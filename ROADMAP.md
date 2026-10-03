@@ -1,0 +1,384 @@
+# ROADMAP — GoKemping Rental & Booking System
+
+**Dasar dokumen:** [PRD.md](./PRD.md)
+**Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
+**Status:** Belum ada implementasi
+**Terakhir diperbarui:** 2026-10-03
+
+---
+
+## 1. Ringkasan Fase
+
+| Fase | Nama              | Fokus                                          | Output Utama                                | Estimasi   |
+| ---- | ----------------- | ---------------------------------------------- | ------------------------------------------- | ---------- |
+| 0    | Foundation        | Bootstrap, auth admin, isolasi `business_id`   | Admin bisa login & melihat dashboard kosong | 3–4 hari   |
+| 1    | Core Public       | Landing sampai kirim WhatsApp                  | Alur booking end-to-end berfungsi           | 12–15 hari |
+| 2    | Admin Back-office | CRUD produk, booking, pembayaran, penyewa      | Admin bisa operasional penuh                | 12–15 hari |
+| 3    | Management        | Laporan, export, statistik, content management | Laporan & konten bisa dikelola admin        | 7–10 hari  |
+
+Total estimasi: **34–44 hari kerja** untuk 1 developer.
+
+---
+
+## 2. Fase 0 — Foundation
+
+### 2.1 Prasyarat Lingkungan
+
+- [x] Install Composer 2.x
+- [x] Install pnpm (`corepack enable pnpm` atau `npm i -g pnpm`) — terpasang 12.8.1
+- [x] Install Laravel CLI (`composer global require laravel/installer`)
+- [x] Pastikan service MySQL 8 berjalan
+- [x] Buat database `gokemping` + user khusus
+
+### 2.2 Inisialisasi Proyek
+
+- [x] `laravel new gokemping --react`
+- [x] `pnpm install`
+- [x] `pnpm add motion`
+- [x] `pnpm dlx shadcn@latest add button card input label textarea dialog sheet`
+- [x] `pnpm dlx shadcn@latest add select table badge tabs dropdown-menu`
+- [x] `pnpm dlx shadcn@latest add calendar popover checkbox radio-group`
+- [x] `pnpm dlx shadcn@latest add sonner skeleton separator avatar`
+- [x] Siapkan `.env` (DB, `APP_NAME`, timezone `Asia/Jakarta`)
+- [x] Setup disk `public` untuk storage produk & bukti bayar
+
+### 2.3 Package Backend
+
+- [x] `laravel/fortify` — autentikasi admin
+- [x] `intervention/image` — kompresi & resize gambar produk
+- [x] `openspout/openspout` — export Excel (Fase 3)
+- [x] `barryvdh/laravel-dompdf` — export PDF (Fase 3)
+- [x] `laravel/pint` + `larastan/larastan` (PHPStan level 7) - code quality
+
+### 2.4 Database — Migration & Seeder
+
+- [x] Migration `businesses`
+- [x] Migration `users` + kolom `business_id` + `role`
+- [x] Migration `categories`
+- [x] Migration `products`
+- [x] Migration `product_images`
+- [x] Migration `customers`
+- [x] Migration `bookings`
+- [x] Migration `booking_items`
+- [x] Migration `payments`
+- [x] Migration `payment_methods`
+- [x] Enum classes: `BookingStatus`, `PaymentStatus`, `PaymentMethodType`
+- [x] Seeder 2 business (GoKemping, Sewa Sepeda Garut)
+- [x] Seeder 2 user admin (satu per business)
+- [x] Seeder kategori contoh + produk contoh
+- [x] Factory untuk seluruh model (dipakai di test)
+
+### 2.5 Isolasi Data (BR-05)
+
+- [x] `EnsureBusinessAccess` middleware
+- [x] Scope global `business_id` pada query
+- [x] Policy per model: `ProductPolicy`, `CategoryPolicy`, `BookingPolicy`, `PaymentPolicy`
+- [x] Halaman login admin
+- [x] Layout dashboard (sidebar) terisolasi dari halaman publik
+- [x] Redirect otomatis admin ke dashboard sesuai `business_id`
+
+**Deliverable Fase 0:** Admin dapat login dan hanya melihat data unit bisnisnya.
+
+**Status: selesai.** Verifikasi: `composer run test` (Pint, PHPStan level 7, 31 test) dan
+`pnpm run check` + `pnpm run types:check` + `pnpm run build` hijau.
+
+Catatan environment lokal yang berbeda dari asumsi awal:
+
+- pnpm yang terpasang adalah versi 12.8.1, bukan 10.x.
+- Analisa statis memakai `larastan/larastan` dengan `phpstan analyse --memory-limit=1G`
+  karena limit bawaan 128M tidak cukup untuk mem-boot Laravel.
+- Akun dev: `admin@gokemping.test` dan `admin@sewasepedagarut.test`, password `password`
+  (wajib diganti sebelum production).
+
+---
+
+## 3. Fase 1 — Core Public
+
+### 3.1 Landing Page
+
+- [ ] Hero section + CTA (Sewa Alat Camping / Sewa Sepeda)
+- [ ] Section tentang GoKemping
+- [ ] Section layanan
+- [ ] Produk unggulan
+- [ ] Cara penyewaan (stepper)
+- [ ] Section keunggulan
+- [ ] FAQ
+- [ ] Kontak & lokasi
+- [ ] Animasi Motion: hero, scroll reveal, hover card
+
+### 3.2 Halaman Pilih Layanan
+
+- [ ] Kartu GoKemping → `/gokemping`
+- [ ] Kartu Sewa Sepeda Garut → `/sewa-sepeda-garut`
+
+### 3.3 Katalog Produk
+
+- [ ] Halaman katalog per unit bisnis
+- [ ] Card produk: foto, nama, kategori, harga, satuan, status, deskripsi singkat
+- [ ] Search (nama produk)
+- [ ] Filter kategori
+- [ ] Filter harga (min/max)
+- [ ] Sorting (harga, nama, terbaru)
+- [ ] Pagination
+- [ ] State URL (`Inertia` + query string) agar filter bisa di-share
+
+### 3.4 Detail Produk
+
+- [ ] Foto utama + gallery (shadcn/ui carousel)
+- [ ] Nama, kategori, harga, satuan
+- [ ] Deskripsi
+- [ ] Spesifikasi
+- [ ] Ketentuan penyewaan
+- [ ] Status ketersediaan
+- [ ] CTA "Sewa Sekarang"
+
+### 3.5 Form Booking
+
+- [ ] Pilih tanggal mulai
+- [ ] Pilih tanggal selesai
+- [ ] Hitung durasi otomatis
+- [ ] Kalkulator harga real-time (harga × jumlah × durasi)
+- [ ] Stepper jumlah barang (`[-] n [+]`)
+- [ ] Validasi tanggal selesai ≥ tanggal mulai
+- [ ] Validasi tanggal tidak di masa lalu
+
+### 3.6 Availability Checking (BR-04)
+
+- [ ] Endpoint cek ketersediaan (JSON, dipanggil saat tanggal berubah)
+- [ ] Hitung stok terpakai dari booking aktif pada periode tersebut
+- [ ] Tampilkan "Tersedia X unit"
+- [ ] Blockir lanjut jika stok tidak mencukupi
+- [ ] Booking aktif yang dihitung: `dikonfirmasi` + `sedang_disewa`
+
+### 3.7 Biodata Penyewa
+
+- [ ] Nama lengkap *
+- [ ] Nomor WhatsApp *
+- [ ] Email (opsional)
+- [ ] NIK *
+- [ ] Alamat *
+- [ ] Kota/Kabupaten
+- [ ] Catatan
+- [ ] Field tambahan penyewa sepeda: jumlah penyewa
+- [ ] Deteksi pelanggan lama berdasarkan WhatsApp/NIK → prefill otomatis (PRD §25)
+
+### 3.8 Review Booking
+
+- [ ] Ringkasan produk, jumlah, periode, durasi, harga, subtotal
+- [ ] Ringkasan data penyewa
+- [ ] Total
+- [ ] Tombol "Lanjut Pembayaran"
+- [ ] Edit data (kembali ke form sebelumnya)
+
+### 3.9 Metode Pembayaran & Halaman Pembayaran
+
+- [ ] Pilihan metode: Cash / QRIS / Transfer Bank
+- [ ] Halaman Cash: total + keterangan + tombol lanjut
+- [ ] Halaman QRIS: QRIS toko + total + upload bukti
+- [ ] Halaman Transfer: rekening + tombol salin + upload bukti
+- [ ] Ambil data rekening/QRIS dari `payment_methods` sesuai `business_id`
+- [ ] Salin nomor rekening ke clipboard
+
+### 3.10 Upload Bukti Pembayaran (BR-08)
+
+- [ ] Validasi `mimes:jpg,jpeg,png,webp`
+- [ ] Validasi `max:5120` (5 MB)
+- [ ] Preview gambar sebelum submit
+- [ ] Hapus & ganti bukti
+- [ ] Bukti **wajib** untuk QRIS/Transfer, **opsional** untuk Cash
+
+### 3.11 Penyimpanan Booking
+
+- [ ] Simpan booking + `booking_items` dalam satu transaksi DB
+- [ ] Salin harga produk ke `booking_items` (BR-09)
+- [ ] Generate kode booking `GK-YYYYMMDD-NNN` / `SSG-YYYYMMDD-NNN` (BR-10)
+- [ ] Simpan record `payments`
+- [ ] Set status awal: booking `menunggu_konfirmasi`, payment `belum_dibayar` / `menunggu_verifikasi`
+
+### 3.12 WhatsApp Booking (BR-06)
+
+- [ ] Template pesan otomatis sesuai format PRD §19
+- [ ] Nomor tujuan mengikuti `business.whatsapp`
+- [ ] Tombol "Lanjut Pesan via WhatsApp" → `wa.me/<number>?text=<encoded>`
+- [ ] Halaman `/booking/success` berisi kode booking + tombol WhatsApp
+
+**Deliverable Fase 1:** Pelanggan dapat menyelesaikan booking penuh dan mengirim detail ke WhatsApp admin tanpa login.
+
+---
+
+## 4. Fase 2 — Admin Back-office
+
+### 4.1 Dashboard
+
+- [ ] Total produk
+- [ ] Booking hari ini
+- [ ] Sedang disewa
+- [ ] Menunggu konfirmasi
+- [ ] Pendapatan (periode berjalan)
+- [ ] Chart booking 7 hari terakhir
+- [ ] Widget booking terbaru
+- [ ] Semua query ter-scope `business_id`
+
+### 4.2 Manajemen Kategori
+
+- [ ] Tabel kategori + jumlah produk
+- [ ] Tambah / edit / ubah status
+- [ ] Hapus kategori (dengan konfirmasi)
+- [ ] Guard: kategori dengan produk tidak bisa dihapus
+
+### 4.3 Manajemen Produk
+
+- [ ] Tabel produk: foto, nama, kategori, harga, stok, status
+- [ ] Search + filter kategori + filter status
+- [ ] Form tambah produk
+- [ ] Form edit produk
+- [ ] Upload multiple foto + gallery
+- [ ] Kompresi gambar (Intervention)
+- [ ] Hapus / nonaktifkan produk (soft delete)
+- [ ] Atur harga, stok, deskripsi, spesifikasi, ketentuan sewa
+- [ ] Produk nonaktif tidak muncul di katalog publik
+
+### 4.4 Manajemen Booking
+
+- [ ] Tabel: kode, penyewa, produk, periode, total, pembayaran, status
+- [ ] Search + filter status + filter rentang tanggal
+- [ ] Halaman detail booking
+- [ ] Ubah status: menunggu → dikonfirmasi → sedang disewa → selesai
+- [ ] Batalkan booking
+- [ ] Riwayat status booking
+- [ ] Konfirmasi pembatalan otomatis pada `payments`
+
+### 4.5 Manajemen Penyewa
+
+- [ ] Tabel: nama, WhatsApp, NIK (masked), alamat, jumlah booking, total transaksi
+- [ ] Search by nama / WhatsApp / NIK
+- [ ] Halaman detail penyewa + riwayat booking
+- [ ] NIK ditampilkan tersamar (masking) di seluruh halaman
+
+### 4.6 Manajemen Pembayaran
+
+- [ ] Tabel: metode, nominal, bukti, status
+- [ ] Filter status & metode
+- [ ] Lihat bukti pembayaran (modal preview)
+- [ ] Verifikasi pembayaran → Lunas
+- [ ] Tolak pembayaran (dengan alasan)
+- [ ] Catat `verified_at` dan `verified_by`
+- [ ] Cash: ubah langsung menjadi Lunas
+
+### 4.7 Pengaturan Pembayaran
+
+- [ ] Upload QRIS merchant
+- [ ] Nama merchant
+- [ ] Data bank: nama bank, nomor rekening, pemilik
+- [ ] Keterangan pembayaran cash
+- [ ] Aktif/nonaktifkan tiap metode
+- [ ] Simpan per `business_id`
+
+### 4.8 Pengaturan Akun Admin
+
+- [ ] Ubah profil
+- [ ] Ubah password
+- [ ] Toggle light/dark mode
+
+**Deliverable Fase 2:** Admin dapat menjalankan seluruh operasional secara mandiri.
+
+---
+
+## 5. Fase 3 — Management
+
+### 5.1 Laporan
+
+- [ ] Filter tanggal mulai & tanggal akhir
+- [ ] Jumlah booking
+- [ ] Booking selesai
+- [ ] Booking dibatalkan
+- [ ] Total pendapatan
+- [ ] Produk paling banyak disewa
+- [ ] Jumlah penyewa
+- [ ] Rekap metode pembayaran
+- [ ] Grafik pendapatan (harian/bulanan)
+
+### 5.2 Export
+
+- [ ] Export Excel — data booking
+- [ ] Export Excel — rekap laporan
+- [ ] Export PDF — laporan periode + kop surat
+
+### 5.3 Statistik
+
+- [ ] Grafik booking per bulan
+- [ ] Grafik pendapatan per bulan
+- [ ] Produk terlaris
+- [ ] Metode pembayaran paling banyak dipakai
+
+### 5.4 Content Management
+
+- [ ] Banner / hero carousel
+- [ ] Informasi layanan
+- [ ] FAQ (CRUD)
+- [ ] Ketentuan sewa
+- [ ] Kontak (WhatsApp, telepon, alamat)
+- [ ] Informasi lokasi (embed maps)
+- [ ] Semua konten ter-scope `business_id`
+
+**Deliverable Fase 3:** Admin dapat menganalisis bisnis dan mengelola konten tanpa sentuh kode.
+
+---
+
+## 6. Definition of Done
+
+Sebuah task dianggap selesai bila:
+
+- [ ] Fitur berfungsi sesuai PRD
+- [ ] Validasi input tersedia di server (`FormRequest`), bukan hanya di frontend
+- [ ] Query ter-scope `business_id` untuk seluruh data admin
+- [ ] Ter-cover automated test (Pest/PHPUnit) untuk logic kritis: availability, booking code, booking total, scoping
+- [ ] Lolos `pint` dan `phpstan`
+- [ ] Lolos ESLint + TypeScript check (`pnpm run lint`, `pnpm tsc --noEmit`)
+- [ ] Loading & empty state ditangani
+- [ ] Responsive di mobile, tablet, desktop
+- [ ] Nominal Rupiah ter-format konsisten
+- [ ] NIK tidak pernah ditampilkan penuh di halaman publik
+
+---
+
+## 7. Prioritas Anti-Overbooking (BR-04)
+
+Paling berisiko salah adalah pemesanan melebihi stok. Urutan implementasi wajib:
+
+1. Query stok terpakai dengan filter overlap tanggal
+2. Bungkus pembuatan booking dalam `DB::transaction`
+3. `lockForUpdate()` pada row produk & booking aktif terkait
+4. Hitung ulang ketersediaan **di dalam** transaksi
+5. Tolak dengan 422 jika tidak cukup
+6. Otomatis lepas stok reserved pada status `dibatalkan`
+
+---
+
+## 8. Risiko & Mitigasi
+
+| Risiko                               | Dampak | Mitigasi                                                |
+| ------------------------------------ | ------ | ------------------------------------------------------- |
+| Overbooking saat booking bersamaan   | Tinggi | DB transaction + row locking (Bagian 7)                 |
+| Harga produk berubah setelah booking | Sedang | Salin harga ke `booking_items` (BR-09)                  |
+| Data tercampur antar unit bisnis     | Tinggi | Global scope + policy + middleware (BR-05)              |
+| Bukti bayar tidak terbaca            | Sedang | Validasi mime/size + preview + kompresi                 |
+| NIK terekspos                        | Tinggi | Masking di semua halaman + policy akses                 |
+| Kode booking bentrok                 | Sedang | Unique index di database, bukan hanya validasi app      |
+| Halaman katalog lambat               | Sedang | Index `business_id`/`status`, pagination, eager loading |
+| Duplikasi kode produk yang mirip     | Rendah | Unique index `business_id` + `slug`                     |
+
+---
+
+## 9. Checklist Pelepasan (Release)
+
+- [ ] Seluruh Phase 1–3 selesai
+- [ ] Data seed demo dibersihkan sebelum production
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`
+- [ ] `php artisan config:cache` + `route:cache` + `view:cache`
+- [ ] `pnpm build`
+- [ ] Password admin default diganti
+- [ ] Backup MySQL terjadwal
+- [ ] HTTPS aktif
+- [ ] Uji seluruh alur booking pada 2 unit bisnis
+- [ ] Uji upload bukti bayar pada mobile
