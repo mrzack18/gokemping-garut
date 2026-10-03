@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Belum ada implementasi
+**Status:** Fase 0 selesai
 **Terakhir diperbarui:** 2026-10-03
 
 ---
@@ -28,7 +28,10 @@ Total estimasi: **34–44 hari kerja** untuk 1 developer.
 - [x] Install pnpm (`corepack enable pnpm` atau `npm i -g pnpm`) — terpasang 12.8.1
 - [x] Install Laravel CLI (`composer global require laravel/installer`)
 - [x] Pastikan service MySQL 8 berjalan
-- [x] Buat database `gokemping` + user khusus
+- [x] Buat database `gokemping` + user khusus — database `gokemping` dan
+      `gokemping_test` dibuat, user `gokemping` dengan hak
+      SELECT/INSERT/UPDATE/DELETE/CREATE/DROP/ALTER/INDEX/REFERENCES pada kedua
+      database tersebut (tanpa akses `root`).
 
 ### 2.2 Inisialisasi Proyek
 
@@ -79,14 +82,17 @@ Total estimasi: **34–44 hari kerja** untuk 1 developer.
 
 **Deliverable Fase 0:** Admin dapat login dan hanya melihat data unit bisnisnya.
 
-**Status: selesai.** Verifikasi: `composer run test` (Pint, PHPStan level 7, 31 test) dan
-`pnpm run check` + `pnpm run types:check` + `pnpm run build` hijau.
+**Status: selesai.** Verifikasi: `composer run ci:check` (Pint, PHPStan level 7, 31 test)
+dan `pnpm run check` + `pnpm run types:check` + `pnpm run build` hijau.
+Seluruh item pada 2.1–2.5 sudah tercentang.
 
 Catatan environment lokal yang berbeda dari asumsi awal:
 
 - pnpm yang terpasang adalah versi 12.8.1, bukan 10.x.
 - Analisa statis memakai `larastan/larastan` dengan `phpstan analyse --memory-limit=1G`
   karena limit bawaan 128M tidak cukup untuk mem-boot Laravel.
+- Aplikasi memakai user MySQL khusus `gokemping` (bukan `root`). Password ada di `.env`
+  lokal dan tidak disimpan di repository.
 - Akun dev: `admin@gokemping.test` dan `admin@sewasepedagarut.test`, password `password`
   (wajib diganti sebelum production).
 
