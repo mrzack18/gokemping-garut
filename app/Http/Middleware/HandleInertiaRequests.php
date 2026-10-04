@@ -42,16 +42,6 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            /**
-             * Flash yang dipublikasikan ke halaman Inertia.
-             *
-             * Daftar flash ditulis eksplisit, bukan seluruh isi session,
-             * karena session menyimpan draft booking yang berisi data pribadi
-             * penyewa (ROADMAP 3.7).
-             */
-            'flash' => [
-                'booking.customer_saved' => $request->session()->get('booking.customer_saved'),
-            ],
         ];
     }
 }

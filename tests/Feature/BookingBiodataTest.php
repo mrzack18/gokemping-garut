@@ -142,8 +142,7 @@ class BookingBiodataTest extends TestCase
         $this->createDraft($this->camping, $this->tent);
 
         $this->post(route('booking.gokemping.biodata.store'), $this->validCustomer())
-            ->assertRedirect(route('booking.gokemping.biodata'))
-            ->assertSessionHas('booking.customer_saved', true);
+            ->assertRedirect(route('booking.gokemping.review'));
 
         $customer = session(BookingDraft::SESSION_KEY)['customer'];
 
@@ -271,7 +270,7 @@ class BookingBiodataTest extends TestCase
 
         $this->post(route('booking.gokemping.biodata.store'), $this->validCustomer([
             'nik' => '  3201234567890001  ',
-        ]))->assertRedirect(route('booking.gokemping.biodata'));
+        ]))->assertRedirect(route('booking.gokemping.review'));
     }
 
     public function test_alamat_wajib_diisi(): void
@@ -297,7 +296,7 @@ class BookingBiodataTest extends TestCase
 
         $this->post(route('booking.gokemping.biodata.store'), $this->validCustomer([
             'email' => '',
-        ]))->assertRedirect(route('booking.gokemping.biodata'));
+        ]))->assertRedirect(route('booking.gokemping.review'));
     }
 
     public function test_jumlah_penyewa_nol_ditolak(): void
@@ -340,54 +339,6 @@ class BookingBiodataTest extends TestCase
 
         $this->get(route('booking.gokemping.biodata'))->assertOk();
         $this->post(route('booking.gokemping.biodata.store'), $this->validCustomer())->assertRedirect();
-    }
-
-    public function test_flash_konfirmasi_dibagikan_ke_halaman(): void
-    {
-        $this->createDraft($this->camping, $this->tent);
-
-        $this->post(route('booking.gokemping.biodata.store'), $this->validCustomer())
-            ->assertRedirect(route('booking.gokemping.biodata'));
-
-        $this->get(route('booking.gokemping.biodata'))
-            ->assertOk()
-            ->assertInertia(function ($page): void {
-                $flash = $page->toArray()['props']['flash'] ?? null;
-
-                $this->assertIsArray($flash);
-                $this->assertTrue($flash['booking.customer_saved'] ?? null);
-            });
-    }
-
-    public function test_flash_tidak_dibagikan_sebagai_null(): void
-    {
-        $this->createDraft($this->camping, $this->tent);
-
-        $this->get(route('booking.gokemping.biodata'))
-            ->assertOk()
-            ->assertInertia(function ($page): void {
-                $flash = $page->toArray()['props']['flash'] ?? null;
-
-                $this->assertIsArray($flash);
-                $this->assertArrayHasKey('booking.customer_saved', $flash);
-                $this->assertNull($flash['booking.customer_saved']);
-            });
-    }
-
-    public function test_flash_tidak_membocorkan_isi_session(): void
-    {
-        $this->createDraft($this->camping, $this->tent);
-
-        $this->post(route('booking.gokemping.biodata.store'), $this->validCustomer());
-
-        $this->get(route('booking.gokemping.biodata'))
-            ->assertOk()
-            ->assertInertia(function ($page): void {
-                $flash = $page->toArray()['props']['flash'] ?? null;
-
-                $this->assertIsArray($flash);
-                $this->assertSame(['booking.customer_saved'], array_keys($flash));
-            });
     }
 
     public function test_pelanggan_lama_bisa_dipakai_ulang(): void

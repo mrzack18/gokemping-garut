@@ -5,6 +5,7 @@ use App\Http\Controllers\BookingBiodataController;
 use App\Http\Controllers\BookingCustomerLookupController;
 use App\Http\Controllers\BookingDraftController;
 use App\Http\Controllers\BookingFormController;
+use App\Http\Controllers\BookingReviewController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProductDetailController;
@@ -39,6 +40,12 @@ Route::post('/gokemping/booking/biodata', [BookingBiodataController::class, 'sto
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.biodata.store');
 
+// Literal `booking/review` juga harus mendahului `/booking/{product}`
+// supaya tidak tertangkap sebagai slug produk.
+Route::get('/gokemping/booking/review', BookingReviewController::class)
+    ->defaults('business', 'gokemping')
+    ->name('booking.gokemping.review');
+
 Route::post('/gokemping/booking/{product}/draft', BookingDraftController::class)
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.draft.store');
@@ -66,6 +73,10 @@ Route::get('/sewa-sepeda-garut/booking/biodata', [BookingBiodataController::clas
 Route::post('/sewa-sepeda-garut/booking/biodata', [BookingBiodataController::class, 'store'])
     ->defaults('business', 'sewa-sepeda-garut')
     ->name('booking.sewaSepedaGarut.biodata.store');
+
+Route::get('/sewa-sepeda-garut/booking/review', BookingReviewController::class)
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->name('booking.sewaSepedaGarut.review');
 
 Route::post('/sewa-sepeda-garut/booking/{product}/draft', BookingDraftController::class)
     ->defaults('business', 'sewa-sepeda-garut')

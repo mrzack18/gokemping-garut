@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import InputError from '@/components/input-error';
@@ -10,53 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import PublicLayout from '@/layouts/public-layout';
+import { durationInDays, formatBookingDate } from '@/lib/booking';
 import { formatRupiah } from '@/lib/format';
 import bookingRoutes from '@/routes/booking';
 import type { BookingBiodataPageProps, CustomerLookupResponse } from '@/types';
 import { ArrowLeft, CheckCircle2, Loader2, Search } from 'lucide-react';
-
-const MS_PER_DAY = 86_400_000;
-
-const longDateFormatter = new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-});
-
-function parseDate(value: string | null): Date | null {
-    if (value === null || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return null;
-    }
-
-    const date = new Date(`${value}T00:00:00`);
-
-    return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function formatDate(value: string | null): string {
-    const date = parseDate(value);
-
-    return date === null ? '-' : longDateFormatter.format(date);
-}
-
-/**
- * Durasi memakai selisih tanggal selesai dikurangi tanggal mulai, sama dengan
- * perhitungan di ROADMAP 3.5 dan cek ketersediaan di ROADMAP 3.6.
- */
-function durationInDays(start: string | null, end: string | null): number {
-    const startDate = parseDate(start);
-    const endDate = parseDate(end);
-
-    if (startDate === null || endDate === null) {
-        return 0;
-    }
-
-    const diff = Math.round(
-        (endDate.getTime() - startDate.getTime()) / MS_PER_DAY,
-    );
-
-    return diff > 0 ? diff : 1;
-}
 
 function routesFor(slug: string) {
     if (slug === 'gokemping') {
@@ -95,13 +53,6 @@ export default function BookingBiodata({
     const [isFound, setIsFound] = useState(false);
     const [lookupError, setLookupError] = useState<string | null>(null);
     const controllerRef = useRef<AbortController | null>(null);
-
-    /**
-     * Flash dari server yang menandai data penyewa sudah tersimpan di draft.
-     * Langkah review booking ada di ROADMAP 3.8, jadi konfirmasi inilah yang
-     * menutup alur sampai halaman tersebut tersedia.
-     */
-    const isSaved = usePage().props.flash['booking.customer_saved'] === true;
 
     const duration = durationInDays(draft.start_date, draft.end_date);
     const quantity = draft.quantity;
@@ -228,7 +179,7 @@ export default function BookingBiodata({
         { label: 'Produk', value: product.name },
         {
             label: 'Periode',
-            value: `${formatDate(draft.start_date)} sampai ${formatDate(draft.end_date)}`,
+            value: `${formatBookingDate(draft.start_date)} sampai ${formatBookingDate(draft.end_date)}`,
         },
         { label: 'Durasi', value: `${duration} hari` },
         { label: 'Jumlah', value: String(quantity) },
@@ -269,22 +220,6 @@ export default function BookingBiodata({
                             dan NIK dipakai untuk mengenali penyewa lama dan
                             mengisi form otomatis.
                         </p>
-
-                        {isSaved ? (
-                            <div className="mt-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900 dark:border-green-900 dark:bg-green-950 dark:text-green-100">
-                                <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
-                                <div>
-                                    <p className="font-medium">
-                                        Data penyewa tersimpan.
-                                    </p>
-                                    <p className="mt-1 text-green-800 dark:text-green-200">
-                                        Periksa kembali isian sebelum
-                                        melanjutkan ke langkah konfirmasi
-                                        booking.
-                                    </p>
-                                </div>
-                            </div>
-                        ) : null}
                     </motion.div>
                 </div>
             </section>

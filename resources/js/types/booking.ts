@@ -96,3 +96,54 @@ export type BookingBiodataPageProps = {
     customer: BookingCustomerDraft;
     isBikeRental: boolean;
 };
+
+/**
+ * Halaman review booking (ROADMAP 3.8, PRD section 15).
+ *
+ * Durasi, subtotal, dan total dihitung di server lewat `BookingPeriod` dan
+ * dikirim sebagai angka siap tampil, supaya total yang dibaca penyewa sama
+ * dengan total yang akan disimpan di ROADMAP 3.11.
+ */
+export type BookingReviewPageProps = {
+    business: LandingBusiness;
+    businesses: LandingBusiness[];
+    product: {
+        id: number;
+        name: string;
+        slug: string;
+        price: number;
+        price_unit: string;
+        stock: number;
+    };
+    period: {
+        start_date: string;
+        end_date: string;
+        start_date_label: string;
+        end_date_label: string;
+        duration: number;
+        duration_label: string;
+        quantity: number;
+    };
+    availability: {
+        available: number;
+        requested: number;
+        is_available: boolean;
+    };
+    pricing: {
+        price: number;
+        price_label: string;
+        subtotal: number;
+        total: number;
+    };
+    customer: {
+        name: string;
+        whatsapp: string;
+        email: string;
+        nik: string;
+        address: string;
+        city: string;
+        notes: string;
+        renter_count: string;
+    };
+    isBikeRental: boolean;
+};

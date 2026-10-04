@@ -51,12 +51,11 @@ class BookingBiodataController extends Controller
     }
 
     /**
-     * Menyimpan data penyewa ke draft.
+     * Menyimpan data penyewa ke draft lalu meneruskan ke halaman review.
      *
-     * Setelah tersimpan, halaman diarahkan kembali ke form biodata dengan
-     * pesan Berhasil. Langkah berikutnya adalah review booking (ROADMAP 3.8)
-     * yang belum ada, jadi redirect ke sana ditunda sampai halaman itu
-     * dibangun. Tidak ada tautan ke halaman yang belum ada.
+     * Draft ditulis dengan `merge()` supaya jadwal yang dipilih pada langkah
+     * sebelumnya tidak hilang. Setelah biodata tersimpan, penyewa diarahkan ke
+     * review (ROADMAP 3.8) sesuai urutan alur PRD section 36.
      */
     public function store(
         StoreBookingCustomerRequest $request,
@@ -69,8 +68,7 @@ class BookingBiodataController extends Controller
             'customer' => $request->customerPayload(BookingRoutes::isBikeRental($business)),
         ]);
 
-        return to_route('booking.'.BookingRoutes::prefix($business).'.biodata')
-            ->with('booking.customer_saved', true);
+        return to_route('booking.'.BookingRoutes::prefix($business).'.review');
     }
 
     /**

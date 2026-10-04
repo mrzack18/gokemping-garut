@@ -424,11 +424,51 @@ Catatan implementasi 3.7:
 
 ### 3.8 Review Booking
 
-- [ ] Ringkasan produk, jumlah, periode, durasi, harga, subtotal
-- [ ] Ringkasan data penyewa
-- [ ] Total
-- [ ] Tombol "Lanjut Pembayaran"
-- [ ] Edit data (kembali ke form sebelumnya)
+- [x] Ringkasan produk, jumlah, periode, durasi, harga, subtotal
+- [x] Ringkasan data penyewa
+- [x] Total
+- [x] Tombol "Lanjut Pembayaran"
+- [x] Edit data (kembali ke form sebelumnya)
+
+Catatan implementasi 3.8:
+
+- Halaman review berada di `/gokemping/booking/review` dan
+  `/sewa-sepeda-garut/booking/review`. Literal `booking/review` didaftarkan
+  sebelum `/booking/{product}` supaya tidak tertangkap sebagai slug produk,
+  pola yang sama dengan `booking/biodata`.
+- Setelah biodata tersimpan, `BookingBiodataController::store` sekarang
+  mengarahkan pengguna ke halaman review, sesuai urutan alur PRD section 36.
+  Banner konfirmasi berbasis flash yang sebelumnya dipakai di halaman biodata
+  dihapus karena sudah tidak diperlukan setelah halaman review ada.
+- Durasi, subtotal, dan total dihitung server lewat `App\Support\BookingPeriod`
+  dan dikirim sebagai angka siap tampil bersama label tanggal berbahasa
+  Indonesia (`10 Oktober 2026`). Angka yang dibaca penyewa sekarang sama
+  dengan angka yang akan dipakai `booking_items` di ROADMAP 3.11, bukan hasil
+  hitungan ulang di browser.
+- Helper tanggal dan durasi yang sebelumnya terduplikasi di `form.tsx` dan
+  `biodata.tsx` dipindahkan ke `resources/js/lib/booking.ts` supaya form
+  jadwal, biodata, dan review memakai satu implementasi yang sama.
+- Ketersediaan dicek ulang oleh `BookingReviewController` memakai
+  `AvailabilityService` (BR-04). Draft sudah divalidasi sejak ROADMAP 3.5,
+  tetapi stok bisa terpakai booking lain di antara langkah tersebut. Kalau unit
+  yang tersisa lebih sedikit dari yang diminta, halaman menampilkan
+  peringatan, mematikan checkbox konfirmasi, dan menawarkan tautan untuk
+  mengubah jadwal. Booking berstatus batal dan yang sudah lewat tidak ikut
+  mengurangi ketersediaan, mengikuti `BookingStatus::holdsStock()`.
+- PRD section 15 mengharuskan konfirmasi pengguna sebelum lanjut, jadi halaman
+  memakai checkbox "Saya pastikan detail booking dan data penyewa di atas sudah
+  benar" sebagai syarat. Kolom yang tidak wajib diisi seperti email, kota, dan
+  catatan hanya ditampilkan kalau penyewa mengisinya.
+- Tombol "Lanjut Pembayaran" sudah ada sesuai checklist, tetapi sengaja
+  dinonaktifkan dengan keterangan bahwa halaman pembayaran dibangun pada
+  ROADMAP 3.9. Tidak ada tautan ke halaman yang belum ada. Begitu 3.9 siap,
+  tombol ini cukup diarahkan ke route pembayaran.
+- Halaman review mengarahkan pengguna ke form biodata bila data penyewa wajib
+  (nama, WhatsApp, NIK, alamat) belum lengkap, dan mengembalikan 404 bila
+  draft tidak ada, milik unit lain, atau produknya sudah tidak aktif.
+- Review tetap bersifat baca saja. Ada feature test yang mengunci batas ini
+  dengan memastikan `bookings`, `booking_items`, dan `customers` tetap kosong
+  setelah halaman dibuka.
 
 ### 3.9 Metode Pembayaran & Halaman Pembayaran
 

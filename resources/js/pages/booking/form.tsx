@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import PublicLayout from '@/layouts/public-layout';
+import { durationInDays, formatBookingDate } from '@/lib/booking';
 import { formatRupiah } from '@/lib/format';
 import bookingRoutes from '@/routes/booking';
 import catalogRoutes from '@/routes/catalog';
@@ -20,57 +21,6 @@ import {
     Minus,
     Plus,
 } from 'lucide-react';
-
-const MS_PER_DAY = 86_400_000;
-
-const longDateFormatter = new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-});
-
-/**
- * Tanggal dari `<input type="date">` selalu berbentuk `YYYY-MM-DD` dan tidak
- * punya zona waktu. Parsing dilakukan lokal agar tidak bergeser sehari
- * karena konversi ke UTC.
- */
-function parseDate(value: string): Date | null {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return null;
-    }
-
-    const date = new Date(`${value}T00:00:00`);
-
-    return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function formatDate(value: string): string {
-    const date = parseDate(value);
-
-    return date === null ? '-' : longDateFormatter.format(date);
-}
-
-/**
- * Durasi dihitung sebagai selisih tanggal selesai dikurangi tanggal mulai.
- * PRD section 11 memakai contoh 10 Oktober sampai 12 Oktober sama dengan 2
- * hari, jadi tanggal selesai diperlakukan sebagai batas pengembalian dan
- * tidak ikut dihitung sebagai hari sewa.
- *
- * Sewa pada tanggal yang sama menghasilkan selisih 0, dan itu akan membuat
- * total nol rupiah, jadi durasi minimum yang dipakai adalah 1 hari.
- */
-function durationInDays(startDate: string, endDate: string): number {
-    const start = parseDate(startDate);
-    const end = parseDate(endDate);
-
-    if (start === null || end === null) {
-        return 0;
-    }
-
-    const diff = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY);
-
-    return diff > 0 ? diff : 1;
-}
 
 function productDetailUrlBySlug(slug: string, productSlug: string): string {
     if (slug === 'gokemping') {
@@ -632,8 +582,8 @@ export default function BookingForm({
 
                                 {startDate !== '' && endDate !== '' ? (
                                     <p className="text-xs text-muted-foreground">
-                                        {formatDate(startDate)} sampai{' '}
-                                        {formatDate(endDate)}
+                                        {formatBookingDate(startDate)} sampai{' '}
+                                        {formatBookingDate(endDate)}
                                     </p>
                                 ) : null}
 
