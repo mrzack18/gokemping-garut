@@ -102,15 +102,32 @@ Catatan environment lokal yang berbeda dari asumsi awal:
 
 ### 3.1 Landing Page
 
-- [ ] Hero section + CTA (Sewa Alat Camping / Sewa Sepeda)
-- [ ] Section tentang GoKemping
-- [ ] Section layanan
-- [ ] Produk unggulan
-- [ ] Cara penyewaan (stepper)
-- [ ] Section keunggulan
-- [ ] FAQ
-- [ ] Kontak & lokasi
-- [ ] Animasi Motion: hero, scroll reveal, hover card
+- [x] Hero section + CTA (Sewa Alat Camping / Sewa Sepeda)
+- [x] Section tentang GoKemping
+- [x] Section layanan
+- [x] Produk unggulan
+- [x] Cara penyewaan (stepper)
+- [x] Section keunggulan
+- [x] FAQ
+- [x] Kontak & lokasi
+- [x] Animasi Motion: hero, scroll reveal, hover card
+
+Implementasi:
+
+- `LandingController` mengirim unit bisnis aktif dan produk unggulan, maksimal 4
+  produk per unit supaya kedua unit sama-sama terlihat.
+- `BusinessScope` dinonaktifkan secara eksplisit pada query produk karena
+  halaman ini lintas tenant, termasuk ketika admin yang sedang login membuka
+  landing page.
+- Tiap section dipisah sebagai komponen di `resources/js/components/landing/`
+  dengan `PublicLayout` untuk header, navigasi anchor, dan footer.
+- `app.tsx` memetakan halaman `welcome` ke layout `null` karena layout publik
+  dirender dari dalam halaman.
+- Konten statis (tentang, layanan, keunggulan, FAQ, cara penyewaan) berada di
+  komponen. Konten dinamis (nama unit, alamat, WhatsApp, produk, harga, stok)
+  dibaca dari database.
+- 8 feature test menutup akses tamu, filter unit dan produk nonaktif, batas
+  jumlah produk per unit, urutan terbaru, serta kasus admin yang login.
 
 ### 3.2 Halaman Pilih Layanan
 

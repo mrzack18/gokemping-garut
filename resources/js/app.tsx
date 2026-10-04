@@ -12,11 +12,11 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            // Halaman publik memakai PublicLayout sendiri, tanpa sidebar admin.
             case name === 'welcome':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
-            // Halaman publik tidak memakai sidebar admin.
             case name.startsWith('admin/'):
                 return AppLayout;
             case name.startsWith('settings/'):
