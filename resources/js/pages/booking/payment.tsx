@@ -44,8 +44,9 @@ const ACCEPTED_PROOF_TYPES = 'image/jpg,image/jpeg,image/png,image/webp';
  * berkas belum tersimpan, lalu dibersihkan supaya `URL.createObjectURL` tidak
  * menahan memori browser.
  *
- * Tombol "Lanjut Pesan via WhatsApp" tampil sesuai PRD section 17 tetapi masih
- * nonaktif karena pembuatannya ada di ROADMAP 3.12.
+ * Tombol konfirmasi menyimpan booking di ROADMAP 3.11. Setelah booking
+ * tersimpan, penyewa diarahkan ke halaman konfirmasi yang berisi kode booking;
+ * tombol WhatsApp di halaman itu dibangun di ROADMAP 3.12.
  */
 export default function BookingPayment({
     business,
@@ -62,6 +63,12 @@ export default function BookingPayment({
 
     const proofForm = useForm<{ proof: File | null }>({ proof: null });
     const removeForm = useForm({});
+    /**
+     * Form konfirmasi tidak mengirim data apa pun, tetapi tetap punya dua key
+     * error dari server: `proof` kalau bukti belum diunggah, dan `period` kalau
+     * stok sudah habis saat booking disimpan.
+     */
+    const bookingForm = useForm<{ proof?: string; period?: string }>({});
 
     const selectedFile = proofForm.data.proof;
 
@@ -95,11 +102,23 @@ export default function BookingPayment({
 
     const proofStoreUrl = routes.payment.proof.store.url();
     const proofDestroyUrl = routes.payment.proof.destroy.url();
+    const bookingStoreUrl = routes.store.url();
 
     const previewUrl = localPreview ?? proof?.url ?? null;
     const previewName = selectedFile?.name ?? proof?.name ?? null;
     const hasSavedProof = proof !== null;
-    const isBusy = proofForm.processing || removeForm.processing;
+    const isBusy =
+        proofForm.processing || removeForm.processing || bookingForm.processing;
+
+    /**
+     * Booking tidak boleh disimpan sebelum bukti pembayaran tersimpan di
+     * server. Berkas yang masih dipilih di form upload belum ada di disk, jadi
+     * menyimpan booking akan menghasilkan pembayaran tanpa bukti.
+     */
+    const canConfirm =
+        !isBusy &&
+        availability.is_available &&
+        (!method.requires_proof || hasSavedProof);
 
     function selectProof(event: React.ChangeEvent<HTMLInputElement>): void {
         const file = event.target.files?.[0] ?? null;
@@ -145,6 +164,10 @@ export default function BookingPayment({
         proofForm.setData('proof', null);
         proofForm.clearErrors('proof');
         removeForm.delete(proofDestroyUrl);
+    }
+
+    function confirmBooking(): void {
+        bookingForm.post(bookingStoreUrl);
     }
 
     return (
@@ -519,21 +542,37 @@ export default function BookingPayment({
                                 {method.requires_proof && !hasSavedProof ? (
                                     <p className="text-xs text-amber-700 dark:text-amber-400">
                                         Unggah bukti pembayaran dulu sebelum
-                                        melanjutkan ke WhatsApp.
+                                        menyimpan booking.
                                     </p>
+                                ) : null}
+
+                                {bookingForm.errors.proof ? (
+                                    <InputError
+                                        message={bookingForm.errors.proof}
+                                    />
+                                ) : null}
+
+                                {bookingForm.errors.period ? (
+                                    <InputError
+                                        message={bookingForm.errors.period}
+                                    />
                                 ) : null}
 
                                 <Button
                                     type="button"
                                     size="lg"
                                     className="w-full"
-                                    disabled
+                                    disabled={!canConfirm}
+                                    onClick={confirmBooking}
                                 >
-                                    Lanjut Pesan via WhatsApp
+                                    {bookingForm.processing
+                                        ? 'Menyimpan...'
+                                        : 'Konfirmasi Booking'}
                                 </Button>
                                 <p className="text-xs text-muted-foreground">
-                                    Tombol WhatsApp dibangun pada ROADMAP 3.12,
-                                    jadi tombol ini belum aktif.
+                                    Booking disimpan dengan status menunggu
+                                    konfirmasi admin. WhatsApp ke admin dibangun
+                                    pada ROADMAP 3.12.
                                 </p>
                             </CardContent>
                         </Card>

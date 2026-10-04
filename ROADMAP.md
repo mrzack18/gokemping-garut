@@ -329,7 +329,7 @@ Implementasi:
   menghasilkan satu request.
 - **Status yang menahan stok.** ROADMAP menyebut `dikonfirmasi` dan
   `sedang_disewa`, tapi enum `BookingStatus::holdsStock()` juga memasukkan
-  `menunggu_konfirmasi`. Dipakai versi enum, 즉 tiga status, karena
+  `menunggu_konfirmasi`. Dipakai versi enum, bukan tiga status, karena
   `menunggu_konfirmasi` juga sudah menahan barang dan mengabaikannya membuka
   celah overbooking: dua pembeli bisa sama-sama mendapat unit terakhir.
   Endpoint juga mengirim daftar status tersebut di `holding_statuses` supaya
@@ -347,12 +347,16 @@ Implementasi:
   yang dia buka.
 - Hasil yang bisa negatif dicegah `max(0, ...)`, jadi booking yang telanjur
   melebihi stok tidak membuat angka tersedia negatif.
-- **`lockForUpdate` belum dipakai.** PRD section 39.3 memetakan BR-04 ke
-  `AvailabilityService` yang jalan di dalam `DB::transaction` + `lockForUpdate`.
-  Endpoint ini hanya membaca, dipanggil setiap kali tanggal berubah, jadi
-  mengunci baris akan menambah kontensi tanpa mencegah apa pun. Pengaman race
-  yang sesungguhnya adalah saat penyimpanan booking di ROADMAP 3.11, tepat
+- **`lockForUpdate` belum dipakai di endpoint.** PRD section 39.3 memetakan BR-04
+  ke `AvailabilityService` yang jalan di dalam `DB::transaction` +
+  `lockForUpdate`. Endpoint ini hanya membaca, dipanggil setiap kali tanggal
+  berubah, jadi mengunci baris akan menambah kontensi tanpa mencegah apa pun.
+  Pengaman race yang sesungguhnya ada di penyimpanan booking ROADMAP 3.11, tepat
   sebelum stok dikurangi. Perlu dikonfirmasi ke pemilik produk.
+- Periode satu hari (`start_date` sama dengan `end_date`) dulu tidak pernah
+  beririsan dengan apa pun karena rentang eksklusifnya kosong. Diperbaiki di
+  ROADMAP 3.11, dan test di sini ikut memakai perhitungan yang sudah diperbaiki
+  karena endpoint, review, dan penyimpanan booking memakai scope yang sama.
 - Validasi endpoint menolak tanggal kurang, format bukan `Y-m-d`, tanggal selesai
   sebelum tanggal mulai, tanggal mulai di masa lalu, dan jumlah di bawah 1.
   Tanggal wajib yang tidak lolos validasi dijawab 422 dengan pesan yang sama
@@ -533,11 +537,63 @@ Catatan 3.10:
 
 ### 3.11 Penyimpanan Booking
 
-- [ ] Simpan booking + `booking_items` dalam satu transaksi DB
-- [ ] Salin harga produk ke `booking_items` (BR-09)
-- [ ] Generate kode booking `GK-YYYYMMDD-NNN` / `SSG-YYYYMMDD-NNN` (BR-10)
-- [ ] Simpan record `payments`
-- [ ] Set status awal: booking `menunggu_konfirmasi`, payment `belum_dibayar` / `menunggu_verifikasi`
+- [x] Simpan booking + `booking_items` dalam satu transaksi DB
+- [x] Salin harga produk ke `booking_items` (BR-09)
+- [x] Generate kode booking `GK-YYYYMMDD-NNN` / `SSG-YYYYMMDD-NNN` (BR-10)
+- [x] Simpan record `payments`
+- [x] Set status awal: booking `menunggu_konfirmasi`, payment `belum_dibayar` / `menunggu_verifikasi`
+
+Catatan 3.11:
+
+- Penyimpanan dimulai dari `BookingStoreController` lewat `BookingService`.
+  Ketersediaan dihitung ulang di dalam `DB::transaction` tepat sebelum stok
+  dipakai, karena nilai yang tampil di halaman review dan pembayaran hanya
+  informatif dan bisa jadi basi di antara dipilihnya metode dan tombol
+  konfirmasi ditekan.
+- Urutan lock di dalam transaksi dijaga tetap: baris `business` dulu, lalu baris
+  `products`. Baris `business` adalah mutex pembuatan kode booking. `lockForUpdate`
+  di `bookings` tidak bisa jadi mutex karena pada kode pertama untuk tanggal
+  tersebut belum ada baris sama sekali, jadi dua request bersamaan bisa
+  sama-sama membaca urutan terakhir yang sama. Indeks unik `bookings.booking_code`
+  tetap menjadi penjaga terakhir kalau kunci baris tersebut tetap terlewat.
+- Stok habis saat submit tidak menghapus draft. Penyewa dikembalikan ke review
+  supaya cukup mengganti periode tanpa mengulang biodata, dan bukti pembayaran
+  yang sudah diunggah tetap utuh. Exception-nya `InsufficientStockException`,
+  dipisah dari `RuntimeException` supaya tidak jadi halaman 500.
+- Harga, nama produk, dan satuan harga disalin dari tabel `products` saat
+  penyimpanan. Test mengirim `total` dan `price` palsu di body request untuk
+  memastikan nilai klien tidak pernah dipakai.
+- Kode booking memakai tanggal booking dibuat, bukan tanggal mulai sewa, dan
+  nomornya dihitung ulang dari kode yang sudah tersimpan pada tanggal itu,
+  bukan dari counter terpisah. Pembacaan kode terakhir secara leksikal hanya
+  benar selama nomor urut muat tiga digit, jadi sisipan `exists()` yang melompati
+  slot yang sudah terpakai, termasuk saat sudah lewat 999 kode per hari.
+- Path bukti dari draft dipindahkan ke `payments.proof`. Berkasnya sendiri
+  **tidak** dihapus dari disk, karena sekarang path itu dimiliki record
+  pembayaran. Sebaliknya draft **dihapus** setelah booking tersimpan, jadi
+  submit ulang berakhir dengan 404 dan tidak bisa membuat booking ganda.
+- Halaman konfirmasi membaca ringkasan dari session (`BookingReceipt`), bukan
+  dari URL, supaya kode booking tidak bisa dibaca orang lain dengan menebak
+  alamat halaman. Halaman juga tidak pernah membaca booking berdasarkan
+  request, jadi tidak ada jalur pembocoran data di luar session tersebut.
+- Penyewa dicari ulang berdasarkan nomor WhatsApp yang sudah dinormalkan,
+  konsisten dengan endpoint deteksi pelanggan lama (ROADMAP 3.7), sehingga
+  orang yang menyewa dua kali tidak terpecah jadi dua baris.
+- `PaymentStatus::initialFor()` diubah jadi metode statis karena status awal
+  ditentukan oleh metode pembayaran, bukan oleh instance status yang dibaca.
+  Cash mulai dari `belum_dibayar`, bukan `lunas`, supaya admin tetap yang
+  menandai pembayaran diterima.
+
+Perbaikan ketersediaan di 3.11:
+
+- Periode satu hari (`start_date` sama dengan `end_date`) sebelumnya tidak
+  pernah beririsan dengan apa pun, karena rentang eksklusifnya kosong. Satu
+  barang bisa terjual berkali-kali untuk tanggal yang sama.
+- `Booking::scopeOverlappingPeriod()` sekarang menormalkan batas atas periode
+  yang diminta menjadi `start + 1` hari, dan booking satu hari ikut dihitung
+  lewat syarat kedua yang membandingkan `end_date` dengan `start_date`.
+- Dipakai bersama oleh endpoint ketersediaan (ROADMAP 3.6), halaman review
+  (3.8), dan penyimpanan booking, jadi ketiganya tidak bisa berbeda pendapat.
 
 ### 3.12 WhatsApp Booking (BR-06)
 

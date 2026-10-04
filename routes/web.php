@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingDraftController;
 use App\Http\Controllers\BookingFormController;
 use App\Http\Controllers\BookingPaymentController;
 use App\Http\Controllers\BookingReviewController;
+use App\Http\Controllers\BookingStoreController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProductDetailController;
@@ -65,6 +66,14 @@ Route::get('/gokemping/booking/payment/{method}', [BookingPaymentController::cla
     ->whereIn('method', array_column(PaymentMethodType::cases(), 'value'))
     ->name('booking.gokemping.payment.show');
 
+Route::get('/gokemping/booking/success', [BookingStoreController::class, 'success'])
+    ->defaults('business', 'gokemping')
+    ->name('booking.gokemping.success');
+
+Route::post('/gokemping/booking', [BookingStoreController::class, 'store'])
+    ->defaults('business', 'gokemping')
+    ->name('booking.gokemping.store');
+
 Route::post('/gokemping/booking/{product}/draft', BookingDraftController::class)
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.draft.store');
@@ -113,6 +122,14 @@ Route::get('/sewa-sepeda-garut/booking/payment/{method}', [BookingPaymentControl
     ->defaults('business', 'sewa-sepeda-garut')
     ->whereIn('method', array_column(PaymentMethodType::cases(), 'value'))
     ->name('booking.sewaSepedaGarut.payment.show');
+
+Route::get('/sewa-sepeda-garut/booking/success', [BookingStoreController::class, 'success'])
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->name('booking.sewaSepedaGarut.success');
+
+Route::post('/sewa-sepeda-garut/booking', [BookingStoreController::class, 'store'])
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->name('booking.sewaSepedaGarut.store');
 
 Route::post('/sewa-sepeda-garut/booking/{product}/draft', BookingDraftController::class)
     ->defaults('business', 'sewa-sepeda-garut')

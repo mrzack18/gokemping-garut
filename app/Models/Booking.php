@@ -112,13 +112,38 @@ class Booking extends Model
      * beririsan dengan permintaan mulai 12, tapi tidak beririsan dengan
      * permintaan mulai 13.
      *
+     * Periode satu hari, yaitu tanggal mulai sama dengan tanggal selesai,
+     * tetap menempati satu hari barang. Rentang yang sama persis tidak akan
+     * pernah beririsan dengan apa pun kalau dibandingkan apa adanya, sehingga
+     * batas atas periode yang diminta dinormalkan menjadi `start + 1` hari dan
+     * booking satu hari ikut dibandingkan lewat syarat kedua.
+     *
      * @param  Builder<Booking>  $query
      * @return Builder<Booking>
      */
     public function scopeOverlappingPeriod(Builder $query, Carbon|string $start, Carbon|string $end): Builder
     {
-        return $query->whereDate('start_date', '<', $end)
-            ->whereDate('end_date', '>', $start);
+        $start = Carbon::parse($start)->startOfDay();
+        $end = Carbon::parse($end)->startOfDay();
+
+        $exclusiveEnd = $end->greaterThan($start) ? $end : $start->copy()->addDay();
+
+        return $query->where(function (Builder $query) use ($start, $exclusiveEnd): void {
+            $query->where(function (Builder $query) use ($start, $exclusiveEnd): void {
+                $query->whereDate('start_date', '<', $exclusiveEnd)
+                    ->whereDate('end_date', '>', $start);
+            })->orWhere(function (Builder $query) use ($start, $exclusiveEnd): void {
+                /**
+                 * Booking satu hari punya `end_date` yang sama dengan
+                 * `start_date`, jadi batas pengembaliannya jatuh pada hari yang
+                 * sama dengan hari sewa. Syarat kedua inilah yang menghitungnya
+                 * sebagai pemesan satu hari penuh.
+                 */
+                $query->whereColumn('end_date', 'start_date')
+                    ->whereDate('start_date', '>=', $start)
+                    ->whereDate('start_date', '<', $exclusiveEnd);
+            });
+        });
     }
 
     /**

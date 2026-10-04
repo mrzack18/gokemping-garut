@@ -10,10 +10,15 @@ enum PaymentStatus: string
     case Ditolak = 'ditolak';
 
     /**
-     * Cash tidak melalui tahap verifikasi bukti, sehingga saat pembayaran
-     * dicatat statusnya langsung menjadi lunas.
+     * Cash tidak melalui tahap verifikasi bukti, jadi status awalnya cukup
+     * `belum_dibayar` dan admin yang menandai lunas saat menerima uang.
+     * QRIS dan transfer sudah punya bukti saat booking disimpan, tapi statusnya
+     * tetap `menunggu_verifikasi` karena belum dikonfirmasi admin.
+     *
+     * Dipanggil sebagai metode statis karena status awal ditentukan oleh
+     * metode pembayaran, bukan oleh instance status yang sedang dibaca.
      */
-    public function initialFor(PaymentMethodType $method): self
+    public static function initialFor(PaymentMethodType $method): self
     {
         return match ($method) {
             PaymentMethodType::Cash => self::BelumDibayar,

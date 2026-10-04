@@ -209,3 +209,35 @@ export type BookingPaymentPageProps = {
     };
     proof: BookingPaymentProof | null;
 };
+
+/**
+ * Ringkasan booking yang sudah tersimpan (ROADMAP 3.11).
+ *
+ * Data ini dikirim dari session, bukan dibaca dari URL, jadi halaman konfirmasi
+ * tidak pernah menampilkan booking milik orang lain. `business_slug` dipakai
+ * server untuk memastikan receipt-nya milik unit yang sedang dibuka.
+ */
+export type BookingReceipt = {
+    booking_code: string;
+    business_slug: string;
+    business_name: string;
+    product_name: string;
+    period: {
+        start_date_label: string;
+        end_date_label: string;
+        duration: number;
+        quantity: number;
+    };
+    total: number;
+    total_label: string;
+    payment: {
+        method_label: string;
+        status_label: string;
+    };
+    booking_status_label: string;
+};
+
+export type BookingSuccessPageProps = {
+    receipt: BookingReceipt;
+    businesses: LandingBusiness[];
+};
