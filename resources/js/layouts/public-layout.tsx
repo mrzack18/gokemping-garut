@@ -16,6 +16,11 @@ import { useState, type PropsWithChildren } from 'react';
 
 type PublicLayoutProps = PropsWithChildren<{
     businesses: LandingBusiness[];
+    /**
+     * Prefix untuk link navigasi anchor. Halaman selain landing page perlu
+     * menyetel `"/"` supaya menu tetap mengarah ke section landing page.
+     */
+    anchorBase?: string;
 }>;
 
 const navigation = [
@@ -30,6 +35,7 @@ const navigation = [
 
 export default function PublicLayout({
     businesses,
+    anchorBase = '',
     children,
 }: PublicLayoutProps) {
     const { auth } = usePage<{ auth: { user: { name: string } | null } }>()
@@ -53,7 +59,7 @@ export default function PublicLayout({
                         {navigation.map((item) => (
                             <a
                                 key={item.href}
-                                href={item.href}
+                                href={`${anchorBase}${item.href}`}
                                 className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             >
                                 {item.label}
@@ -91,7 +97,7 @@ export default function PublicLayout({
                                     {navigation.map((item) => (
                                         <a
                                             key={item.href}
-                                            href={item.href}
+                                            href={`${anchorBase}${item.href}`}
                                             onClick={() => setOpen(false)}
                                             className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                         >

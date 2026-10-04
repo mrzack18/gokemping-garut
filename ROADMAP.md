@@ -154,14 +154,50 @@ Implementasi:
 
 ### 3.3 Katalog Produk
 
-- [ ] Halaman katalog per unit bisnis
-- [ ] Card produk: foto, nama, kategori, harga, satuan, status, deskripsi singkat
-- [ ] Search (nama produk)
-- [ ] Filter kategori
-- [ ] Filter harga (min/max)
-- [ ] Sorting (harga, nama, terbaru)
-- [ ] Pagination
-- [ ] State URL (`Inertia` + query string) agar filter bisa di-share
+- [x] Halaman katalog per unit bisnis
+- [x] Card produk: foto, nama, kategori, harga, satuan, status, deskripsi singkat
+- [x] Search (nama produk)
+- [x] Filter kategori
+- [x] Filter harga (min/max)
+- [x] Sorting (harga, nama, terbaru)
+- [x] Pagination
+- [x] State URL (`Inertia` + query string) agar filter bisa di-share
+
+Implementasi:
+
+- Path katalog mengikuti PRD section 34: `/gokemping` dan
+  `/sewa-sepeda-garut`. Kedua path memakai `CatalogController` yang sama,
+  slug unit dikirim sebagai route default sehingga controller tidak perlu
+  membaca path URL secara manual.
+- `BusinessScope` dinonaktifkan secara eksplisit karena katalog adalah halaman
+  publik lintas tenant. Unit nonaktif dan slug yang tidak terdaftar
+  menghasilkan 404, bukan katalog kosong.
+- Card mengikuti PRD section 9: foto (gambar `is_primary`, atau gambar
+  pertama menurut `sort_order`), nama, kategori, harga, satuan, status
+  ketersediaan, dan deskripsi yang dipotong 160 karakter. Produk tanpa foto
+  menampilkan placeholder, bukan gambar rusak.
+- Semua state filter dibaca dari query string (`q`, `category`, `min_price`,
+  `max_price`, `sort`, `page`) sehingga URL bisa di-share dan filter bertahan
+  saat halaman di-refresh. Filter default tidak ditulis ke URL agar tautan
+  tetap pendek.
+- Parameter yang tidak valid tidak menghasilkan 422. `min_price` lebih besar
+  dari `max_price` diperbaiki ke batas yang sama supaya daftar tidak kosong
+  tanpa alasan, dan `sort` di luar daftar yang dikenal kembali ke `terbaru`.
+- Karakter wildcard LIKE pada pencarian di-escape, sehingga `q=%` tidak
+  berubah menjadi pencarian semua produk.
+- Filter kategori hanya menerima slug kategori milik unit yang sedang dibuka.
+  Slug kategori milik unit lain diabaikan, bukan dipakai menarik produk
+  lintas tenant.
+- Pagination 12 produk per halaman dengan `withQueryString()`, dan nomor
+  halaman dirender ringkas dengan elipsis supaya URL panjang tidak/link
+  quebrado.
+- `PublicLayout` mendapat props opsional `anchorBase` supaya menu navigasi
+  tetap mengarah ke section landing page saat dibuka dari halaman katalog.
+- Tombol "Lihat Detail" pada PRD section 9 sengaja belum dirender karena
+  halaman detail produk adalah ROADMAP 3.4.
+- 27 feature test menutup akses tamu, isolasi antar unit, unit nonaktif, slug
+  tak dikenal, pelolosan wildcard, tiap filter, sorting, pagination, state URL,
+  foto utama, dan status ketersediaan.
 
 ### 3.4 Detail Produk
 

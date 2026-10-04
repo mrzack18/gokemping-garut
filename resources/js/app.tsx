@@ -14,6 +14,7 @@ void createInertiaApp({
         switch (true) {
             // Halaman publik memakai PublicLayout sendiri, tanpa sidebar admin.
             case name === 'welcome':
+            case name.startsWith('catalog/'):
             case name.startsWith('services/'):
                 return null;
             case name.startsWith('auth/'):
