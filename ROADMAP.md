@@ -646,14 +646,50 @@ Catatan implementasi 3.12:
 
 ### 4.1 Dashboard
 
-- [ ] Total produk
-- [ ] Booking hari ini
-- [ ] Sedang disewa
-- [ ] Menunggu konfirmasi
-- [ ] Pendapatan (periode berjalan)
-- [ ] Chart booking 7 hari terakhir
-- [ ] Widget booking terbaru
-- [ ] Semua query ter-scope `business_id`
+- [x] Total produk
+- [x] Booking hari ini
+- [x] Sedang disewa
+- [x] Menunggu konfirmasi
+- [x] Pendapatan (periode berjalan)
+- [x] Chart booking 7 hari terakhir
+- [x] Widget booking terbaru
+- [x] Semua query ter-scope `business_id`
+
+Catatan implementasi 4.1:
+
+- Angka dashboard dipindah dari controller ke `App\Services\DashboardService`,
+  supaya definisi setiap angka bisa diuji tanpa harus merender halaman.
+  Controller cuma meneruskan unit bisnis admin yang login.
+- Service menerima `business_id` secara eksplisit dan tidak mengandalkan admin
+  yang sedang login. `BusinessScope` tetap menyaring query sebagai lapisan kedua
+  (BR-05), jadi pemanggil yang salah parameter akan mendapat angka nol, bukan
+  angka unit lain.
+- **Pendapatan hanya menghitung pembayaran `lunas` yang `verified_at`-nya di
+  bulan berjalan.** Booking yang belum dibayar tidak dihitung supaya angka
+  dashboard tidak lebih besar dari uang yang benar-benar masuk. Jumlah yang belum
+  diverifikasi ditampilkan terpisah sebagai `revenue.pending`, dihitung dari
+  payment record bulan berjalan, karena admin tetap perlu tahu ada uang yang
+  menunggu verifikasi.
+- Test menutup dua hal yang paling mudah tertukar: pembayaran `lunas` tanpa
+  `verified_at` tidak dihitung, dan pembayaran `ditolak` tidak masuk daftar
+  yang menunggu.
+- "Booking hari ini" memakai tanggal booking **dibuat**, mengikuti timezone
+  aplikasi, bukan tanggal mulai sewa. Booking yang dibuat hari ini untuk sewa
+  bulan depan tidak boleh muncul sebagai booking hari ini. Test khusus ini ada
+  karena kedua tanggal itu paling mudah tertukar.
+- Grafik 7 hari selalu mengirim tujuh titik, termasuk hari tanpa booking. Kalau
+  hanya mengirim hari yang ada booking-nya, grafik akan terlihat melompati
+  tanggal dan admin salah baca.
+- Grafik dibuat dengan elemen biasa, bukan library chart, karena kebutuhannya
+  hanya tujuh batang. Menambah dependensi chart untuk ini tidak sebanding
+  dengan bobotnya. Kalau laporan Fase 3 butuh grafik yang lebih rumit,
+  `resources/js/components/admin/booking-chart.tsx` bisa diganti library chart
+  tanpa menyentuh service-nya, karena frontend hanya menerima angka.
+- Widget booking terbaru menampilkan nama produk dari `booking_items`, bukan
+  dari `products`. Kalau produknya diubah atau produknya tidak lagi terhubung
+  ke unit ini, booking lama tetap terbaca apa adanya (BR-09).
+- Card "Fase 0 selesai" yang sebelumnya mengisi halaman dashboard dihapus,
+  karena sekarang halaman ini sudah berisi data operasional.
 
 ### 4.2 Manajemen Kategori
 

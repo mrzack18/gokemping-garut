@@ -60,4 +60,18 @@ final class BookingPeriod
 
         return $date->locale('id')->translatedFormat('j F Y');
     }
+
+    /**
+     * Tanggal singkat untuk label rapat, contoh `29 Okt`.
+     *
+     * Dipakai di grafik dashboard, di mana tanggal penuh akan memenuhi sumbu.
+     */
+    public static function readableShortDate(string|CarbonInterface $date): string
+    {
+        $date = $date instanceof CarbonInterface
+            ? $date
+            : Carbon::parse($date);
+
+        return $date->locale('id')->translatedFormat('j M');
+    }
 }

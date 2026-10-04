@@ -2,24 +2,24 @@ import { Head } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { BadgeCheck, Clock, Package, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import BookingChart from '@/components/admin/booking-chart';
+import type { AdminDashboardPageProps } from '@/types';
 import { dashboard } from '@/routes/admin';
-
-type DashboardProps = {
-    business: {
-        name: string;
-        slug: string;
-        bookingCodePrefix: string;
-        whatsapp: string;
-    };
-    stats: {
-        totalProducts: number;
-        bookingsToday: number;
-        rented: number;
-        awaitingConfirmation: number;
-        pendingPayments: number;
-    };
-};
 
 const statCards = [
     { key: 'totalProducts', label: 'Total Produk', icon: Package },
@@ -33,7 +33,24 @@ const statCards = [
     },
 ] as const;
 
-export default function AdminDashboard({ business, stats }: DashboardProps) {
+/**
+ * Warna badge mengikuti status booking, supaya admin bisa memindai daftar
+ * booking terbaru tanpa membaca labelnya.
+ */
+const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
+    menunggu_konfirmasi: 'secondary',
+    dikonfirmasi: 'default',
+    sedang_disewa: 'default',
+    selesai: 'outline',
+    dibatalkan: 'outline',
+};
+
+export default function AdminDashboard({
+    business,
+    stats,
+}: AdminDashboardPageProps) {
+    const { revenue } = stats;
+
     return (
         <>
             <Head title={`Dashboard ${business.name}`} />
@@ -81,25 +98,163 @@ export default function AdminDashboard({ business, stats }: DashboardProps) {
                                     <card.icon className="size-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-3xl font-semibold">
+                                    <div className="text-3xl font-semibold tabular-nums">
                                         {stats[card.key]}
                                     </div>
                                 </CardContent>
                             </Card>
                         </motion.div>
                     ))}
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.3 }}
+                    >
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Pendapatan Bulan Ini
+                                </CardTitle>
+                                <Wallet className="size-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-semibold tabular-nums">
+                                    Rp {revenue.paid_label}
+                                </div>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Lunas dan dikonfirmasi admin,{' '}
+                                    {revenue.period_label}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Belum diverifikasi: Rp{' '}
+                                    {revenue.pending_label}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Fase 0 selesai</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground">
-                        Autentikasi admin, isolasi unit bisnis, dan seluruh
-                        tabel inti sudah siap. Modul produk, booking, dan
-                        pembayaran menyusul pada fase berikutnya.
-                    </CardContent>
-                </Card>
+                <div className="grid gap-4 lg:grid-cols-5">
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.36 }}
+                        className="lg:col-span-2"
+                    >
+                        <Card className="h-full">
+                            <CardHeader>
+                                <CardTitle>Booking 7 Hari Terakhir</CardTitle>
+                                <CardDescription>
+                                    Dihitung dari tanggal booking masuk, bukan
+                                    tanggal mulai sewa.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <BookingChart points={stats.bookingChart} />
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.42 }}
+                        className="lg:col-span-3"
+                    >
+                        <Card className="h-full">
+                            <CardHeader>
+                                <CardTitle>Booking Terbaru</CardTitle>
+                                <CardDescription>
+                                    Lima booking terakhir yang masuk di unit
+                                    ini.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {stats.recentBookings.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum ada booking masuk.
+                                    </p>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Kode</TableHead>
+                                                <TableHead>Penyewa</TableHead>
+                                                <TableHead>Produk</TableHead>
+                                                <TableHead>Periode</TableHead>
+                                                <TableHead className="text-right">
+                                                    Total
+                                                </TableHead>
+                                                <TableHead>Status</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {stats.recentBookings.map(
+                                                (booking) => (
+                                                    <TableRow
+                                                        key={
+                                                            booking.booking_code
+                                                        }
+                                                    >
+                                                        <TableCell className="font-mono text-xs">
+                                                            {
+                                                                booking.booking_code
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {
+                                                                booking.customer_name
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {
+                                                                booking.product_name
+                                                            }
+                                                            <span className="text-muted-foreground">
+                                                                {' '}
+                                                                ×
+                                                                {
+                                                                    booking.quantity
+                                                                }
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="whitespace-nowrap">
+                                                            {
+                                                                booking.period_label
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell className="text-right tabular-nums">
+                                                            Rp{' '}
+                                                            {
+                                                                booking.total_label
+                                                            }
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                variant={
+                                                                    statusVariants[
+                                                                        booking
+                                                                            .status
+                                                                    ] ??
+                                                                    'secondary'
+                                                                }
+                                                            >
+                                                                {
+                                                                    booking.status_label
+                                                                }
+                                                            </Badge>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ),
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
             </div>
         </>
     );
