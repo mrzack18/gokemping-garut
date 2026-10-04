@@ -1,0 +1,453 @@
+import { Head, Link } from '@inertiajs/react';
+import { motion } from 'motion/react';
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import PublicLayout from '@/layouts/public-layout';
+import { formatRupiah } from '@/lib/format';
+import catalogRoutes from '@/routes/catalog';
+import type { BookingFormPageProps } from '@/types';
+import { AlertCircle, ArrowLeft, ImageOff, Minus, Plus } from 'lucide-react';
+
+const MS_PER_DAY = 86_400_000;
+
+const longDateFormatter = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+});
+
+/**
+ * Tanggal dari `<input type="date">` selalu berbentuk `YYYY-MM-DD` dan tidak
+ * punya zona waktu. Parsing dilakukan lokal agar tidak bergeser sehari
+ * karena konversi ke UTC.
+ */
+function parseDate(value: string): Date | null {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return null;
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDate(value: string): string {
+    const date = parseDate(value);
+
+    return date === null ? '-' : longDateFormatter.format(date);
+}
+
+/**
+ * Durasi dihitung sebagai selisih tanggal selesai dikurangi tanggal mulai.
+ * PRD section 11 memakai contoh 10 Oktober sampai 12 Oktober sama dengan 2
+ * hari, jadi tanggal selesai diperlakukan sebagai batas pengembalian dan
+ * tidak ikut dihitung sebagai hari sewa.
+ *
+ * Sewa pada tanggal yang sama menghasilkan selisih 0, dan itu akan membuat
+ * total nol rupiah, jadi durasi minimum yang dipakai adalah 1 hari.
+ */
+function durationInDays(startDate: string, endDate: string): number {
+    const start = parseDate(startDate);
+    const end = parseDate(endDate);
+
+    if (start === null || end === null) {
+        return 0;
+    }
+
+    const diff = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY);
+
+    return diff > 0 ? diff : 1;
+}
+
+function productDetailUrlBySlug(slug: string, productSlug: string): string {
+    if (slug === 'gokemping') {
+        return catalogRoutes.gokemping.show.url(productSlug);
+    }
+
+    if (slug === 'sewa-sepeda-garut') {
+        return catalogRoutes.sewaSepedaGarut.show.url(productSlug);
+    }
+
+    return `/${slug}/${productSlug}`;
+}
+
+export default function BookingForm({
+    business,
+    businesses,
+    product,
+    minDate,
+}: BookingFormPageProps) {
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [quantity, setQuantity] = useState(1);
+
+    const productDetailUrl = productDetailUrlBySlug(
+        business.slug,
+        product.slug,
+    );
+
+    const startError =
+        startDate === ''
+            ? 'Pilih tanggal mulai.'
+            : startDate < minDate
+              ? 'Tanggal mulai tidak boleh di masa lalu.'
+              : null;
+
+    const endError =
+        endDate === ''
+            ? 'Pilih tanggal selesai.'
+            : startError !== null
+              ? null
+              : endDate < startDate
+                ? 'Tanggal selesai harus tanggal mulai atau setelahnya.'
+                : null;
+
+    const duration =
+        startError === null && endError === null
+            ? durationInDays(startDate, endDate)
+            : 0;
+
+    const total = product.price * quantity * duration;
+    const isOutOfStock = product.stock < 1;
+    const canEstimate = !isOutOfStock && duration > 0 && quantity > 0;
+
+    return (
+        <PublicLayout businesses={businesses} anchorBase="/">
+            <Head title={`Booking ${product.name}`} />
+
+            <section className="border-b">
+                <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="-ml-3"
+                        >
+                            <Link href={productDetailUrl}>
+                                <ArrowLeft className="size-4" />
+                                Kembali ke detail produk
+                            </Link>
+                        </Button>
+
+                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                            Form Booking
+                        </h1>
+                        <p className="mt-3 max-w-2xl text-muted-foreground">
+                            Tentukan jadwal sewa dan jumlah barang. Estimasi
+                            total dihitung otomatis dan bisa berubah saat
+                            ketersediaan diperiksa pada langkah berikutnya.
+                        </p>
+                    </motion.div>
+                </div>
+            </section>
+
+            <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+                <div className="grid gap-8 lg:grid-cols-3">
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45 }}
+                        className="space-y-4 lg:col-span-2"
+                    >
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">
+                                    Produk yang disewa
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex gap-4">
+                                    <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                        {product.photo ? (
+                                            <img
+                                                src={product.photo}
+                                                alt={product.name}
+                                                className="size-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex size-full items-center justify-center text-muted-foreground">
+                                                <ImageOff className="size-5" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        {product.category ? (
+                                            <Badge
+                                                variant="secondary"
+                                                className="font-normal"
+                                            >
+                                                {product.category.name}
+                                            </Badge>
+                                        ) : null}
+                                        <p className="font-medium">
+                                            {product.name}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {formatRupiah(product.price)} /{' '}
+                                            {product.price_unit}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {isOutOfStock ? (
+                            <Card>
+                                <CardContent className="flex items-start gap-3 py-6">
+                                    <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
+                                    <div className="space-y-1">
+                                        <p className="font-medium">
+                                            Stok produk sedang kosong
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Produk ini tidak bisa dipesan untuk
+                                            sementara. Hubungi admin unit{' '}
+                                            {business.name} untuk informasi
+                                            ketersediaan.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">
+                                        Jadwal dan jumlah
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="start_date">
+                                                Tanggal mulai
+                                            </Label>
+                                            <Input
+                                                id="start_date"
+                                                name="start_date"
+                                                type="date"
+                                                min={minDate}
+                                                value={startDate}
+                                                onChange={(event) =>
+                                                    setStartDate(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                aria-invalid={
+                                                    startError !== null
+                                                }
+                                            />
+                                            {startError !== null ? (
+                                                <p className="text-xs text-destructive">
+                                                    {startError}
+                                                </p>
+                                            ) : null}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="end_date">
+                                                Tanggal selesai
+                                            </Label>
+                                            <Input
+                                                id="end_date"
+                                                name="end_date"
+                                                type="date"
+                                                min={
+                                                    startError === null &&
+                                                    startDate !== ''
+                                                        ? startDate
+                                                        : minDate
+                                                }
+                                                value={endDate}
+                                                onChange={(event) =>
+                                                    setEndDate(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                aria-invalid={endError !== null}
+                                            />
+                                            {endError !== null ? (
+                                                <p className="text-xs text-destructive">
+                                                    {endError}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="quantity">
+                                            Jumlah barang
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Kurangi jumlah"
+                                                disabled={quantity <= 1}
+                                                onClick={() =>
+                                                    setQuantity(
+                                                        Math.max(
+                                                            1,
+                                                            quantity - 1,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                <Minus />
+                                            </Button>
+                                            <input
+                                                id="quantity"
+                                                name="quantity"
+                                                type="number"
+                                                min={1}
+                                                max={product.stock}
+                                                value={quantity}
+                                                onChange={(event) => {
+                                                    const parsed = Number(
+                                                        event.target.value,
+                                                    );
+                                                    setQuantity(
+                                                        Number.isFinite(parsed)
+                                                            ? Math.min(
+                                                                  Math.max(
+                                                                      Math.trunc(
+                                                                          parsed,
+                                                                      ),
+                                                                      1,
+                                                                  ),
+                                                                  product.stock,
+                                                              )
+                                                            : 1,
+                                                    );
+                                                }}
+                                                className="h-9 w-16 rounded-md border bg-background text-center text-sm tabular-nums"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Tambah jumlah"
+                                                disabled={
+                                                    quantity >= product.stock
+                                                }
+                                                onClick={() =>
+                                                    setQuantity(
+                                                        Math.min(
+                                                            product.stock,
+                                                            quantity + 1,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                <Plus />
+                                            </Button>
+                                            <span className="text-sm text-muted-foreground">
+                                                Maksimal {product.stock} unit
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-xs text-muted-foreground">
+                                        Tanggal selesai diperlakukan sebagai
+                                        batas pengembalian, bukan hari sewa.
+                                        Sewa 10 sampai 12 Oktober dihitung 2
+                                        hari, dan sewa pada tanggal yang sama
+                                        dihitung 1 hari.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, delay: 0.1 }}
+                    >
+                        <Card className="lg:sticky lg:top-24">
+                            <CardHeader>
+                                <CardTitle className="text-base">
+                                    Estimasi biaya
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3 text-sm">
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-muted-foreground">
+                                        Harga {product.price_unit}
+                                    </span>
+                                    <span className="tabular-nums">
+                                        {formatRupiah(product.price)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-muted-foreground">
+                                        Jumlah
+                                    </span>
+                                    <span className="tabular-nums">
+                                        {quantity}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-muted-foreground">
+                                        Durasi
+                                    </span>
+                                    <span className="tabular-nums">
+                                        {duration > 0
+                                            ? `${duration} hari`
+                                            : '-'}
+                                    </span>
+                                </div>
+
+                                {startDate !== '' && endDate !== '' ? (
+                                    <p className="text-xs text-muted-foreground">
+                                        {formatDate(startDate)} sampai{' '}
+                                        {formatDate(endDate)}
+                                    </p>
+                                ) : null}
+
+                                <Separator />
+
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="font-medium">Total</span>
+                                    <span className="text-xl font-semibold tabular-nums">
+                                        {canEstimate
+                                            ? formatRupiah(total)
+                                            : '-'}
+                                    </span>
+                                </div>
+
+                                {canEstimate ? (
+                                    <p className="text-xs text-muted-foreground tabular-nums">
+                                        {formatRupiah(product.price)} x{' '}
+                                        {quantity} x {duration} hari
+                                    </p>
+                                ) : null}
+
+                                <Separator />
+
+                                <Button className="w-full" size="lg" disabled>
+                                    Lanjut
+                                </Button>
+                                <p className="text-xs text-muted-foreground">
+                                    Pengecekan ketersediaan dan biodata penyewa
+                                    dibangun pada ROADMAP 3.6 dan 3.7, jadi
+                                    tombol ini belum bisa melanjutkan.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
+            </section>
+        </PublicLayout>
+    );
+}

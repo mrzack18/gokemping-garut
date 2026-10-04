@@ -13,6 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import PublicLayout from '@/layouts/public-layout';
 import { formatRupiah } from '@/lib/format';
+import bookingRoutes from '@/routes/booking';
 import catalogRoutes from '@/routes/catalog';
 import type { ProductDetailPageProps } from '@/types';
 import { ArrowLeft, ImageOff } from 'lucide-react';
@@ -28,6 +29,14 @@ export default function ProductDetailPage({
     product,
 }: ProductDetailPageProps) {
     const catalogUrl = catalogUrlBySlug[business.slug] ?? `/${business.slug}`;
+    const bookingUrlBySlug: Record<string, string> = {
+        gokemping: bookingRoutes.gokemping.create.url(product.slug),
+        'sewa-sepeda-garut': bookingRoutes.sewaSepedaGarut.create.url(
+            product.slug,
+        ),
+    };
+    const bookingUrl =
+        bookingUrlBySlug[business.slug] ?? `/booking/${product.slug}`;
     const specification = Object.entries(product.specification);
 
     return (
@@ -218,16 +227,26 @@ export default function ProductDetailPage({
                         <Separator />
 
                         <div className="space-y-3">
-                            <Button
-                                className="w-full sm:w-auto"
-                                size="lg"
-                                disabled
-                            >
-                                Sewa Sekarang
-                            </Button>
+                            {product.is_available ? (
+                                <Button
+                                    asChild
+                                    className="w-full sm:w-auto"
+                                    size="lg"
+                                >
+                                    <Link href={bookingUrl}>Sewa Sekarang</Link>
+                                </Button>
+                            ) : (
+                                <Button
+                                    className="w-full sm:w-auto"
+                                    size="lg"
+                                    disabled
+                                >
+                                    Sewa Sekarang
+                                </Button>
+                            )}
                             <p className="text-xs text-muted-foreground">
                                 {product.is_available
-                                    ? 'Form booking belum tersedia. Halaman pemesanan sedang dibangun pada langkah ROADMAP 3.5.'
+                                    ? 'Form booking untuk memilih jadwal sewa dan jumlah barang.'
                                     : 'Pemesanan belum bisa dilakukan karena stok kosong. Hubungi admin unit ini untuk informasi ketersediaan.'}
                             </p>
                         </div>

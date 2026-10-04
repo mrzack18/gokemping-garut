@@ -256,13 +256,53 @@ Catatan dependency:
 
 ### 3.5 Form Booking
 
-- [ ] Pilih tanggal mulai
-- [ ] Pilih tanggal selesai
-- [ ] Hitung durasi otomatis
-- [ ] Kalkulator harga real-time (harga × jumlah × durasi)
-- [ ] Stepper jumlah barang (`[-] n [+]`)
-- [ ] Validasi tanggal selesai ≥ tanggal mulai
-- [ ] Validasi tanggal tidak di masa lalu
+- [x] Pilih tanggal mulai
+- [x] Pilih tanggal selesai
+- [x] Hitung durasi otomatis
+- [x] Kalkulator harga real-time (harga × jumlah × durasi)
+- [x] Stepper jumlah barang (`[-] n [+]`)
+- [x] Validasi tanggal selesai ≥ tanggal mulai
+- [x] Validasi tanggal tidak di masa lalu
+
+Implementasi:
+
+- Path form mengikuti PRD section 34: `/gokemping/booking/{product}` dan
+  `/sewa-sepeda-garut/booking/{product}`. Kedua path memakai
+  `BookingFormController` yang sama dengan slug unit sebagai route default.
+- Halaman ini murni memilih jadwal, jumlah, dan menghitung perkiraan harga.
+  Halaman tidak menyimpan apa pun ke database: penyimpanan booking ada di
+  ROADMAP 3.11, pengecekan ketersediaan real-time ada di ROADMAP 3.6, dan
+  biodata penyewa ada di ROADMAP 3.7. Ada feature test yang mengunci batas ini
+  dengan memastikan tabel `bookings` tetap kosong setelah halaman dibuka.
+- Upper bound stepper memakai `products.stock`, bukan stok tersisa. Pengurangan
+  stok oleh booking lain adalah tanggung jawab ROADMAP 3.6, jadi stepper sengaja
+  tidak ikut menghitung booking aktif.
+- Durasi memakai selisih `tanggal selesai - tanggal mulai`, mengikuti contoh di
+  PRD section 11: 10 Oktober sampai 12 Oktober = 2 hari. Tanggal selesai
+  diperlakukan sebagai batas pengembalian dan tidak ikut dihitung sebagai hari
+  sewa.
+- ROADMAP menyebut validasi `tanggal selesai ≥ tanggal mulai`, sedangkan
+  contoh PRD menghasilkan durasi 2 hari untuk rentang 2 hari. Dua aturan itu
+  disatukan dengan membolehkan tanggal yang sama dan memakai durasi minimum 1
+  hari, sehingga tidak ada booking bernilai nol rupiah. Aturan ini perlu
+  dikonfirmasi ke pemilik produk.
+- Validasi tanggal tidak di masa lalu memakai `minDate` yang dikirim backend
+  sebagai `today()` pada timezone aplikasi, sehingga frontend tidak menghitung
+  ulang zona waktu. Field tanggal juga memakai `<input type="date">` native,
+  jadi batas `min` ditegakkan browser tanpa library kalender tambahan.
+- Harga, satuan, stok, dan tanggal minimum dikirim backend. Kalkulator berjalan
+  real-time di frontend tanpa request tambahan.
+- Produk stok 0 tetap dirender dengan pemberitahuan stok kosong, bukan 404,
+  karena produknya masih ada dan halaman ini yang menjelaskan kondisinya.
+  Tombol "Lanjut" sengaja nonaktif karena langkah berikutnya (3.6 dan 3.7)
+  belum dibangun, supaya tidak ada tujuan tautan yang belum ada.
+- CTA "Sewa Sekarang" di detail produk (ROADMAP 3.4) sekarang tautannya aktif
+  menuju form ini, memakai route Wayfinder.
+- 15 feature test menutup akses tamu kedua unit, kelengkapan data kalkulator,
+  batas tanggal minimum, produk tanpa kategori/foto, foto utama, stok 0, slug
+  yang sama di dua unit, isolasi antar unit, produk nonaktif, produk terhapus,
+  unit nonaktif, admin yang tetap bisa membuka form unit lain, dan jaminan tidak
+  ada booking yang tersimpan.
 
 ### 3.6 Availability Checking (BR-04)
 
