@@ -131,8 +131,26 @@ Implementasi:
 
 ### 3.2 Halaman Pilih Layanan
 
-- [ ] Kartu GoKemping → `/gokemping`
-- [ ] Kartu Sewa Sepeda Garut → `/sewa-sepeda-garut`
+- [x] Kartu GoKemping → `/gokemping`
+- [x] Kartu Sewa Sepeda Garut → `/sewa-sepeda-garut`
+
+Implementasi:
+
+- Route `GET /pilih-layanan` bernama `services.index`, ditangani
+  `ServiceSelectionController`.
+- Halaman memakai `PublicLayout` yang sama dengan landing page, jadi
+  `app.tsx` memetakan prefix `services/` ke layout `null`.
+- Kartu unit diambil dari database (nama, alamat, deskripsi, prefix kode
+  booking) sehingga unit baru otomatis muncul tanpa ubah kode.
+- Label tombol mengikuti PRD section 8: `Lihat Peralatan` dan `Lihat Sepeda`,
+  disimpan di `service-copy.ts` bersama URL katalog masing-masing.
+- Tiap kartu menampilkan maksimal 3 contoh barang beserta harga dari unit
+  tersebut sebagai gambaran isi katalog sebelum pengunjung memilih.
+- Copy per unit dipusatkan di `service-copy.ts` supaya landing page dan
+  halaman pilih layanan tidak menduplikasi teks.
+- 7 feature test menutup akses tamu, filter unit nonaktif, kebocoran produk
+  antar unit, produk nonaktif dan stok nol, batas jumlah contoh, prefix kode
+  booking, serta kasus admin yang login.
 
 ### 3.3 Katalog Produk
 

@@ -23,3 +23,21 @@ export type LandingPageProps = {
     businesses: LandingBusiness[];
     featuredProducts: LandingProduct[];
 };
+
+export type ServiceSelectionProduct = {
+    id: number;
+    name: string;
+    price: number;
+    price_unit: string;
+    stock: number;
+};
+
+export type ServiceSelectionPreview = {
+    business_id: number;
+    products: ServiceSelectionProduct[];
+};
+
+export type ServiceSelectionPageProps = {
+    businesses: (LandingBusiness & { booking_code_prefix: string })[];
+    previewProducts: ServiceSelectionPreview[];
+};

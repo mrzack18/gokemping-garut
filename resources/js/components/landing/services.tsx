@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import Reveal from '@/components/landing/reveal';
 import Section from '@/components/landing/section';
@@ -5,6 +6,7 @@ import { serviceCopyFor, serviceUrl } from '@/components/landing/service-copy';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import services from '@/routes/services';
 import type { LandingBusiness } from '@/types';
 import { ArrowRight, Check } from 'lucide-react';
 
@@ -70,15 +72,26 @@ export default function Services({ businesses }: ServicesProps) {
                                         </ul>
                                     ) : null}
 
-                                    <Button
-                                        asChild
-                                        className="w-full sm:w-auto"
-                                    >
-                                        <a href={serviceUrl(business)}>
-                                            {copy.cta}
-                                            <ArrowRight className="size-4" />
-                                        </a>
-                                    </Button>
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                        <Button
+                                            asChild
+                                            className="w-full sm:w-auto"
+                                        >
+                                            <a href={serviceUrl(business)}>
+                                                {copy.cta}
+                                                <ArrowRight className="size-4" />
+                                            </a>
+                                        </Button>
+                                        <Button
+                                            asChild
+                                            variant="ghost"
+                                            className="w-full sm:w-auto"
+                                        >
+                                            <Link href={services.index()}>
+                                                Bandingkan layanan
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </motion.div>

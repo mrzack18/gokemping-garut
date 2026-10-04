@@ -1,4 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import services from '@/routes/services';
+import { ArrowRight } from 'lucide-react';
 import About from '@/components/landing/about';
 import Advantages from '@/components/landing/advantages';
 import Contact from '@/components/landing/contact';
@@ -19,6 +22,21 @@ export default function Welcome({
             <Head title="Sewa Camping dan Sepeda di Garut" />
 
             <Hero businesses={businesses} />
+
+            <div className="border-b">
+                <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+                    <Button
+                        asChild
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                    >
+                        <Link href={services.index()}>
+                            Lihat semua layanan
+                            <ArrowRight className="size-4" />
+                        </Link>
+                    </Button>
+                </div>
+            </div>
 
             <About businesses={businesses} />
 

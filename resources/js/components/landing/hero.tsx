@@ -1,6 +1,8 @@
+import { Link } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { serviceCopyFor, serviceUrl } from '@/components/landing/service-copy';
+import services from '@/routes/services';
 import type { LandingBusiness } from '@/types';
 import { ArrowRight, ShieldCheck, Wallet } from 'lucide-react';
 
@@ -89,6 +91,15 @@ export default function Hero({ businesses }: HeroProps) {
                         </Button>
                     ))}
                 </motion.div>
+
+                <motion.p variants={item} className="mt-4 text-sm">
+                    <Link
+                        href={services.index()}
+                        className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    >
+                        Belum yakin? Lihat perbandingan kedua layanan
+                    </Link>
+                </motion.p>
 
                 <motion.dl
                     variants={item}
