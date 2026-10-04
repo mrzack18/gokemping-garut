@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Business;
 use App\Models\Product;
 use App\Models\Scopes\BusinessScope;
+use App\Support\BookingDraft;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -52,8 +53,10 @@ class BookingFormController extends Controller
         'stock',
     ];
 
-    public function __invoke(Request $request): Response
-    {
+    public function __invoke(
+        Request $request,
+        BookingDraft $draft,
+    ): Response {
         $business = $this->resolveBusiness($request);
         $product = $this->resolveProduct($business, $request);
 
@@ -76,7 +79,46 @@ class BookingFormController extends Controller
                     ],
             ],
             'minDate' => Carbon::today()->toDateString(),
+            'initial' => $this->initialValues($draft, $business, $product),
         ]);
+    }
+
+    /**
+     * Nilai awal form dari draft yang sudah tersimpan, supaya tombol "Kembali"
+     * dari halaman biodata tidak menghapus jadwal yang sudah dipilih.
+     *
+     * @return array{start_date: string, end_date: string, quantity: int}
+     */
+    private function initialValues(BookingDraft $draft, Business $business, Product $product): array
+    {
+        $empty = [
+            'start_date' => '',
+            'end_date' => '',
+            'quantity' => 1,
+        ];
+
+        $context = $draft->resolveFor($business->slug);
+
+        if ($context === null || $context['product']->is($product) === false) {
+            return $empty;
+        }
+
+        $values = $draft->read() ?? [];
+
+        $startDate = $values['start_date'] ?? null;
+        $endDate = $values['end_date'] ?? null;
+
+        if (! is_string($startDate) || ! is_string($endDate)) {
+            return $empty;
+        }
+
+        $quantity = $values['quantity'] ?? 1;
+
+        return [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'quantity' => is_int($quantity) ? max(1, $quantity) : 1,
+        ];
     }
 
     private function resolveBusiness(Request $request): Business

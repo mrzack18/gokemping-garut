@@ -20,6 +20,15 @@ export type BookingFormPageProps = {
     businesses: LandingBusiness[];
     product: BookingFormProduct;
     minDate: string;
+    /**
+     * Nilai awal dari draft session supaya tombol "Kembali" dari halaman
+     * biodata tidak menghapus jadwal yang sudah dipilih.
+     */
+    initial: {
+        start_date: string;
+        end_date: string;
+        quantity: number;
+    };
 };
 
 /**
@@ -36,4 +45,54 @@ export type BookingAvailability = {
     is_available: boolean;
     message: string;
     holding_statuses: string[];
+};
+
+/**
+ * Data penyewa yang dikembalikan endpoint `booking.customerLookup` untuk
+ * prefill otomatis (ROADMAP 3.7, PRD section 25).
+ */
+export type CustomerLookupCustomer = {
+    name: string;
+    whatsapp: string;
+    email: string | null;
+    nik: string;
+    address: string;
+    city: string | null;
+    notes: string | null;
+};
+
+export type CustomerLookupResponse = {
+    found: boolean;
+    customer: CustomerLookupCustomer | null;
+};
+
+export type BookingCustomerDraft = {
+    name: string;
+    whatsapp: string;
+    email: string;
+    nik: string;
+    address: string;
+    city: string;
+    notes: string;
+    renter_count: number | string | null;
+};
+
+export type BookingBiodataPageProps = {
+    business: LandingBusiness;
+    businesses: LandingBusiness[];
+    product: {
+        id: number;
+        name: string;
+        slug: string;
+        price: number;
+        price_unit: string;
+        stock: number;
+    };
+    draft: {
+        start_date: string | null;
+        end_date: string | null;
+        quantity: number;
+    };
+    customer: BookingCustomerDraft;
+    isBikeRental: boolean;
 };

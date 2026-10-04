@@ -369,15 +369,58 @@ Implementasi:
 
 ### 3.7 Biodata Penyewa
 
-- [ ] Nama lengkap *
-- [ ] Nomor WhatsApp *
-- [ ] Email (opsional)
-- [ ] NIK *
-- [ ] Alamat *
-- [ ] Kota/Kabupaten
-- [ ] Catatan
-- [ ] Field tambahan penyewa sepeda: jumlah penyewa
-- [ ] Deteksi pelanggan lama berdasarkan WhatsApp/NIK → prefill otomatis (PRD §25)
+- [x] Nama lengkap *
+- [x] Nomor WhatsApp *
+- [x] Email (opsional)
+- [x] NIK *
+- [x] Alamat *
+- [x] Kota/Kabupaten
+- [x] Catatan
+- [x] Field tambahan penyewa sepeda: jumlah penyewa
+- [x] Deteksi pelanggan lama berdasarkan WhatsApp/NIK → prefill otomatis (PRD §25)
+
+Catatan implementasi 3.7:
+
+- Biodata dibuat sebagai halaman terpisah di
+  `/gokemping/booking/biodata` dan `/sewa-sepeda-garut/booking/biodata`, bukan
+  sebagai bagian dari form jadwal. Literal `booking/biodata` didaftarkan
+  sebelum `/booking/{product}` supaya tidak tertangkap sebagai slug produk.
+- Data yang sudah diisi pada langkah sebelumnya disimpan sebagai draft di
+  session lewat `App\Support\BookingDraft` (`booking.draft`). Session hanya
+  menyimpan identitas dan input pengguna: slug unit, `product_id`, tanggal
+  mulai, tanggal selesai, jumlah, dan data penyewa. Tidak ada tulisan ke
+  `bookings` maupun `customers` sampai ROADMAP 3.11.
+- Draft ditulis dengan `merge()`, bukan `write()`, sehingga penyewa yang
+  mengganti jadwal di form dan menekan "Lanjut" lagi tidak kehilangan data
+  biodata yang sudah diisi. Tombol "Kembali ke form booking" juga mengembalikan
+  nilai draft lewat prop `initial` dari `BookingFormController`.
+- Halaman biodata menampilkan ringkasan periode, durasi, dan subtotal yang
+  dihitung ulang dari `products` terbaru, jadi harga yang tampil tidak pernah
+  basi. Ringkasan lengkap booking tetap milik ROADMAP 3.8.
+- Nomor WhatsApp dinormalkan ke format `62...` oleh
+  `App\Support\WhatsappNumber` sebelum divalidasi dan disimpan, karena
+  `customers.whatsapp` punya unique constraint sehingga format berbeda akan
+  memecah satu orang menjadi beberapa baris.
+- `renter_count` hanya dirender, divalidasi, dan disimpan untuk unit
+  `sewa-sepeda-garut`. Untuk unit camping nilainya dipaksa `null` supaya tidak
+  ikut ke draft dan tidak menjadi data penyewa yang tidak dipakai.
+- Deteksi pelanggan lama memakai endpoint JSON publik
+  `GET /booking/customer-lookup` (PRD §25) yang dipanggil saat field WhatsApp
+  atau NIK kehilangan fokus. Endpoint tidak memerlukan login karena penyewa
+  tidak punya akun, jadi dia sengaja dibatasi `throttle:30,1`, hanya menerima
+  `whatsapp` dan `nik`, mengembalikan paling banyak satu pelanggan yang cocok,
+  dan tidak pernah mengembalikan daftar pelanggan. Urutan lookup mengikuti
+  kekuatan kunci: `whatsapp` lebih dulu, `nik` hanya dipakai kalau nomor tidak
+  diberikan. Nomor atau NIK yang tidak valid dan tidak ditemukan menghasilkan
+  `found: false`, bukan pesan error, supaya form tetap bisa diisi manual.
+- Penyimpanan draft availability dicek ulang di server oleh
+  `StoreBookingDraftRequest` walaupun frontend sudah memanggil endpoint
+  pengecekan 3.6. Pemeriksaan ini berada di dalam `withValidator()` supaya
+  kegagalan menghentikan request dengan 422 sebelum draft ditulis, bukan
+  sekadar menambah pesan pada validator yang sudah selesai berjalan.
+- Penyimpanan ke `customers` dan `bookings` tetap menunggu ROADMAP 3.11. Ada
+  feature test yang mengunci batas ini dengan memastikan kedua tabel tetap
+  kosong setelah alur biodata selesai.
 
 ### 3.8 Review Booking
 

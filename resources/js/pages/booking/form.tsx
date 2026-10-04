@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -101,18 +101,37 @@ function availabilityRouteBySlug(slug: string) {
     return null;
 }
 
+/**
+ * Route Wayfinder untuk menyimpan draft booking (ROADMAP 3.7).
+ */
+function draftRouteBySlug(slug: string) {
+    if (slug === 'gokemping') {
+        return bookingRoutes.gokemping.draft;
+    }
+
+    if (slug === 'sewa-sepeda-garut') {
+        return bookingRoutes.sewaSepedaGarut.draft;
+    }
+
+    return null;
+}
+
 export default function BookingForm({
     business,
     businesses,
     product,
     minDate,
+    initial,
 }: BookingFormPageProps) {
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [quantity, setQuantity] = useState(1);
+    const serverErrors = usePage().props.errors as Record<string, string>;
+
+    const [startDate, setStartDate] = useState(initial.start_date);
+    const [endDate, setEndDate] = useState(initial.end_date);
+    const [quantity, setQuantity] = useState(initial.quantity);
     const [availability, setAvailability] =
         useState<BookingAvailability | null>(null);
     const [isChecking, setIsChecking] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [availabilityError, setAvailabilityError] = useState<string | null>(
         null,
     );
@@ -123,22 +142,27 @@ export default function BookingForm({
     );
 
     const availabilityRoute = availabilityRouteBySlug(business.slug);
+    const draftRoute = draftRouteBySlug(business.slug);
 
     const startError =
-        startDate === ''
+        serverErrors.start_date ??
+        (startDate === ''
             ? 'Pilih tanggal mulai.'
             : startDate < minDate
               ? 'Tanggal mulai tidak boleh di masa lalu.'
-              : null;
+              : null);
 
     const endError =
-        endDate === ''
+        serverErrors.end_date ??
+        (endDate === ''
             ? 'Pilih tanggal selesai.'
             : startError !== null
               ? null
               : endDate < startDate
                 ? 'Tanggal selesai harus tanggal mulai atau setelahnya.'
-                : null;
+                : null);
+
+    const quantityError = serverErrors.quantity ?? null;
 
     const hasValidPeriod = startError === null && endError === null;
 
@@ -226,6 +250,39 @@ export default function BookingForm({
     const isBlocked =
         availabilityError !== null ||
         (availability !== null && !isQuantityAvailable);
+
+    /**
+     * Lanjut hanya aktif kalau periode valid, ketersediaan sudah dicek, dan
+     * jumlah benar-benar tersedia. Server tetap mengecek ulang saat menyimpan
+     * draft, jadi nilai di sini hanya untuk kenyamanan pengguna, bukan sumber
+     * kebenaran.
+     */
+    const canContinue =
+        !isOutOfStock &&
+        hasValidPeriod &&
+        quantityError === null &&
+        !isChecking &&
+        !isBlocked &&
+        isQuantityAvailable;
+
+    function continueToBiodata(): void {
+        if (!canContinue || draftRoute === null) {
+            return;
+        }
+
+        router.post(
+            draftRoute.store.url(product.slug),
+            {
+                start_date: startDate,
+                end_date: endDate,
+                quantity,
+            },
+            {
+                onStart: () => setIsSubmitting(true),
+                onFinish: () => setIsSubmitting(false),
+            },
+        );
+    }
 
     return (
         <PublicLayout businesses={businesses} anchorBase="/">
@@ -467,6 +524,12 @@ export default function BookingForm({
                                             </span>
                                         </div>
 
+                                        {quantityError !== null ? (
+                                            <p className="text-xs text-destructive">
+                                                {quantityError}
+                                            </p>
+                                        ) : null}
+
                                         <div className="flex items-start gap-2 pt-1 text-sm">
                                             {isChecking ? (
                                                 <>
@@ -605,8 +668,14 @@ export default function BookingForm({
 
                                 <Separator />
 
-                                <Button className="w-full" size="lg" disabled>
-                                    Lanjut
+                                <Button
+                                    type="button"
+                                    className="w-full"
+                                    size="lg"
+                                    onClick={continueToBiodata}
+                                    disabled={!canContinue || isSubmitting}
+                                >
+                                    {isSubmitting ? 'Menyimpan...' : 'Lanjut'}
                                 </Button>
                                 <p className="text-xs text-muted-foreground">
                                     {availability !== null &&
@@ -614,7 +683,9 @@ export default function BookingForm({
                                         ? 'Jumlah barang melebihi unit yang tersedia pada periode ini.'
                                         : isBlocked
                                           ? 'Ketersediaan belum bisa dipastikan. Isi tanggal yang valid lalu coba lagi.'
-                                          : 'Biodata penyewa dibangun pada ROADMAP 3.7, jadi tombol ini belum bisa melanjutkan.'}
+                                          : !hasValidPeriod
+                                            ? 'Isi tanggal sewa dengan benar sebelum melanjutkan.'
+                                            : 'Data penyewa diminta pada langkah berikutnya.'}
                                 </p>
                             </CardContent>
                         </Card>

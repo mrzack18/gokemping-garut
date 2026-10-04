@@ -12,6 +12,13 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            /**
+             * Flash yang dipublikasikan server. Daftar key didefinisikan
+             * eksplisit di `HandleInertiaRequests`.
+             */
+            flash: {
+                'booking.customer_saved'?: unknown;
+            };
             [key: string]: unknown;
         };
     }
