@@ -14,6 +14,7 @@ use App\Support\BookingDraft;
 use App\Support\BookingPeriod;
 use App\Support\BookingReceipt;
 use App\Support\BookingRoutes;
+use App\Support\BookingWhatsappMessage;
 use App\Support\PaymentMethods;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,10 @@ use Inertia\Response;
  * Draft dihapus setelah booking tersimpan supaya penyewa tidak bisa membuat
  * booking kedua dari halaman yang sama hanya dengan menekan tombol lagi.
  * Submit ulang setelah draft hilang berakhir dengan 404, bukan booking ganda.
+ *
+ * Receipt sekaligus membawa pesan WhatsApp ke admin (BR-06). Pesannya disusun
+ * di server saat booking disimpan, jadi halaman sukses tidak pernah merakit
+ * ulang detail booking dari data yang sudah bisa basi.
  */
 class BookingStoreController extends Controller
 {
@@ -127,6 +132,9 @@ class BookingStoreController extends Controller
 
         $item = $booking->items->first();
 
+        $message = BookingWhatsappMessage::build($booking, $context['business']);
+        $link = BookingWhatsappMessage::link($context['business'], $message);
+
         return [
             'booking_code' => $booking->booking_code,
             'business_slug' => $context['business']->slug,
@@ -147,6 +155,11 @@ class BookingStoreController extends Controller
                 'status_label' => $booking->payment_status->label(),
             ],
             'booking_status_label' => $booking->booking_status->label(),
+            'whatsapp' => [
+                'number' => BookingWhatsappMessage::number($context['business']),
+                'url' => $link,
+                'message' => $message,
+            ],
         ];
     }
 

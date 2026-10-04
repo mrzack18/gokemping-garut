@@ -1,26 +1,37 @@
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'motion/react';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import PublicLayout from '@/layouts/public-layout';
 import type { BookingSuccessPageProps } from '@/types';
-import { ArrowLeft, CalendarClock, Receipt, Wallet } from 'lucide-react';
+import { ArrowLeft, CalendarClock, MessageCircle, Receipt } from 'lucide-react';
 
 /**
- * Halaman konfirmasi booking (ROADMAP 3.11).
+ * Halaman konfirmasi booking (ROADMAP 3.11 dan 3.12).
  *
  * Halaman ini menampilkan kode booking hasil generate `BookingCodeGenerator`
  * (BR-10) beserta status awal booking dan pembayarannya. Isinya dibaca dari
  * session, bukan dari URL, supaya kode booking tidak bisa dijebol orang lain
  * dengan menebak alamat halaman.
  *
- * Tombol WhatsApp untuk meneruskan detail ke admin dibangun di ROADMAP 3.12.
+ * Tombol "Lanjut Pesan via WhatsApp" meneruskan detail booking ke admin sesuai
+ * template PRD section 19. Tautan dan isi pesannya sudah dirakit di server,
+ * dan nomornya mengikuti unit penyewa (BR-06).
  */
 export default function BookingSuccess({
     receipt,
     businesses,
 }: BookingSuccessPageProps) {
+    const { whatsapp } = receipt;
+
     return (
         <PublicLayout businesses={businesses} anchorBase="/">
             <Head title={`Booking ${receipt.booking_code}`} />
@@ -36,9 +47,45 @@ export default function BookingSuccess({
                             Booking tersimpan
                         </h1>
                         <p className="mt-3 text-muted-foreground">
-                            Simpan kode booking ini. Admin akan menghubungi Anda
-                            untuk konfirmasi.
+                            Kirim detail booking ini ke admin lewat WhatsApp
+                            supaya pesanan Anda lebih cepat diproses. Kode
+                            booking di bawah tetap dipakai admin untuk menemukan
+                            transaksi Anda.
                         </p>
+
+                        <div className="mt-8 flex flex-col gap-3">
+                            {whatsapp.url ? (
+                                <Button asChild size="lg" className="w-full">
+                                    <a
+                                        href={whatsapp.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <MessageCircle />
+                                        Lanjut Pesan via WhatsApp
+                                    </a>
+                                </Button>
+                            ) : (
+                                <Alert variant="destructive">
+                                    <MessageCircle />
+                                    <AlertTitle>
+                                        Nomor WhatsApp admin belum tersedia
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        Salin detail booking di bawah lalu
+                                        kirimkan ke admin lewat WhatsApp secara
+                                        manual.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
+                            {whatsapp.number ? (
+                                <p className="text-center text-xs text-muted-foreground">
+                                    Pesan akan dibuka di WhatsApp Admin{' '}
+                                    {receipt.business_name} ({whatsapp.number}).
+                                </p>
+                            ) : null}
+                        </div>
 
                         <Card className="mt-8">
                             <CardHeader>
@@ -120,12 +167,30 @@ export default function BookingSuccess({
                             </CardContent>
                         </Card>
 
-                        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                        <Accordion
+                            type="single"
+                            collapsible
+                            className="mt-6 rounded-lg border px-4"
+                        >
+                            <AccordionItem value="message">
+                                <AccordionTrigger>
+                                    Lihat isi pesan WhatsApp
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <pre className="overflow-x-auto text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                                        {whatsapp.message}
+                                    </pre>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+
+                        <div className="mt-8 grid gap-4 sm:grid-cols-2">
                             <div className="flex items-start gap-3">
                                 <Receipt className="size-5 shrink-0 text-muted-foreground" />
                                 <p className="text-sm text-muted-foreground">
                                     Kode booking dipakai admin untuk menemukan
-                                    transaksi Anda.
+                                    transaksi Anda, jadi sebutkan kode ini di
+                                    pesan pertama.
                                 </p>
                             </div>
                             <div className="flex items-start gap-3">
@@ -133,13 +198,6 @@ export default function BookingSuccess({
                                 <p className="text-sm text-muted-foreground">
                                     Booking menunggu konfirmasi admin sebelum
                                     barang dipakai.
-                                </p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <Wallet className="size-5 shrink-0 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                    Bukti pembayaran sudah tersimpan dan akan
-                                    diverifikasi admin.
                                 </p>
                             </div>
                         </div>

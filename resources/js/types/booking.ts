@@ -211,6 +211,18 @@ export type BookingPaymentPageProps = {
 };
 
 /**
+ * Tautan WhatsApp admin (BR-06, PRD section 19).
+ *
+ * `number` dan `url` bisa `null` kalau nomor WhatsApp unit tidak valid. Isi
+ * pesan tetap dikirim supaya penyewa bisa menyalinnya manual ke admin.
+ */
+export type BookingReceiptWhatsapp = {
+    number: string | null;
+    url: string | null;
+    message: string;
+};
+
+/**
  * Ringkasan booking yang sudah tersimpan (ROADMAP 3.11).
  *
  * Data ini dikirim dari session, bukan dibaca dari URL, jadi halaman konfirmasi
@@ -235,6 +247,7 @@ export type BookingReceipt = {
         status_label: string;
     };
     booking_status_label: string;
+    whatsapp: BookingReceiptWhatsapp;
 };
 
 export type BookingSuccessPageProps = {

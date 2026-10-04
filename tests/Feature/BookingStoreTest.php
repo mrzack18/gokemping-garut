@@ -323,6 +323,53 @@ class BookingStoreTest extends TestCase
             );
     }
 
+    public function test_receipt_membawa_pesan_whatsapp_admin_unit(): void
+    {
+        $this->camping->update(['name' => 'GoKemping', 'whatsapp' => '6281234567890']);
+        $this->cashMethod($this->camping);
+        $this->prepareDraft($this->camping, $this->tent, 'cash');
+        $this->storeBooking($this->camping);
+
+        $code = (string) $this->booking()->booking_code;
+        $whatsapp = $this->receipt()['whatsapp'];
+
+        $this->assertSame('6281234567890', $whatsapp['number']);
+        $this->assertSame(
+            'https://wa.me/6281234567890?text='.rawurlencode($whatsapp['message']),
+            $whatsapp['url'],
+        );
+        $this->assertStringContainsString('Kode Booking: '.$code, $whatsapp['message']);
+        $this->assertStringContainsString('Halo Admin GoKemping,', $whatsapp['message']);
+
+        $this->get(route('booking.gokemping.success'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('receipt.whatsapp.number', '6281234567890')
+                ->where('receipt.whatsapp.url', $whatsapp['url'])
+            );
+    }
+
+    public function test_nomor_admin_tidak_valid_mengosongkan_tautan_tetap_menyimpan_pesan(): void
+    {
+        $this->camping->update(['whatsapp' => 'belum-diatur']);
+        $this->cashMethod($this->camping);
+        $this->prepareDraft($this->camping, $this->tent, 'cash');
+        $this->storeBooking($this->camping);
+
+        $whatsapp = $this->receipt()['whatsapp'];
+
+        $this->assertNull($whatsapp['number']);
+        $this->assertNull($whatsapp['url']);
+        $this->assertNotSame('', $whatsapp['message']);
+
+        $this->get(route('booking.gokemping.success'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('receipt.whatsapp.number', null)
+                ->where('receipt.whatsapp.url', null)
+            );
+    }
+
     public function test_halaman_sukses_unit_lain_mengarah_ke_beranda(): void
     {
         $this->cashMethod($this->camping);

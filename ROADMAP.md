@@ -2,8 +2,8 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 0 selesai
-**Terakhir diperbarui:** 2026-10-03
+**Status:** Fase 1 selesai
+**Terakhir diperbarui:** 2026-10-04
 
 ---
 
@@ -597,10 +597,46 @@ Perbaikan ketersediaan di 3.11:
 
 ### 3.12 WhatsApp Booking (BR-06)
 
-- [ ] Template pesan otomatis sesuai format PRD §19
-- [ ] Nomor tujuan mengikuti `business.whatsapp`
-- [ ] Tombol "Lanjut Pesan via WhatsApp" → `wa.me/<number>?text=<encoded>`
-- [ ] Halaman `/booking/success` berisi kode booking + tombol WhatsApp
+- [x] Template pesan otomatis sesuai format PRD §19
+- [x] Nomor tujuan mengikuti `business.whatsapp`
+- [x] Tombol "Lanjut Pesan via WhatsApp" → `wa.me/<number>?text=<encoded>`
+- [x] Halaman `/booking/success` berisi kode booking + tombol WhatsApp
+
+Catatan implementasi 3.12:
+
+- Pesan disusun di server oleh `App\Support\BookingWhatsappMessage`, bukan di
+  browser. Isinya berasal dari database: nama produk, periode, total, metode,
+  dan data penyewa. Kalau dirakit di frontend, nilainya bisa berbeda dari yang
+  benar-benar disimpan di ROADMAP 3.11.
+- Pesan dirakit sekali, saat booking disimpan, lalu ikut di dalam receipt
+  session. Halaman sukses tidak pernah membaca ulang booking, jadi menekan
+  tombol berulang kali tidak mengubah isi pesan dan tidak menambah query.
+- Nomor tujuan selalu `business.whatsapp` unit yang dipakai penyewa, sudah
+  dinormalkan ke `62...` oleh `WhatsappNumber`, jadi penyewa Sewa Sepeda Garut
+  tidak bisa mengirim detail booking-nya ke admin GoKemping karena salah tombol.
+- Kalau nomor unit tidak valid, `url` dikosongkan dan tombol WhatsApp tidak
+  dirender. Isi pesannya tetap dikirim supaya penyewa bisa menyalin dan
+  mengirim manual, dan halaman menjelaskan kenapa tombolnya tidak ada.
+  Membuka WhatsApp ke nomor yang salah lebih merugikan daripada tidak membuka
+  apa pun.
+- `rawurlencode` dipakai untuk isi pesan, jadi baris baru dan spasi ter-encode
+  dengan benar dan WhatsApp tidak memotong pesan di tengah.
+- NIK tidak ikut terkirim lengkap, hanya 4 digit depan dan 4 digit belakang.
+  Pesan WhatsApp bisa diteruskan dan di-screenshot, sedangkan admin tetap bisa
+  membuka NIK lengkap dari booking berdasarkan kode booking. Ini lebih aman dari
+  contoh di PRD section 19 yang menulis NIK penuh.
+- `Jumlah Penyewa` hanya ikut untuk unit sewa sepeda, mengikuti `renter_count`
+  yang memang cuma diisi di unit itu. `Catatan Penyewa` hanya ikut kalau isinya
+  bukan string kosong.
+- Garis pemisah bagian dibuat satu panjang seragam. PRD section 19 memakai
+  panjang yang berbeda-beda (`15`, `12`, dan `16` karakter) yang tidak
+  membawa informasi apa pun.
+- `/booking/success` didaftarkan sebelum `/booking/{product}`, sama seperti
+  `biodata`, `review`, dan `payment`. Konsekuensinya slug produk `success` tidak
+  bisa dipakai. Belum ada daftar slug terlarang di aplikasi; harus dibuat saat
+  manajemen produk dibangun di ROADMAP 4.3.
+- Tidak ada field baru. Halaman sukses hanya menampilkan ringkasan yang sudah
+  tersimpan di `bookings`, `booking_items`, dan `payments`.
 
 **Deliverable Fase 1:** Pelanggan dapat menyelesaikan booking penuh dan mengirim detail ke WhatsApp admin tanpa login.
 
