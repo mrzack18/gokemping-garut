@@ -21,3 +21,19 @@ export type BookingFormPageProps = {
     product: BookingFormProduct;
     minDate: string;
 };
+
+/**
+ * Respons endpoint `booking.*.availability` (ROADMAP 3.6).
+ */
+export type BookingAvailability = {
+    product_id: number;
+    start_date: string;
+    end_date: string;
+    stock: number;
+    used: number;
+    available: number;
+    requested: number;
+    is_available: boolean;
+    message: string;
+    holding_statuses: string[];
+};

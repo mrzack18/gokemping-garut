@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import PublicLayout from '@/layouts/public-layout';
 import { formatRupiah } from '@/lib/format';
+import bookingRoutes from '@/routes/booking';
 import catalogRoutes from '@/routes/catalog';
-import type { BookingFormPageProps } from '@/types';
-import { AlertCircle, ArrowLeft, ImageOff, Minus, Plus } from 'lucide-react';
+import type { BookingAvailability, BookingFormPageProps } from '@/types';
+import {
+    AlertCircle,
+    ArrowLeft,
+    ImageOff,
+    Loader2,
+    Minus,
+    Plus,
+} from 'lucide-react';
 
 const MS_PER_DAY = 86_400_000;
 
@@ -76,6 +84,23 @@ function productDetailUrlBySlug(slug: string, productSlug: string): string {
     return `/${slug}/${productSlug}`;
 }
 
+/**
+ * Route Wayfinder untuk endpoint ketersediaan (ROADMAP 3.6). `null` kalau unit
+ * bisnis tidak punya route terdaftar, supaya pemanggilan endpoint dilewati
+ * alih-alih menembak URL yang tidak ada.
+ */
+function availabilityRouteBySlug(slug: string) {
+    if (slug === 'gokemping') {
+        return bookingRoutes.gokemping.availability;
+    }
+
+    if (slug === 'sewa-sepeda-garut') {
+        return bookingRoutes.sewaSepedaGarut.availability;
+    }
+
+    return null;
+}
+
 export default function BookingForm({
     business,
     businesses,
@@ -85,11 +110,19 @@ export default function BookingForm({
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [quantity, setQuantity] = useState(1);
+    const [availability, setAvailability] =
+        useState<BookingAvailability | null>(null);
+    const [isChecking, setIsChecking] = useState(false);
+    const [availabilityError, setAvailabilityError] = useState<string | null>(
+        null,
+    );
 
     const productDetailUrl = productDetailUrlBySlug(
         business.slug,
         product.slug,
     );
+
+    const availabilityRoute = availabilityRouteBySlug(business.slug);
 
     const startError =
         startDate === ''
@@ -107,14 +140,92 @@ export default function BookingForm({
                 ? 'Tanggal selesai harus tanggal mulai atau setelahnya.'
                 : null;
 
-    const duration =
-        startError === null && endError === null
-            ? durationInDays(startDate, endDate)
-            : 0;
+    const hasValidPeriod = startError === null && endError === null;
+
+    /**
+     * Endpoint ketersediaan dipanggil setiap kali periode berubah, sesuai
+     * ROADMAP 3.6. Jumlah barang tidak ikut memicu request karena hanya perlu
+     * dibandingkan dengan `available` yang sudah diterima.
+     */
+    useEffect(() => {
+        if (availabilityRoute === null || !hasValidPeriod) {
+            setAvailability(null);
+            setAvailabilityError(null);
+            setIsChecking(false);
+
+            return;
+        }
+
+        const controller = new AbortController();
+
+        setIsChecking(true);
+
+        fetch(
+            availabilityRoute.url(
+                { product: product.slug },
+                {
+                    query: {
+                        start_date: startDate,
+                        end_date: endDate,
+                    },
+                },
+            ),
+            {
+                signal: controller.signal,
+                headers: { Accept: 'application/json' },
+            },
+        )
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Permintaan gagal');
+                }
+
+                return (await response.json()) as BookingAvailability;
+            })
+            .then((data) => {
+                setAvailability(data);
+                setAvailabilityError(null);
+                setQuantity((current) =>
+                    Math.min(current, Math.max(data.available, 1)),
+                );
+            })
+            .catch((error: unknown) => {
+                if (
+                    error instanceof DOMException &&
+                    error.name === 'AbortError'
+                ) {
+                    return;
+                }
+
+                setAvailability(null);
+                setAvailabilityError(
+                    'Ketersediaan tidak bisa diperiksa. Muat ulang halaman untuk mencoba lagi.',
+                );
+            })
+            .finally(() => setIsChecking(false));
+
+        return () => controller.abort();
+    }, [availabilityRoute, endDate, hasValidPeriod, product.slug, startDate]);
+
+    const duration = hasValidPeriod ? durationInDays(startDate, endDate) : 0;
+
+    /**
+     * Batas stepper ikut Availability Checking: begitu respons diterima,
+     * jumlah tidak boleh melebihi unit yang benar-benar tersedia.
+     */
+    const maxQuantity =
+        availability === null
+            ? product.stock
+            : Math.max(availability.available, 1);
 
     const total = product.price * quantity * duration;
     const isOutOfStock = product.stock < 1;
     const canEstimate = !isOutOfStock && duration > 0 && quantity > 0;
+    const isQuantityAvailable =
+        availability !== null && quantity <= availability.available;
+    const isBlocked =
+        availabilityError !== null ||
+        (availability !== null && !isQuantityAvailable);
 
     return (
         <PublicLayout businesses={businesses} anchorBase="/">
@@ -310,7 +421,7 @@ export default function BookingForm({
                                                 name="quantity"
                                                 type="number"
                                                 min={1}
-                                                max={product.stock}
+                                                max={maxQuantity}
                                                 value={quantity}
                                                 onChange={(event) => {
                                                     const parsed = Number(
@@ -325,7 +436,7 @@ export default function BookingForm({
                                                                       ),
                                                                       1,
                                                                   ),
-                                                                  product.stock,
+                                                                  maxQuantity,
                                                               )
                                                             : 1,
                                                     );
@@ -338,12 +449,12 @@ export default function BookingForm({
                                                 size="icon"
                                                 aria-label="Tambah jumlah"
                                                 disabled={
-                                                    quantity >= product.stock
+                                                    quantity >= maxQuantity
                                                 }
                                                 onClick={() =>
                                                     setQuantity(
                                                         Math.min(
-                                                            product.stock,
+                                                            maxQuantity,
                                                             quantity + 1,
                                                         ),
                                                     )
@@ -352,8 +463,56 @@ export default function BookingForm({
                                                 <Plus />
                                             </Button>
                                             <span className="text-sm text-muted-foreground">
-                                                Maksimal {product.stock} unit
+                                                Maksimal {maxQuantity} unit
                                             </span>
+                                        </div>
+
+                                        <div className="flex items-start gap-2 pt-1 text-sm">
+                                            {isChecking ? (
+                                                <>
+                                                    <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
+                                                    <span className="text-muted-foreground">
+                                                        Memeriksa
+                                                        ketersediaan...
+                                                    </span>
+                                                </>
+                                            ) : availabilityError !== null ? (
+                                                <>
+                                                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                                    <span className="text-destructive">
+                                                        {availabilityError}
+                                                    </span>
+                                                </>
+                                            ) : availability === null ? (
+                                                <span className="text-muted-foreground">
+                                                    Ketersediaan unit akan
+                                                    diperiksa otomatis setelah
+                                                    tanggal diisi.
+                                                </span>
+                                            ) : isQuantityAvailable ? (
+                                                <>
+                                                    <Badge variant="secondary">
+                                                        Tersedia{' '}
+                                                        {availability.available}{' '}
+                                                        unit
+                                                    </Badge>
+                                                    <span className="text-muted-foreground">
+                                                        dari{' '}
+                                                        {availability.stock}{' '}
+                                                        unit, sisa{' '}
+                                                        {availability.used} unit
+                                                        sedang tersewa.
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                                    <span className="text-destructive">
+                                                        Stok tidak mencukupi
+                                                        pada periode tersebut.
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 
@@ -415,6 +574,17 @@ export default function BookingForm({
                                     </p>
                                 ) : null}
 
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-muted-foreground">
+                                        Ketersediaan
+                                    </span>
+                                    <span className="tabular-nums">
+                                        {availability === null
+                                            ? '-'
+                                            : `${availability.available} dari ${availability.stock} unit`}
+                                    </span>
+                                </div>
+
                                 <Separator />
 
                                 <div className="flex items-center justify-between gap-4">
@@ -439,9 +609,12 @@ export default function BookingForm({
                                     Lanjut
                                 </Button>
                                 <p className="text-xs text-muted-foreground">
-                                    Pengecekan ketersediaan dan biodata penyewa
-                                    dibangun pada ROADMAP 3.6 dan 3.7, jadi
-                                    tombol ini belum bisa melanjutkan.
+                                    {availability !== null &&
+                                    !isQuantityAvailable
+                                        ? 'Jumlah barang melebihi unit yang tersedia pada periode ini.'
+                                        : isBlocked
+                                          ? 'Ketersediaan belum bisa dipastikan. Isi tanggal yang valid lalu coba lagi.'
+                                          : 'Biodata penyewa dibangun pada ROADMAP 3.7, jadi tombol ini belum bisa melanjutkan.'}
                                 </p>
                             </CardContent>
                         </Card>

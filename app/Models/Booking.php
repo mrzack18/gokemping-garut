@@ -105,13 +105,20 @@ class Booking extends Model
      * Booking yang periodenya beririsan dengan rentang yang diminta, dipakai
      * untuk menghitung stok terpakai pada pengecekan ketersediaan (BR-04).
      *
+     * Rentang memakai tanggal selesai eksklusif karena PRD section 11
+     * menghitung sewa 10 Oktober sampai 12 Oktober sebagai 2 hari. Tanggal
+     * selesai adalah batas pengembalian, bukan hari sewa, sehingga barang
+     * sudah bisa disewa lagi pada tanggal tersebut. Booking 10 sampai 12
+     * beririsan dengan permintaan mulai 12, tapi tidak beririsan dengan
+     * permintaan mulai 13.
+     *
      * @param  Builder<Booking>  $query
      * @return Builder<Booking>
      */
     public function scopeOverlappingPeriod(Builder $query, Carbon|string $start, Carbon|string $end): Builder
     {
-        return $query->whereDate('start_date', '<=', $end)
-            ->whereDate('end_date', '>=', $start);
+        return $query->whereDate('start_date', '<', $end)
+            ->whereDate('end_date', '>', $start);
     }
 
     /**

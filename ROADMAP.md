@@ -306,11 +306,66 @@ Implementasi:
 
 ### 3.6 Availability Checking (BR-04)
 
-- [ ] Endpoint cek ketersediaan (JSON, dipanggil saat tanggal berubah)
-- [ ] Hitung stok terpakai dari booking aktif pada periode tersebut
-- [ ] Tampilkan "Tersedia X unit"
-- [ ] Blockir lanjut jika stok tidak mencukupi
-- [ ] Booking aktif yang dihitung: `dikonfirmasi` + `sedang_disewa`
+- [x] Endpoint cek ketersediaan (JSON, dipanggil saat tanggal berubah)
+- [x] Hitung stok terpakai dari booking aktif pada periode tersebut
+- [x] Tampilkan "Tersedia X unit"
+- [x] Blockir lanjut jika stok tidak mencukupi
+- [x] Booking aktif yang dihitung: `dikonfirmasi` + `sedang_disewa`
+
+Implementasi:
+
+- `app/Services/AvailabilityService.php` dibuat sesuai PRD section 39.3. Method
+  `usedUnits()` menjumlahkan `booking_items.quantity` untuk booking yang
+  beririsan periode dan menahan stok, `availableUnits()` mengurangi dari
+  `products.stock`, dan `summarise()` menyusun payload untuk endpoint.
+- Endpoint JSON ada di dua path, mengikuti pola path form booking:
+  `/gokemping/booking/{product}/availability` dan
+  `/sewa-sepeda-garut/booking/{product}/availability`. Form booking memanggilnya
+  setiap kali tanggal berubah, memakai `AbortController` supaya request yang
+  sudah basi dibatalkan dan tidak menimpa hasil yang lebih baru.
+- Jumlah barang sengaja tidak ikut memicu request. ROADMAP menyebut endpoint
+  dipanggil saat tanggal berubah, jadi jumlah hanya dibandingkan dengan angka
+  `available` yang sudah diterima di klien. Dengan begitu satu periode
+  menghasilkan satu request.
+- **Status yang menahan stok.** ROADMAP menyebut `dikonfirmasi` dan
+  `sedang_disewa`, tapi enum `BookingStatus::holdsStock()` juga memasukkan
+  `menunggu_konfirmasi`. Dipakai versi enum, 즉 tiga status, karena
+  `menunggu_konfirmasi` juga sudah menahan barang dan mengabaikannya membuka
+  celah overbooking: dua pembeli bisa sama-sama mendapat unit terakhir.
+  Endpoint juga mengirim daftar status tersebut di `holding_statuses` supaya
+  angka ketersediaan bisa ditelusuri.
+- **Batas periode eksklusif.** `Booking::scopeOverlappingPeriod()` diubah dari
+  `<=` dan `>=` menjadi `<` dan `>`. Alasannya PRD section 11 menghitung sewa
+  10 Oktober sampai 12 Oktober sebagai 2 hari, jadi tanggal selesai adalah batas
+  pengembalian dan barang sudah bisa disewa lagi pada tanggal tersebut. Booking
+  10 sampai 12 masih dianggap beririsan dengan permintaan mulai 12, tapi tidak dengan
+  permintaan mulai 13. Scope ini belum dipakai kode lain, jadi perubahan tidak
+  merusak apa pun.
+- Isolasi unit dijaga dengan memfilter `bookings.business_id` ke unit produk.
+  Booking unit lain pada produk yang sama tidak pernah ikut dihitung, dan admin
+  yang login ke unit lain tetap melihat angka ketersediaan yang benar untuk unit
+  yang dia buka.
+- Hasil yang bisa negatif dicegah `max(0, ...)`, jadi booking yang telanjur
+  melebihi stok tidak membuat angka tersedia negatif.
+- **`lockForUpdate` belum dipakai.** PRD section 39.3 memetakan BR-04 ke
+  `AvailabilityService` yang jalan di dalam `DB::transaction` + `lockForUpdate`.
+  Endpoint ini hanya membaca, dipanggil setiap kali tanggal berubah, jadi
+  mengunci baris akan menambah kontensi tanpa mencegah apa pun. Pengaman race
+  yang sesungguhnya adalah saat penyimpanan booking di ROADMAP 3.11, tepat
+  sebelum stok dikurangi. Perlu dikonfirmasi ke pemilik produk.
+- Validasi endpoint menolak tanggal kurang, format bukan `Y-m-d`, tanggal selesai
+  sebelum tanggal mulai, tanggal mulai di masa lalu, dan jumlah di bawah 1.
+  Tanggal wajib yang tidak lolos validasi dijawab 422 dengan pesan yang sama
+  dengan pesan di form.
+- Batas atas stepper jumlah barang sekarang mengikuti `available`, bukan
+  `products.stock`. Jumlah yang melebihi ketersediaan ditolak di ringkasan biaya
+  dengan pesan "Stok tidak mencukupi pada periode tersebut." sesuai PRD
+  section 12. Tombol "Lanjut" tetap nonaktif karena langkah berikutnya adalah
+  biodata penyewa (ROADMAP 3.7).
+- 15 test service dan 23 test endpoint menutup perhitungan stok terpakai, periode
+  tidak beririsan, batas eksklusif, tiga status yang menahan stok, status yang
+  sudah lepas, isolasi antar unit, admin yang login, seluruh aturan validasi,
+  respons 404, dan jaminan endpoint tidak menulis booking baru.
 
 ### 3.7 Biodata Penyewa
 
