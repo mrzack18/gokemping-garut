@@ -52,6 +52,14 @@ Route::post('/gokemping/booking/payment', [BookingPaymentController::class, 'sto
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.payment.store');
 
+Route::post('/gokemping/booking/payment/proof', [BookingPaymentController::class, 'storeProof'])
+    ->defaults('business', 'gokemping')
+    ->name('booking.gokemping.payment.proof.store');
+
+Route::delete('/gokemping/booking/payment/proof', [BookingPaymentController::class, 'destroyProof'])
+    ->defaults('business', 'gokemping')
+    ->name('booking.gokemping.payment.proof.destroy');
+
 Route::get('/gokemping/booking/payment/{method}', [BookingPaymentController::class, 'show'])
     ->defaults('business', 'gokemping')
     ->whereIn('method', array_column(PaymentMethodType::cases(), 'value'))
@@ -92,6 +100,14 @@ Route::get('/sewa-sepeda-garut/booking/review', BookingReviewController::class)
 Route::post('/sewa-sepeda-garut/booking/payment', [BookingPaymentController::class, 'store'])
     ->defaults('business', 'sewa-sepeda-garut')
     ->name('booking.sewaSepedaGarut.payment.store');
+
+Route::post('/sewa-sepeda-garut/booking/payment/proof', [BookingPaymentController::class, 'storeProof'])
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->name('booking.sewaSepedaGarut.payment.proof.store');
+
+Route::delete('/sewa-sepeda-garut/booking/payment/proof', [BookingPaymentController::class, 'destroyProof'])
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->name('booking.sewaSepedaGarut.payment.proof.destroy');
 
 Route::get('/sewa-sepeda-garut/booking/payment/{method}', [BookingPaymentController::class, 'show'])
     ->defaults('business', 'sewa-sepeda-garut')

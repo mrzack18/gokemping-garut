@@ -64,6 +64,30 @@ class BookingDraft
         return $merged;
     }
 
+    /**
+     * Buang beberapa key dari draft tanpa menyentuh key lain.
+     *
+     * Dipakai saat bukti pembayaran dibatalkan: key bukti dihapus dari draft
+     * sementara produk, periode, dan biodata tetap utuh supaya penyewa tidak
+     * harus mengulang langkah sebelumnya.
+     *
+     * @param  list<string>  $keys
+     */
+    public function forgetKeys(array $keys): void
+    {
+        $draft = $this->read();
+
+        if ($draft === null) {
+            return;
+        }
+
+        foreach ($keys as $key) {
+            unset($draft[$key]);
+        }
+
+        $this->write($draft);
+    }
+
     public function forget(): void
     {
         $this->session()->forget(self::SESSION_KEY);

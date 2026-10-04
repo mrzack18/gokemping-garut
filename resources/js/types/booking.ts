@@ -170,6 +170,19 @@ export type BookingReviewPageProps = {
 };
 
 /**
+ * Bukti pembayaran yang sudah tersimpan (ROADMAP 3.10, BR-08).
+ *
+ * `url` dibaca dari disk publik oleh server, `name` hanya untuk ditampilkan.
+ * Path relatif ikut dikirim supaya frontend tidak perlu menebak nama berkas
+ * saat penyewa menggantinya.
+ */
+export type BookingPaymentProof = {
+    path: string;
+    name: string;
+    url: string;
+};
+
+/**
  * Halaman pembayaran per metode (ROADMAP 3.9, PRD section 17).
  */
 export type BookingPaymentPageProps = {
@@ -194,4 +207,5 @@ export type BookingPaymentPageProps = {
     pricing: {
         total: number;
     };
+    proof: BookingPaymentProof | null;
 };

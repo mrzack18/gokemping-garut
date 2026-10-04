@@ -1,14 +1,35 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
-import { useClipboard } from '@/hooks/use-clipboard';
+import { useEffect, useState } from 'react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useClipboard } from '@/hooks/use-clipboard';
 import { formatRupiah } from '@/lib/format';
 import PublicLayout from '@/layouts/public-layout';
 import bookingRoutes from '@/routes/booking';
 import type { BookingPaymentPageProps } from '@/types';
-import { AlertTriangle, ArrowLeft, Check, Copy } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowLeft,
+    Check,
+    Copy,
+    FileText,
+    ImageUp,
+    Trash2,
+} from 'lucide-react';
+
+/**
+ * Batas ukuran yang sama dengan validasi server, diperiksa lebih awal supaya
+ * penyewa tidak menunggu berkas 5 MB selesai terunggah sebelum tahu kalau
+ * berkasnya ditolak.
+ */
+const MAX_PROOF_BYTES = 5 * 1024 * 1024;
+
+const ACCEPTED_PROOF_TYPES = 'image/jpg,image/jpeg,image/png,image/webp';
 
 /**
  * Halaman pembayaran sesuai metode yang dipilih di halaman review
@@ -18,12 +39,13 @@ import { AlertTriangle, ArrowLeft, Check, Copy } from 'lucide-react';
  * milik unit bisnis, jadi frontend tidak pernah menyimpan data pembayaran
  * secara hardcoded.
  *
- * Upload bukti pembayaran belum ada pada tahap ini. Validasi, preview, dan
- * hapus ganti bukti dibangun di ROADMAP 3.10, jadi QRIS dan transfer baru
- * menampilkan keterangan tempat bukti, bukan input upload.
+ * Upload bukti pembayaran dibangun di ROADMAP 3.10 (BR-08). Berkas dikirim ke
+ * server untuk disimpan di disk publik. Pratinjau lokal hanya dipakai selama
+ * berkas belum tersimpan, lalu dibersihkan supaya `URL.createObjectURL` tidak
+ * menahan memori browser.
  *
- * Tombol "Lanjut Pesan via WhatsApp" tampil sesuai PRD section 17 tetapi
- * masih nonaktif karena pembuatannya ada di ROADMAP 3.12.
+ * Tombol "Lanjut Pesan via WhatsApp" tampil sesuai PRD section 17 tetapi masih
+ * nonaktif karena pembuatannya ada di ROADMAP 3.12.
  */
 export default function BookingPayment({
     business,
@@ -33,8 +55,33 @@ export default function BookingPayment({
     period,
     availability,
     pricing,
+    proof,
 }: BookingPaymentPageProps) {
     const [copiedText, copy] = useClipboard();
+    const [localPreview, setLocalPreview] = useState<string | null>(null);
+
+    const proofForm = useForm<{ proof: File | null }>({ proof: null });
+    const removeForm = useForm({});
+
+    const selectedFile = proofForm.data.proof;
+
+    /**
+     * Pratinjau lokal hidup selama ada berkas yang belum diunggah. Setelah
+     * server menyimpan berkas, halaman dimuat ulang dengan pratinjau dari disk
+     * dan objek URL lokal sudah tidak dibutuhkan.
+     */
+    useEffect(() => {
+        if (selectedFile === null) {
+            setLocalPreview(null);
+
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(selectedFile);
+        setLocalPreview(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [selectedFile]);
 
     const routes = routesFor(business.slug);
 
@@ -45,6 +92,60 @@ export default function BookingPayment({
     const isBankTransfer = method.type === 'bank_transfer';
     const isQris = method.type === 'qris';
     const isCopied = copiedText === method.account_number;
+
+    const proofStoreUrl = routes.payment.proof.store.url();
+    const proofDestroyUrl = routes.payment.proof.destroy.url();
+
+    const previewUrl = localPreview ?? proof?.url ?? null;
+    const previewName = selectedFile?.name ?? proof?.name ?? null;
+    const hasSavedProof = proof !== null;
+    const isBusy = proofForm.processing || removeForm.processing;
+
+    function selectProof(event: React.ChangeEvent<HTMLInputElement>): void {
+        const file = event.target.files?.[0] ?? null;
+
+        /**
+         * Memilih berkas yang sama dua kali tidak memicu event `change`, jadi
+         * nilainya direset lebih dulu supaya penyewa tetap bisa memilih ulang
+         * berkas yang sama setelah membatalkan pilihannya.
+         */
+        event.target.value = '';
+
+        if (file === null) {
+            proofForm.setData('proof', null);
+            proofForm.clearErrors('proof');
+
+            return;
+        }
+
+        /**
+         * Ukuran diperiksa di browser supaya berkas 5 MB tidak perlu sampai ke
+         * server dulu untuk ditolak. Server tetap memvalidasi ulang karena
+         * pemeriksaan di browser hanya untuk kenyamanan.
+         */
+        if (file.size > MAX_PROOF_BYTES) {
+            proofForm.setData('proof', null);
+            proofForm.setError(
+                'proof',
+                'Ukuran bukti pembayaran maksimal 5 MB.',
+            );
+
+            return;
+        }
+
+        proofForm.setData('proof', file);
+        proofForm.clearErrors('proof');
+    }
+
+    function submitProof(): void {
+        proofForm.post(proofStoreUrl);
+    }
+
+    function destroyProof(): void {
+        proofForm.setData('proof', null);
+        proofForm.clearErrors('proof');
+        removeForm.delete(proofDestroyUrl);
+    }
 
     return (
         <PublicLayout businesses={businesses} anchorBase="/">
@@ -241,13 +342,90 @@ export default function BookingPayment({
                                         Bukti Pembayaran
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-5">
                                     <p className="text-sm text-muted-foreground">
                                         Unggah bukti pembayaran setelah
-                                        mentransfer. Form upload, validasi, dan
-                                        pratinjau bildir dibangun pada ROADMAP
-                                        3.10.
+                                        mentransfer. Bukti wajib untuk metode
+                                        ini dan akan diperiksa admin sebelum
+                                        booking dikonfirmasi.
                                     </p>
+
+                                    {previewUrl !== null &&
+                                    previewName !== null ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3 rounded-lg border p-3">
+                                                <FileText className="size-5 shrink-0 text-muted-foreground" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {previewName}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {hasSavedProof
+                                                            ? 'Bukti sudah diunggah'
+                                                            : 'Belum diunggah'}
+                                                    </p>
+                                                </div>
+                                                {hasSavedProof ? (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={isBusy}
+                                                        onClick={destroyProof}
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                        Hapus
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+
+                                            <img
+                                                src={previewUrl}
+                                                alt={`Pratinjau bukti pembayaran ${previewName}`}
+                                                className="max-h-96 w-full rounded-lg border object-contain"
+                                            />
+                                        </div>
+                                    ) : null}
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="proof">
+                                            Pilih berkas bukti
+                                        </Label>
+                                        <Input
+                                            id="proof"
+                                            name="proof"
+                                            type="file"
+                                            accept={ACCEPTED_PROOF_TYPES}
+                                            onChange={selectProof}
+                                            disabled={isBusy}
+                                            aria-invalid={Boolean(
+                                                proofForm.errors.proof,
+                                            )}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Format JPG, JPEG, PNG, atau WebP.
+                                            Maksimal 5 MB.
+                                        </p>
+                                        <InputError
+                                            message={proofForm.errors.proof}
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={
+                                            selectedFile === null || isBusy
+                                        }
+                                        onClick={submitProof}
+                                    >
+                                        <ImageUp className="size-4" />
+                                        {proofForm.processing
+                                            ? 'Mengunggah...'
+                                            : hasSavedProof
+                                              ? 'Ganti Bukti'
+                                              : 'Unggah Bukti'}
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ) : (
@@ -313,6 +491,18 @@ export default function BookingPayment({
                                             {method.label}
                                         </dd>
                                     </div>
+                                    <div className="flex items-start justify-between gap-6">
+                                        <dt className="text-sm text-muted-foreground">
+                                            Bukti
+                                        </dt>
+                                        <dd className="text-right text-sm font-medium">
+                                            {method.requires_proof
+                                                ? hasSavedProof
+                                                    ? 'Sudah diunggah'
+                                                    : 'Belum diunggah'
+                                                : 'Tidak wajib'}
+                                        </dd>
+                                    </div>
                                 </dl>
 
                                 <Separator />
@@ -325,6 +515,13 @@ export default function BookingPayment({
                                         {formatRupiah(pricing.total)}
                                     </p>
                                 </div>
+
+                                {method.requires_proof && !hasSavedProof ? (
+                                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                                        Unggah bukti pembayaran dulu sebelum
+                                        melanjutkan ke WhatsApp.
+                                    </p>
+                                ) : null}
 
                                 <Button
                                     type="button"

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\PaymentMethodType;
 use App\Http\Requests\SelectBookingPaymentMethodRequest;
+use App\Http\Requests\StoreBookingPaymentProofRequest;
 use App\Models\Business;
 use App\Models\PaymentMethod;
 use App\Models\Scopes\BusinessScope;
 use App\Services\AvailabilityService;
 use App\Support\BookingDraft;
 use App\Support\BookingPeriod;
+use App\Support\BookingProofs;
 use App\Support\BookingRoutes;
 use App\Support\PaymentMethods;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -152,12 +154,149 @@ class BookingPaymentController extends Controller
             'pricing' => [
                 'total' => BookingPeriod::total((int) $product->price, $quantity, $duration),
             ],
+            'proof' => $this->proofPayload($context['draft']),
         ]);
     }
 
     /**
+     * Simpan bukti pembayaran yang diunggah (ROADMAP 3.10).
+     *
+     * Berkas ditulis ke disk `public` sekarang, lalu path-nya disimpan di draft.
+     * Pemindahan path itu ke kolom `payments.proof` terjadi di ROADMAP 3.11
+     * bersama pembuatan record pembayarannya, karena sampai titik itu belum ada
+     * baris `payments` yang bisa memegang path tersebut.
+     *
+     * Bukti yang lama dihapus dari disk setelah yang baru berhasil tersimpan,
+     * supaya mengganti bukti tidak meninggalkan berkas yatim.
+     */
+    public function storeProof(
+        StoreBookingPaymentProofRequest $request,
+        BookingDraft $draft,
+        string $business,
+    ): RedirectResponse {
+        $context = $draft->resolveOrFail($business);
+        $prefix = BookingRoutes::prefix($business);
+
+        if (! $draft->customerIsComplete()) {
+            return to_route('booking.'.$prefix.'.biodata');
+        }
+
+        $method = $this->resolveSelectedMethod($context['business'], $context['draft']);
+
+        /**
+         * Metode sudah tidak aktif atau datanya berubah setelah penyewa
+         * membuka halaman. Unggahan ditolak supaya bukti tidak tertaut ke
+         * booking yang nanti tidak bisa diselesaikan.
+         */
+        if ($method === null) {
+            return to_route('booking.'.$prefix.'.review');
+        }
+
+        $file = $request->proof();
+
+        /**
+         * Cash tidak wajib bukti, jadi halaman ini tetap bisa dipanggil tanpa
+         * berkas. Yang terjadi cuma pengembalian ke halaman pembayaran tanpa
+         * ada yang berubah.
+         */
+        if ($file === null) {
+            return to_route('booking.'.$prefix.'.payment.show', [
+                'method' => $method->type->value,
+            ]);
+        }
+
+        $previous = $context['draft']['payment_proof'] ?? null;
+
+        /**
+         * Berkas baru ditulis lebih dulu, dan baru setelah itu draft diperbarui
+         * serta berkas lama dihapus. Urutan ini menjaga bukti lama tetap utuh
+         * selama masih ada, jadi kegagalan di tengah tidak pernah menghasilkan
+         * keadaan "draft menunjuk bukti yang sudah hilang dari disk".
+         */
+        $path = BookingProofs::store($file);
+
+        $draft->merge([
+            'payment_proof' => $path,
+            'payment_proof_original_name' => $file->getClientOriginalName(),
+        ]);
+
+        if (is_string($previous) && $previous !== $path) {
+            BookingProofs::delete($previous);
+        }
+
+        return to_route('booking.'.$prefix.'.payment.show', [
+            'method' => $method->type->value,
+        ]);
+    }
+
+    /**
+     * Batalkan bukti pembayaran lalu hapus berkasnya dari disk.
+     *
+     * Berkas dihapus, bukan sekadar dilupakan di draft. Kalau dibiarkan, setiap
+     * penyewa yang mengunggah lalu membatalkan akan meninggalkan bukti pembayaran
+     * yang tidak pernah dipakai di disk.
+     */
+    public function destroyProof(
+        BookingDraft $draft,
+        string $business,
+    ): RedirectResponse {
+        $context = $draft->resolveOrFail($business);
+        $prefix = BookingRoutes::prefix($business);
+
+        if (! $draft->customerIsComplete()) {
+            return to_route('booking.'.$prefix.'.biodata');
+        }
+
+        $method = $this->resolveSelectedMethod($context['business'], $context['draft']);
+
+        if ($method === null) {
+            return to_route('booking.'.$prefix.'.review');
+        }
+
+        $path = $context['draft']['payment_proof'] ?? null;
+
+        $draft->forgetKeys(['payment_proof', 'payment_proof_original_name']);
+        BookingProofs::delete(is_string($path) ? $path : null);
+
+        return to_route('booking.'.$prefix.'.payment.show', [
+            'method' => $method->type->value,
+        ]);
+    }
+
+    /**
+     * Data bukti pembayaran untuk ditampilkan di halaman pembayaran.
+     *
+     * `url` dibuat ulang dari path yang tersimpan, bukan disimpan sendiri, supaya
+     * BASE_URL dan driver disk tetap punya satu sumber kebenaran.
+     *
+     * @param  array<string, mixed>  $draft
+     * @return array{path: string, name: string, url: string}|null
+     */
+    private function proofPayload(array $draft): ?array
+    {
+        $path = $draft['payment_proof'] ?? null;
+
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        $name = $draft['payment_proof_original_name'] ?? null;
+        $url = BookingProofs::url($path);
+
+        if ($url === null) {
+            return null;
+        }
+
+        return [
+            'path' => $path,
+            'name' => is_string($name) && $name !== '' ? $name : basename($path),
+            'url' => $url,
+        ];
+    }
+
+    /**
      * Metode aktif milik unit bisnis ini yang tercatat di draft, atau `null` kalau
-     * draft belum punya metode, metodenya sudah tidak aktif, atau datanya belum
+     * draft belum punya metode, metodenya sudah nonaktif, atau datanya belum
      * cukup untuk memandu penyewa menyelesaikan pembayaran.
      *
      * @param  array<string, mixed>  $draft

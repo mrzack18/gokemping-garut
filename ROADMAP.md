@@ -503,11 +503,33 @@ Catatan 3.9:
 
 ### 3.10 Upload Bukti Pembayaran (BR-08)
 
-- [ ] Validasi `mimes:jpg,jpeg,png,webp`
-- [ ] Validasi `max:5120` (5 MB)
-- [ ] Preview gambar sebelum submit
-- [ ] Hapus & ganti bukti
-- [ ] Bukti **wajib** untuk QRIS/Transfer, **opsional** untuk Cash
+- [x] Validasi `mimes:jpg,jpeg,png,webp`
+- [x] Validasi `max:5120` (5 MB)
+- [x] Preview gambar sebelum submit
+- [x] Hapus & ganti bukti
+- [x] Bukti **wajib** untuk QRIS/Transfer, **opsional** untuk Cash
+
+Catatan 3.10:
+
+- Aturan wajib/tidaknya bukti bergantung pada metode yang tercatat di draft,
+  bukan pada isi request, jadi pemeriksaan itu dilakukan di `withValidator()`.
+  Cash tidak menolak unggahan, hanya tidak mewajibkannya.
+- Bukti disimpan ke disk `public` pada folder `payments/`. Disk default
+  aplikasi adalah `local` yang private, jadi disk selalu disebutkan eksplisit.
+- Nama berkas di disk memakai UUID, bukan nama asli dari perangkat penyewa.
+  Nama asli hanya disimpan di draft untuk ditampilkan, jadi path yang tersimpan
+  tidak pernah bergantung pada input pengguna dan tidak bisa keluar dari folder
+  bukti.
+- Pratinjau memakai `URL.createObjectURL` yang dibersihkan saat berkas diganti.
+  Ukuran 5 MB juga dicek di browser supaya berkas besar tidak perlu sampai ke
+  server dulu untuk ditolak; server tetap memvalidasinya ulang.
+- Mengganti bukti menghapus berkas lama dari disk, dan membatalkan bukti
+  menghapus berkasnya. Kalau tidak begitu, tiap unggahan yang dibatalkan akan
+  meninggalkan berkas yatim di disk.
+- Path bukti disimpan di draft, bukan di tabel `payments`, karena record
+  pembayarannya baru dibuat di ROADMAP 3.11. Pemindahan path ke kolom
+  `payments.proof` dilakukan di 3.11. Sampai saat itu `payments`, `bookings`,
+  `booking_items`, dan `customers` tetap kosong.
 
 ### 3.11 Penyimpanan Booking
 
