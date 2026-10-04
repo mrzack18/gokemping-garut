@@ -27,6 +27,13 @@ class BookingDraft
     public const SESSION_KEY = 'booking.draft';
 
     /**
+     * Field biodata yang wajib terisi sebelum review dan pembayaran boleh dibuka.
+     *
+     * @var list<string>
+     */
+    public const REQUIRED_CUSTOMER_FIELDS = ['name', 'whatsapp', 'nik', 'address'];
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public function write(array $data): void
@@ -105,6 +112,33 @@ class BookingDraft
         }
 
         return ['business' => $business, 'product' => $product];
+    }
+
+    /**
+     * Apakah draft sudah punya data penyewa minimum yang wajib ada sebelum
+     * review (ROADMAP 3.8) dan halaman pembayaran (ROADMAP 3.9) boleh dibuka.
+     *
+     * Alur publik punya banyak halaman, jadi pemeriksaan ini dipusatkan di sini
+     * supaya review dan pembayaran tidak bisa berbeda pendapat soal data yang
+     * dianggap sudah lengkap.
+     */
+    public function customerIsComplete(): bool
+    {
+        $customer = $this->read()['customer'] ?? null;
+
+        if (! is_array($customer)) {
+            return false;
+        }
+
+        foreach (self::REQUIRED_CUSTOMER_FIELDS as $field) {
+            $value = $customer[$field] ?? null;
+
+            if (! is_string($value) || trim($value) === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

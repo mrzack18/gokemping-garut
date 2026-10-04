@@ -98,6 +98,26 @@ export type BookingBiodataPageProps = {
 };
 
 /**
+ * Opsi metode pembayaran aktif untuk satu unit bisnis (ROADMAP 3.9).
+ *
+ * Datanya dibaca dari `payment_methods` per `business_id`, jadi nomor rekening
+ * dan gambar QRIS tidak pernah ditulis langsung di frontend.
+ */
+export type BookingPaymentMethod = {
+    type: 'cash' | 'qris' | 'bank_transfer';
+    label: string;
+    description: string;
+    requires_proof: boolean;
+    is_ready: boolean;
+    instructions: string | null;
+    merchant_name: string | null;
+    qris_image_url: string | null;
+    bank_name: string | null;
+    account_number: string | null;
+    account_name: string | null;
+};
+
+/**
  * Halaman review booking (ROADMAP 3.8, PRD section 15).
  *
  * Durasi, subtotal, dan total dihitung di server lewat `BookingPeriod` dan
@@ -145,5 +165,33 @@ export type BookingReviewPageProps = {
         notes: string;
         renter_count: string;
     };
+    paymentMethods: BookingPaymentMethod[];
     isBikeRental: boolean;
+};
+
+/**
+ * Halaman pembayaran per metode (ROADMAP 3.9, PRD section 17).
+ */
+export type BookingPaymentPageProps = {
+    business: LandingBusiness;
+    businesses: LandingBusiness[];
+    method: BookingPaymentMethod;
+    product: {
+        name: string;
+        slug: string;
+    };
+    period: {
+        start_date_label: string;
+        end_date_label: string;
+        duration_label: string;
+        quantity: number;
+    };
+    availability: {
+        available: number;
+        requested: number;
+        is_available: boolean;
+    };
+    pricing: {
+        total: number;
+    };
 };

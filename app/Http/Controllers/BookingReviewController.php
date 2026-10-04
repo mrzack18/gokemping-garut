@@ -8,6 +8,7 @@ use App\Services\AvailabilityService;
 use App\Support\BookingDraft;
 use App\Support\BookingPeriod;
 use App\Support\BookingRoutes;
+use App\Support\PaymentMethods;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -16,9 +17,9 @@ use Inertia\Response;
 /**
  * Halaman review booking (ROADMAP 3.8, PRD section 15).
  *
- * Halaman ini menampilkan rekap detail booking, data penyewa, dan total,
- * lalu meminta penyewa mengonfirmasi sebelum lanjut ke pembayaran. Halaman
- * pembayaran sendiri dibangun di ROADMAP 3.9, jadi tombolnya masih nonaktif.
+ * Halaman ini menampilkan rekap detail booking, data penyewa, metode
+ * pembayaran, dan total, lalu meminta penyewa mengonfirmasi dan memilih metode
+ * sebelum lanjut ke pembayaran (ROADMAP 3.9).
  *
  * Ketersediaan dicek ulang di sini (BR-04). Draft sudah divalidasi saat
  * disimpan di ROADMAP 3.5 sampai 3.7, tetapi stok bisa terpakai booking lain
@@ -27,13 +28,6 @@ use Inertia\Response;
  */
 class BookingReviewController extends Controller
 {
-    /**
-     * Field biodata yang wajib terisi sebelum halaman review boleh dibuka.
-     *
-     * @var list<string>
-     */
-    private const REQUIRED_CUSTOMER_FIELDS = ['name', 'whatsapp', 'nik', 'address'];
-
     public function __invoke(
         BookingDraft $draft,
         AvailabilityService $availability,
@@ -41,11 +35,11 @@ class BookingReviewController extends Controller
     ): Response|RedirectResponse {
         $context = $draft->resolveOrFail($business);
 
-        $customer = $this->customerPayload($context['draft']);
-
-        if ($this->customerIsIncomplete($customer)) {
+        if (! $draft->customerIsComplete()) {
             return to_route('booking.'.BookingRoutes::prefix($business).'.biodata');
         }
+
+        $customer = $this->customerPayload($context['draft']);
 
         $product = $context['product'];
         $startDate = (string) $context['draft']['start_date'];
@@ -87,6 +81,7 @@ class BookingReviewController extends Controller
                 'total' => BookingPeriod::total((int) $product->price, $quantity, $duration),
             ],
             'customer' => $customer,
+            'paymentMethods' => PaymentMethods::options($context['business']),
             'isBikeRental' => BookingRoutes::isBikeRental($business),
         ]);
     }
@@ -122,20 +117,6 @@ class BookingReviewController extends Controller
             'notes' => $this->stringOrEmpty($customer['notes'] ?? null),
             'renter_count' => $this->stringOrEmpty($customer['renter_count'] ?? null),
         ];
-    }
-
-    /**
-     * @param  array<string, string>  $customer
-     */
-    private function customerIsIncomplete(array $customer): bool
-    {
-        foreach (self::REQUIRED_CUSTOMER_FIELDS as $field) {
-            if ($customer[$field] === '') {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function stringOrEmpty(mixed $value): string

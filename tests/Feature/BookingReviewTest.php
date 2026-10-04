@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Enums\BookingStatus;
+use App\Enums\PaymentMethodType;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\Business;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Support\BookingDraft;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -339,6 +341,85 @@ class BookingReviewTest extends TestCase
         $this->createCompleteDraft($this->camping, $this->tent);
 
         $this->get($this->reviewRoute($this->camping))->assertOk();
+    }
+
+    public function test_review_menampilkan_metode_pembayaran_aktif(): void
+    {
+        PaymentMethod::factory()->forBusiness($this->camping)->cash('Bayar di pos kemah.')->create();
+        PaymentMethod::factory()->forBusiness($this->camping)->bankTransfer()->create();
+
+        $this->createCompleteDraft($this->camping, $this->tent);
+
+        $this->get($this->reviewRoute($this->camping))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('paymentMethods', 2)
+                ->where('paymentMethods.0.type', 'cash')
+                ->where('paymentMethods.0.is_ready', true)
+                ->where('paymentMethods.0.description', 'Bayar di pos kemah.')
+                ->where('paymentMethods.1.type', 'bank_transfer')
+                ->where('paymentMethods.1.is_ready', true)
+            );
+    }
+
+    public function test_review_menandai_metode_yang_belum_lengkap(): void
+    {
+        PaymentMethod::factory()->forBusiness($this->camping)->state([
+            'type' => PaymentMethodType::Qris,
+            'merchant_name' => 'GoKemping',
+            'qris_image' => null,
+        ])->create();
+
+        $this->createCompleteDraft($this->camping, $this->tent);
+
+        $this->get($this->reviewRoute($this->camping))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('paymentMethods', 1)
+                ->where('paymentMethods.0.type', 'qris')
+                ->where('paymentMethods.0.is_ready', false)
+                ->where('paymentMethods.0.description', 'QRIS GoKemping')
+            );
+    }
+
+    public function test_review_tidak_menampilkan_metode_nonaktif_dan_milik_unit_lain(): void
+    {
+        PaymentMethod::factory()->forBusiness($this->camping)->cash()->create([
+            'is_active' => false,
+        ]);
+        PaymentMethod::factory()->forBusiness($this->bike)->cash()->create();
+
+        $this->createCompleteDraft($this->camping, $this->tent);
+
+        $this->get($this->reviewRoute($this->camping))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('paymentMethods', 0));
+    }
+
+    public function test_metode_bank_transfer_menandai_bukti_wajib(): void
+    {
+        PaymentMethod::factory()->forBusiness($this->camping)->bankTransfer()->create();
+
+        $this->createCompleteDraft($this->camping, $this->tent);
+
+        $this->get($this->reviewRoute($this->camping))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('paymentMethods.0.requires_proof', true)
+            );
+    }
+
+    public function test_metode_cash_tidak_menandai_bukti_wajib(): void
+    {
+        PaymentMethod::factory()->forBusiness($this->camping)->cash()->create();
+
+        $this->createCompleteDraft($this->camping, $this->tent);
+
+        $this->get($this->reviewRoute($this->camping))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('paymentMethods.0.requires_proof', false)
+            );
     }
 
     public function test_review_tidak_menulis_ke_database(): void

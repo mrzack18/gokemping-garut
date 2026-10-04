@@ -1,10 +1,11 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { formatRupiah } from '@/lib/format';
 import PublicLayout from '@/layouts/public-layout';
@@ -29,9 +30,13 @@ import {
  * disimpan di ROADMAP 3.11.
  *
  * Ketersediaan dicek ulang oleh `BookingReviewController` (BR-04). Kalau stok
- * sudah tidak cukup, tombol konfirmasi dimatikan dan penyewa diminta mengubah
- * tanggal. Halaman pembayaran dibangun di ROADMAP 3.9, jadi tombol "Lanjut
- * Pembayaran" sengaja nonaktif dan tidak menautkan ke halaman yang belum ada.
+ * sudah tidak cukup, tombol konfirmasi dan pilihan metode dimatikan, dan
+ * penyewa diminta mengubah tanggal.
+ *
+ * Metode pembayaran dipilih di sini (ROADMAP 3.9), lalu dikirim ke
+ * `booking.gokemping.payment.store` atau `booking.sewaSepedaGarut.payment.store`.
+ * Server yang memutuskan metode mana yang boleh dipakai, jadi pilihan di sini
+ * hanya menentukan kemana penyewa diarahkan, bukan apa yang tersimpan.
  */
 export default function BookingReview({
     business,
@@ -41,9 +46,13 @@ export default function BookingReview({
     availability,
     pricing,
     customer,
+    paymentMethods,
     isBikeRental,
 }: BookingReviewPageProps) {
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [method, setMethod] = useState('');
+
+    const paymentForm = useForm({ method: '' });
 
     const routes = routesFor(business.slug);
 
@@ -52,6 +61,7 @@ export default function BookingReview({
     }
 
     const isAvailable = availability.is_available;
+    const readyMethods = paymentMethods.filter((item) => item.is_ready);
 
     const detailRows = [
         { label: 'Produk', value: product.name },
@@ -91,6 +101,25 @@ export default function BookingReview({
               }
             : null,
     ].filter((row): row is { label: string; value: string } => row !== null);
+
+    const paymentStoreUrl = routes.payment.store.url();
+
+    function chooseMethod(value: string): void {
+        setMethod(value);
+        paymentForm.setData('method', value);
+        paymentForm.clearErrors('method');
+    }
+
+    function submitPaymentMethod(): void {
+        paymentForm.post(paymentStoreUrl);
+    }
+
+    const canPay =
+        isAvailable &&
+        isConfirmed &&
+        method !== '' &&
+        readyMethods.length > 0 &&
+        !paymentForm.processing;
 
     return (
         <PublicLayout businesses={businesses} anchorBase="/">
@@ -304,6 +333,68 @@ export default function BookingReview({
                                 <Separator />
 
                                 <div className="space-y-3">
+                                    <p className="text-sm font-medium">
+                                        Metode pembayaran
+                                    </p>
+
+                                    {paymentMethods.length > 0 ? (
+                                        <RadioGroup
+                                            value={method}
+                                            onValueChange={chooseMethod}
+                                            className="gap-3"
+                                        >
+                                            {paymentMethods.map((item) => (
+                                                <div
+                                                    key={item.type}
+                                                    className="flex items-start gap-3"
+                                                >
+                                                    <RadioGroupItem
+                                                        value={item.type}
+                                                        id={`method-${item.type}`}
+                                                        disabled={
+                                                            !item.is_ready ||
+                                                            !isAvailable
+                                                        }
+                                                    />
+                                                    <Label
+                                                        htmlFor={`method-${item.type}`}
+                                                        className="flex-1 text-sm leading-snug font-normal"
+                                                    >
+                                                        <span className="font-medium">
+                                                            {item.label}
+                                                        </span>
+                                                        <span className="mt-0.5 block text-muted-foreground">
+                                                            {item.description}
+                                                        </span>
+                                                        {!item.is_ready ? (
+                                                            <span className="mt-0.5 block text-amber-700 dark:text-amber-400">
+                                                                Belum bisa
+                                                                dipilih karena
+                                                                data pembayaran
+                                                                belum lengkap.
+                                                            </span>
+                                                        ) : null}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </RadioGroup>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                            Belum ada metode pembayaran yang
+                                            tersedia untuk unit ini.
+                                        </p>
+                                    )}
+
+                                    {paymentForm.errors.method ? (
+                                        <p className="text-sm text-red-600 dark:text-red-400">
+                                            {paymentForm.errors.method}
+                                        </p>
+                                    ) : null}
+                                </div>
+
+                                <Separator />
+
+                                <div className="space-y-3">
                                     <div className="flex items-start gap-3">
                                         <Checkbox
                                             id="review-confirmation"
@@ -325,7 +416,7 @@ export default function BookingReview({
                                     {!isConfirmed ? (
                                         <p className="text-xs text-muted-foreground">
                                             {isAvailable
-                                                ? 'Centang konfirmasi dulu sebelum melanjutkan ke pembayaran.'
+                                                ? 'Centang konfirmasi dulu sebelum memilih metode pembayaran.'
                                                 : 'Konfirmasi tidak bisa diberikan karena ketersediaan berubah.'}
                                         </p>
                                     ) : null}
@@ -335,14 +426,13 @@ export default function BookingReview({
                                     type="button"
                                     size="lg"
                                     className="w-full"
-                                    disabled
+                                    disabled={!canPay}
+                                    onClick={submitPaymentMethod}
                                 >
-                                    Lanjut Pembayaran
+                                    {paymentForm.processing
+                                        ? 'Menyimpan...'
+                                        : 'Lanjut Pembayaran'}
                                 </Button>
-                                <p className="text-xs text-muted-foreground">
-                                    Halaman pembayaran dibangun pada ROADMAP
-                                    3.9, jadi tombol ini belum aktif.
-                                </p>
                             </CardContent>
                         </Card>
                     </motion.div>

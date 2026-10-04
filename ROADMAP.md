@@ -472,12 +472,34 @@ Catatan implementasi 3.8:
 
 ### 3.9 Metode Pembayaran & Halaman Pembayaran
 
-- [ ] Pilihan metode: Cash / QRIS / Transfer Bank
-- [ ] Halaman Cash: total + keterangan + tombol lanjut
-- [ ] Halaman QRIS: QRIS toko + total + upload bukti
-- [ ] Halaman Transfer: rekening + tombol salin + upload bukti
-- [ ] Ambil data rekening/QRIS dari `payment_methods` sesuai `business_id`
-- [ ] Salin nomor rekening ke clipboard
+- [x] Pilihan metode: Cash / QRIS / Transfer Bank
+- [x] Halaman Cash: total + keterangan + tombol lanjut
+- [x] Halaman QRIS: QRIS toko + total + upload bukti
+- [x] Halaman Transfer: rekening + tombol salin + upload bukti
+- [x] Ambil data rekening/QRIS dari `payment_methods` sesuai `business_id`
+- [x] Salin nomor rekening ke clipboard
+
+Catatan 3.9:
+
+- Metode dipilih lewat radio group di halaman review, lalu disimpan ke draft
+  sebagai `payment_method`. Halaman pembayaran dibaca dari `/booking/payment/{method}`
+  untuk kedua unit bisnis.
+- Konfigurasi pembayaran selalu dibaca dari `payment_methods` milik unit bisnis
+  yang sedang diakses, jadi tidak ada nomor rekening atau QRIS yang ditulis
+  langsung di frontend. Metode milik unit lain tidak bisa dipilih walau nilai
+  method-nya valid.
+- Metode yang aktif tetapi datanya belum lengkap (QRIS tanpa gambar, transfer
+  tanpa nomor rekening) tetap ditampilkan dengan penanda belum bisa dipilih,
+  bukan disembunyikan. Konfirmasi-konfirmasi ini yang membuat penyewa tidak
+  terjebak di halaman pembayaran yang tidak bisa diselesaikan.
+- Upload bukti(**"wajib"** untuk QRIS/Transfer) sengaja ditunda ke ROADMAP 3.10.
+  Ketiga halaman pembayaran sudah menampilkan bagian bukti pembayaran beserta
+  keterangan bahwa form unggahnya ada di 3.10, tetapi belum punya input upload.
+- Tombol "Lanjut Pesan via WhatsApp" sudah tampil di halaman pembayaran sesuai
+  PRD section 17, masih nonaktif karena pembuatannya ada di ROADMAP 3.12.
+- Stok dan kelengkapan biodata dicek ulang di halaman pembayaran, jadi halaman
+  ini tidak pernah menampilkan pembayaran untuk draft yang sudah tidak layak.
+- `bookings`, `booking_items`, dan `customers` tetap kosong sampai ROADMAP 3.11.
 
 ### 3.10 Upload Bukti Pembayaran (BR-08)
 

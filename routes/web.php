@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\PaymentMethodType;
 use App\Http\Controllers\BookingAvailabilityController;
 use App\Http\Controllers\BookingBiodataController;
 use App\Http\Controllers\BookingCustomerLookupController;
 use App\Http\Controllers\BookingDraftController;
 use App\Http\Controllers\BookingFormController;
+use App\Http\Controllers\BookingPaymentController;
 use App\Http\Controllers\BookingReviewController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LandingController;
@@ -46,6 +48,15 @@ Route::get('/gokemping/booking/review', BookingReviewController::class)
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.review');
 
+Route::post('/gokemping/booking/payment', [BookingPaymentController::class, 'store'])
+    ->defaults('business', 'gokemping')
+    ->name('booking.gokemping.payment.store');
+
+Route::get('/gokemping/booking/payment/{method}', [BookingPaymentController::class, 'show'])
+    ->defaults('business', 'gokemping')
+    ->whereIn('method', array_column(PaymentMethodType::cases(), 'value'))
+    ->name('booking.gokemping.payment.show');
+
 Route::post('/gokemping/booking/{product}/draft', BookingDraftController::class)
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.draft.store');
@@ -77,6 +88,15 @@ Route::post('/sewa-sepeda-garut/booking/biodata', [BookingBiodataController::cla
 Route::get('/sewa-sepeda-garut/booking/review', BookingReviewController::class)
     ->defaults('business', 'sewa-sepeda-garut')
     ->name('booking.sewaSepedaGarut.review');
+
+Route::post('/sewa-sepeda-garut/booking/payment', [BookingPaymentController::class, 'store'])
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->name('booking.sewaSepedaGarut.payment.store');
+
+Route::get('/sewa-sepeda-garut/booking/payment/{method}', [BookingPaymentController::class, 'show'])
+    ->defaults('business', 'sewa-sepeda-garut')
+    ->whereIn('method', array_column(PaymentMethodType::cases(), 'value'))
+    ->name('booking.sewaSepedaGarut.payment.show');
 
 Route::post('/sewa-sepeda-garut/booking/{product}/draft', BookingDraftController::class)
     ->defaults('business', 'sewa-sepeda-garut')
