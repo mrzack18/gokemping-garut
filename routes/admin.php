@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,8 +14,8 @@ use Illuminate\Support\Facades\Route;
 | mengaksesnya. Query di dalamnya otomatis ter-scope oleh BusinessScope
 | berdasarkan business_id user (BR-05).
 |
-| Modul produk, kategori, booking, penyewa, pembayaran, laporan, dan
-| pengaturan akan ditambahkan pada fase berikutnya.
+| Modul produk, booking, penyewa, pembayaran, laporan, dan pengaturan akan
+| ditambahkan pada fase berikutnya.
 |
 */
 
@@ -23,4 +24,11 @@ Route::middleware(['auth', 'business'])
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('categories', CategoryController::class)
+            ->parameters(['categories' => 'category'])
+            ->only(['index', 'store', 'update', 'destroy']);
+
+        Route::patch('categories/{category}/status', [CategoryController::class, 'updateStatus'])
+            ->name('categories.status');
     });

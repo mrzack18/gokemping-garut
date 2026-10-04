@@ -693,10 +693,54 @@ Catatan implementasi 4.1:
 
 ### 4.2 Manajemen Kategori
 
-- [ ] Tabel kategori + jumlah produk
-- [ ] Tambah / edit / ubah status
-- [ ] Hapus kategori (dengan konfirmasi)
-- [ ] Guard: kategori dengan produk tidak bisa dihapus
+- [x] Tabel kategori + jumlah produk
+- [x] Tambah / edit / ubah status
+- [x] Hapus kategori (dengan konfirmasi)
+- [x] Guard: kategori dengan produk tidak bisa dihapus
+
+Catatan implementasi 4.2:
+
+- Route memakai `Route::resource` tanpa `create`, `edit`, dan `show`. Form tambah
+  dan edit berupa dialog di halaman daftar, jadi tidak ada halaman form terpisah
+  yang harus dijaga. `Route::resource` juga Implicit Model Binding lewat
+  `slug`, jadi `BusinessScope` tetap menyaring kategori milik unit lain: request
+  dari unit lain berakhir 404, bukan 403.
+- **Slug kategori dibuat dari nama, tetapi tidak bisa diubah lewat form edit.**
+  Slug dipakai sebagai filter kategori di URL katalog publik (`?category=...`),
+  sehingga membuatnya ulang saat nama diganti akan memutus tautan yang sudah
+  dibagikan pengunjung. Kategori lama mempertahankan slug-nya.
+- Tabrakan nama di dalam satu unit bisnis tidak ditolak ke admin, diberi akhiran
+  angka (`sepeda`, `sepeda-2`). Dua unit bisnis boleh punya kategori dengan nama
+  dan slug yang sama, jadi keunikan dihitung per `business_id`, bukan global.
+  Ini yang membuat `unique(['business_id', 'slug'])` di migration tetap punya
+  arti sebagai pengaman.
+- `business_id` tidak pernah diambil dari request. Atribut kategori disusun di
+  `StoreCategoryRequest` dan `Category::create()` dipanggil dengan
+  `business_id` milik admin yang login, jadi tidak ada field yang bisa diisi
+  untuk memindahkan kategori ke unit lain.
+- **Jumlah produk dihitung dengan satu agregasi (`withCount`) dan menghitung
+  seluruh produk, termasuk yang nonaktif.** Kategori dengan produk nonaktif pun
+  tetap tidak boleh dihapus, jadi admin perlu melihat jumlahnya. Kalau yang
+  dihitung hanya produk aktif, kategori yang terlihat kosong padahal tidak bisa
+  dihapus akan mengeliruikan.
+- **Kategori yang punya produk tidak dihapus, dan produknya tidak ikut berubah.**
+  Server menolak dengan pesan yang menyebutkan jumlah produk yang menghalangi,
+  dan dialog hapus menampilkan alasan yang sama sebelum tombol ditekan. Cara lain
+  — mengosongkan `category_id` atau ikut menghapus produk — lebih cepat tapi
+  merusak data tanpa disadari admin.
+- Ubah status punya endpoint sendiri (`PATCH admin/categories/{slug}/status`).
+  Aksi di tabel cuma mengubah satu nilai boolean, jadi tidak perlu mengirim ulang
+  nama dan deskripsi yang tidak sedang diedit. Menonaktifkan kategori **tidak**
+  menonaktifkan produk di dalamnya: status produk punya arti sendiri di katalog.
+- Notifikasi memakai `Inertia::flash('toast', ...)`, pola yang sama dengan
+  pengaturan profil, supaya pesan sukses dan penolakan hapus sampai ke frontend
+  lewat `useFlashToast`.
+- Dialog tambah/edit di-render ulang dengan `key` per kategori (`category.id`, atau
+  `new` untuk tambah) supaya isian form lama tidak pernah terbawa ke kategori
+  berikutnya yang dibuka.
+- Menu "Kategori" ditambahkan ke sidebar admin. `app-header.tsx` (layout header)
+  ikut diisi walau layout itu belum dipakai halaman mana pun, supaya nav tidak
+  berbeda kalau layout-nya nanti diganti.
 
 ### 4.3 Manajemen Produk
 

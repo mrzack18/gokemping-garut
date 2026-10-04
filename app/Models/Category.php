@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -68,5 +69,29 @@ class Category extends Model
     public function hasProducts(): bool
     {
         return $this->products()->exists();
+    }
+
+    /**
+     * Slug unik untuk kategori baru di unit bisnis `$business`.
+     *
+     * Keunikan dihitung di dalam satu unit bisnis, bukan global, karena dua
+     * unit boleh memakai nama kategori yang sama. Tabrakan diberi akhiran angka,
+     * bukan ditolak ke admin, supaya nama umum seperti "Sepeda" tetap bisa
+     * dipakai lebih dari sekali di unit yang sama.
+     */
+    public static function generateSlug(Business $business, string $name): string
+    {
+        $base = Str::slug($name);
+        $slug = $base === '' ? 'kategori' : $base;
+        $suffix = 2;
+
+        $query = static::query()->forBusiness($business);
+
+        while ($query->where($query->qualifyColumn('slug'), $slug)->exists()) {
+            $slug = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

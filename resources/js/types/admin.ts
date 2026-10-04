@@ -53,3 +53,23 @@ export type AdminDashboardPageProps = {
         recentBookings: DashboardRecentBooking[];
     };
 };
+
+/**
+ * Kategori di daftar kategori admin (PRD section 23, ROADMAP 4.2).
+ *
+ * `products_count` menghitung seluruh produk, termasuk yang nonaktif, karena
+ * itulah yang menentukan apakah kategori boleh dihapus.
+ */
+export type AdminCategory = {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+    sort_order: number;
+    is_active: boolean;
+    products_count: number;
+};
+
+export type AdminCategoriesPageProps = {
+    categories: AdminCategory[];
+};
