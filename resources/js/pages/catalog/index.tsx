@@ -23,8 +23,20 @@ import PublicLayout from '@/layouts/public-layout';
 import { formatRupiah } from '@/lib/format';
 import catalogRoutes from '@/routes/catalog';
 import services from '@/routes/services';
-import type { CatalogFilters, CatalogPageProps, CatalogSort } from '@/types';
-import { ArrowLeft, ImageOff, Package, RotateCcw, Search } from 'lucide-react';
+import type {
+    CatalogFilters,
+    CatalogPageProps,
+    CatalogProduct,
+    CatalogSort,
+} from '@/types';
+import {
+    ArrowLeft,
+    ArrowRight,
+    ImageOff,
+    Package,
+    RotateCcw,
+    Search,
+} from 'lucide-react';
 
 const ALL_CATEGORIES = 'semua';
 
@@ -38,6 +50,17 @@ const catalogUrlBySlug: Record<string, string> = {
     gokemping: catalogRoutes.gokemping.url(),
     'sewa-sepeda-garut': catalogRoutes.sewaSepedaGarut.url(),
 };
+
+/**
+ * URL detail produk memakai route yang terdaftar agar card tidak pernah
+ * menulis path yang tidak ada.
+ */
+const productUrlBuilders: Record<string, (product: CatalogProduct) => string> =
+    {
+        gokemping: (product) => catalogRoutes.gokemping.show.url(product.slug),
+        'sewa-sepeda-garut': (product) =>
+            catalogRoutes.sewaSepedaGarut.show.url(product.slug),
+    };
 
 const sortOptions: { value: CatalogSort; label: string }[] = [
     { value: 'terbaru', label: 'Terbaru' },
@@ -444,87 +467,110 @@ export default function Catalog({
                     </Card>
                 ) : (
                     <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        {products.data.map((product, index) => (
-                            <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{
-                                    duration: 0.35,
-                                    delay: Math.min(index, 8) * 0.06,
-                                }}
-                            >
-                                <Card className="flex h-full flex-col overflow-hidden">
-                                    <div className="aspect-4/3 w-full overflow-hidden bg-muted">
-                                        {product.photo ? (
-                                            <img
-                                                src={product.photo}
-                                                alt={product.name}
-                                                loading="lazy"
-                                                className="size-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                                                <ImageOff className="size-6" />
-                                                <span className="text-xs">
-                                                    Foto belum tersedia
+                        {products.data.map((product, index) => {
+                            const detailUrlBuilder =
+                                productUrlBuilders[business.slug];
+                            const detailUrl = detailUrlBuilder
+                                ? detailUrlBuilder(product)
+                                : null;
+
+                            return (
+                                <motion.div
+                                    key={product.id}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{
+                                        duration: 0.35,
+                                        delay: Math.min(index, 8) * 0.06,
+                                    }}
+                                >
+                                    <Card className="flex h-full flex-col overflow-hidden">
+                                        <div className="aspect-4/3 w-full overflow-hidden bg-muted">
+                                            {product.photo ? (
+                                                <img
+                                                    src={product.photo}
+                                                    alt={product.name}
+                                                    loading="lazy"
+                                                    className="size-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                                                    <ImageOff className="size-6" />
+                                                    <span className="text-xs">
+                                                        Foto belum tersedia
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <CardHeader className="gap-2">
+                                            {product.category ? (
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="w-fit font-normal"
+                                                >
+                                                    {product.category.name}
+                                                </Badge>
+                                            ) : null}
+                                            <CardTitle className="text-base leading-snug">
+                                                {product.name}
+                                            </CardTitle>
+                                        </CardHeader>
+
+                                        <CardContent className="mt-auto space-y-3">
+                                            <div className="flex flex-wrap items-baseline gap-x-2">
+                                                <span className="text-lg font-semibold tabular-nums">
+                                                    {formatRupiah(
+                                                        product.price,
+                                                    )}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">
+                                                    / {product.price_unit}
                                                 </span>
                                             </div>
-                                        )}
-                                    </div>
 
-                                    <CardHeader className="gap-2">
-                                        {product.category ? (
-                                            <Badge
-                                                variant="secondary"
-                                                className="w-fit font-normal"
-                                            >
-                                                {product.category.name}
-                                            </Badge>
-                                        ) : null}
-                                        <CardTitle className="text-base leading-snug">
-                                            {product.name}
-                                        </CardTitle>
-                                    </CardHeader>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <Badge
+                                                    variant={
+                                                        product.is_available
+                                                            ? 'default'
+                                                            : 'destructive'
+                                                    }
+                                                >
+                                                    {product.is_available
+                                                        ? 'Tersedia'
+                                                        : 'Tidak tersedia'}
+                                                </Badge>
+                                                {product.is_available ? (
+                                                    <span className="text-xs text-muted-foreground tabular-nums">
+                                                        Sisa {product.stock}
+                                                    </span>
+                                                ) : null}
+                                            </div>
 
-                                    <CardContent className="mt-auto space-y-3">
-                                        <div className="flex flex-wrap items-baseline gap-x-2">
-                                            <span className="text-lg font-semibold tabular-nums">
-                                                {formatRupiah(product.price)}
-                                            </span>
-                                            <span className="text-sm text-muted-foreground">
-                                                / {product.price_unit}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Badge
-                                                variant={
-                                                    product.is_available
-                                                        ? 'default'
-                                                        : 'destructive'
-                                                }
-                                            >
-                                                {product.is_available
-                                                    ? 'Tersedia'
-                                                    : 'Tidak tersedia'}
-                                            </Badge>
-                                            {product.is_available ? (
-                                                <span className="text-xs text-muted-foreground tabular-nums">
-                                                    Sisa {product.stock}
-                                                </span>
+                                            {product.description ? (
+                                                <p className="line-clamp-3 text-sm text-muted-foreground">
+                                                    {product.description}
+                                                </p>
                                             ) : null}
-                                        </div>
 
-                                        {product.description ? (
-                                            <p className="line-clamp-3 text-sm text-muted-foreground">
-                                                {product.description}
-                                            </p>
-                                        ) : null}
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
+                                            {detailUrl ? (
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    className="mt-auto w-full"
+                                                >
+                                                    <Link href={detailUrl}>
+                                                        Lihat Detail
+                                                        <ArrowRight className="size-4" />
+                                                    </Link>
+                                                </Button>
+                                            ) : null}
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 )}
 

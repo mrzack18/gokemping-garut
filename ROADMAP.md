@@ -193,21 +193,66 @@ Implementasi:
   quebrado.
 - `PublicLayout` mendapat props opsional `anchorBase` supaya menu navigasi
   tetap mengarah ke section landing page saat dibuka dari halaman katalog.
-- Tombol "Lihat Detail" pada PRD section 9 sengaja belum dirender karena
-  halaman detail produk adalah ROADMAP 3.4.
+- Tombol "Lihat Detail" pada PRD section 9 baru ditambahkan saat ROADMAP 3.4
+  selesai, karena halaman detail produk baru ada pada langkah tersebut.
 - 27 feature test menutup akses tamu, isolasi antar unit, unit nonaktif, slug
   tak dikenal, pelolosan wildcard, tiap filter, sorting, pagination, state URL,
   foto utama, dan status ketersediaan.
 
 ### 3.4 Detail Produk
 
-- [ ] Foto utama + gallery (shadcn/ui carousel)
-- [ ] Nama, kategori, harga, satuan
-- [ ] Deskripsi
-- [ ] Spesifikasi
-- [ ] Ketentuan penyewaan
-- [ ] Status ketersediaan
-- [ ] CTA "Sewa Sekarang"
+- [x] Foto utama + gallery (shadcn/ui carousel)
+- [x] Nama, kategori, harga, satuan
+- [x] Deskripsi
+- [x] Spesifikasi
+- [x] Ketentuan penyewaan
+- [x] Status ketersediaan
+- [x] CTA "Sewa Sekarang"
+
+Implementasi:
+
+- Path detail mengikuti PRD section 34: `/gokemping/{product}` dan
+  `/sewa-sepeda-garut/{product}`. Kedua path memakai
+  `ProductDetailController` yang sama dengan slug unit sebagai route default.
+- Produk dicari per pasangan unit bisnis dan slug, bukan lewat route model
+  binding global. `products` hanya punya unique key per unit
+  (`business_id`, `slug`), jadi slug yang sama bisa ada di dua unit dan
+  binding global akan membuka produk dari unit yang salah.
+- `BusinessScope` dinonaktifkan karena halaman ini publik lintas tenant.
+  Produk nonaktif, produk terhapus, produk milik unit lain, dan unit nonaktif
+  semuanya menghasilkan 404.
+- Gallery memakai shadcn/ui carousel (dependensi baru
+  `embla-carousel-react`). Card memakai carousel, satu foto memakai gambar
+  tunggal, dan nol foto memakai placeholder, sehingga tombol navigasi tidak
+  pernah muncul tanpa gunanya.
+- Foto utama (`is_primary`) selalu berada di posisi pertama, sisanya mengikuti
+  `sort_order`. Pengurutan dilakukan dua tahap dengan urutan yang benar:
+  `Collection::sortBy()` stabil, jadi sortir `sort_order` dulu baru menaruh
+  foto utama ke depan. Urutan terbalik akan mengembalikan foto utama ke tempat
+  semula.
+- Spesifikasi dirender sebagai daftar label/value. Nilainya diperlakukan
+  sebagai `unknown` di TypeScript karena kolomnya JSON bebas, lalu dirender
+  lewat `String(value)`.
+- CTA "Sewa Sekarang" dirender sesuai PRD section 10 dalam keadaan nonaktif,
+  dengan keterangan bahwa form booking dibangun pada ROADMAP 3.5. Tombol ini
+  sengaja tidak ditautkan supaya tidak ada 404 baru di halaman yang baru saja
+  dirapikan.
+- Card katalog (ROADMAP 3.3) sekarang menampilkan tombol "Lihat Detail" yang
+  menuju halaman ini, memakai route Wayfinder sehingga path yang ditulis
+  selalu path yang terdaftar.
+- 15 feature test menutup akses tamu, seluruh field PRD section 10, produk
+  tanpa kategori/spesifikasi/ketentuan/foto, status ketersediaan, urutan
+  gallery, slug yang sama di dua unit, isolasi antar unit, produk nonaktif,
+  produk terhapus, dan admin yang tetap bisa membuka detail unit lain.
+
+Catatan dependency:
+
+- `pnpm dlx shadcn add carousel` juga menulis ulang
+  `resources/js/components/ui/button.tsx` ke versi registry terbaru, yang
+  mengimpor `cn` dari paket `"cn"` dan `Slot` dari paket `"radix-ui"`. Kedua
+  paket itu tidak ada di proyek ini, jadi `button.tsx` dikembalikan seperti
+  semula. Hanya import `cn` di `carousel.tsx` yang diarahkan ke
+  `@/lib/utils` agar sesuai konvensi repo.
 
 ### 3.5 Form Booking
 

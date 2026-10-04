@@ -55,6 +55,30 @@ export type CatalogPaginator = {
     per_page: number;
 };
 
+export type CatalogProductImage = {
+    url: string;
+    is_primary: boolean;
+};
+
+export type ProductDetail = {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+    /**
+     * Spesifikasi bebas bentuknya (kolom JSON), jadi nilai masih bisa
+     * berupa angka atau teks.
+     */
+    specification: Record<string, unknown>;
+    rental_terms: string | null;
+    price: number;
+    price_unit: string;
+    stock: number;
+    is_available: boolean;
+    category: { id: number; name: string; slug: string } | null;
+    images: CatalogProductImage[];
+};
+
 export type CatalogPageProps = {
     business: LandingBusiness & { booking_code_prefix: string };
     businesses: LandingBusiness[];
@@ -62,4 +86,10 @@ export type CatalogPageProps = {
     products: CatalogPaginator;
     filters: CatalogFilters;
     priceBounds: { min: number; max: number };
+};
+
+export type ProductDetailPageProps = {
+    business: LandingBusiness & { booking_code_prefix: string };
+    businesses: LandingBusiness[];
+    product: ProductDetail;
 };
