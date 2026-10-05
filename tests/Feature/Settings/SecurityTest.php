@@ -115,4 +115,24 @@ class SecurityTest extends TestCase
             ->assertSessionHasErrors('current_password')
             ->assertRedirect(route('security.edit'));
     }
+
+    public function test_password_validation_messages_are_in_indonesian()
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->from(route('security.edit'))
+            ->put(route('user-password.update'), [
+                'current_password' => 'password',
+                'password' => 'new-password',
+                'password_confirmation' => 'password-lain',
+            ]);
+
+        $response
+            ->assertSessionHasErrors([
+                'password' => 'Konfirmasi password tidak sama dengan password baru.',
+            ])
+            ->assertRedirect(route('security.edit'));
+    }
 }

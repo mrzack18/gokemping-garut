@@ -61,6 +61,26 @@ class ProfileUpdateTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
+    public function test_validation_messages_are_in_indonesian()
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->from(route('profile.edit'))
+            ->patch(route('profile.update'), [
+                'name' => '',
+                'email' => '',
+            ]);
+
+        $response
+            ->assertSessionHasErrors([
+                'name' => 'Nama wajib diisi.',
+                'email' => 'Email wajib diisi.',
+            ])
+            ->assertRedirect(route('profile.edit'));
+    }
+
     public function test_user_can_delete_their_account()
     {
         $user = User::factory()->create();

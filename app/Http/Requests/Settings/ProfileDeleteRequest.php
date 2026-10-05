@@ -21,4 +21,17 @@ class ProfileDeleteRequest extends FormRequest
             'password' => $this->currentPasswordRules(),
         ];
     }
+
+    /**
+     * Pesan validasi dalam bahasa Indonesia (ROADMAP 4.8).
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'password.required' => 'Password wajib diisi.',
+            'password.current_password' => 'Password tidak cocok.',
+        ];
+    }
 }

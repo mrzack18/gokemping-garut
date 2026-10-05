@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 2 berjalan — 4.1 s/d 4.7 selesai
+**Status:** Fase 2 selesai — siap lanjut Fase 3
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -1067,9 +1067,40 @@ Catatan implementasi 4.7:
 
 ### 4.8 Pengaturan Akun Admin
 
-- [ ] Ubah profil
-- [ ] Ubah password
-- [ ] Toggle light/dark mode
+- [x] Ubah profil
+- [x] Ubah password
+- [x] Toggle light/dark mode
+
+Catatan implementasi 4.8:
+
+- **Fungsi dasarnya sudah berdiri sejak Fase 0 lewat starter kit; 4.8
+  memverifikasi, melengkapi, dan menyelaraskannya dengan bahasa aplikasi.**
+  Halaman `settings/profile`, `settings/security`, dan `settings/appearance`
+  berada di balik middleware `auth` + `business` yang sama dengan dashboard,
+  jadi hanya admin yang tertaut ke unit bisnis yang bisa membukanya.
+- **Ubah profil mengubah nama dan email.** Mengganti email mengosongkan
+  `email_verified_at` karena alamat barunya belum diverifikasi, dan email
+  dijaga unik terhadap akun lain. Penghapusan akun ikut tersedia di halaman
+  yang sama dengan konfirmasi password, tetapi bukan bagian dari checklist
+  4.8 dan tidak diubah perilakunya.
+- **Ubah password mewajibkan password saat ini, memakai aturan kekuatan
+  password Fortify, dan dibatasi `throttle:6,1`.** Halaman keamanan juga
+  memuat pengaturan 2FA dan passkey bawaan starter kit; keduanya dibiarkan
+  berfungsi karena tidak mengganggu alur admin.
+- **Mode terang, gelap, dan sistem disimpan di browser lewat
+  `useAppearance`, bukan di server.** Tidak ada request yang perlu dikirim
+  saat admin berpindah tema, dan pilihan itu langsung dipakai di seluruh
+  halaman pada kunjungan berikutnya.
+- **Seluruh teks area pengaturan diterjemahkan ke bahasa Indonesia**, termasuk
+  label, placeholder, tombol, dialog hapus akun, badge 2FA/passkey, pesan
+  validasi profil dan password, serta toast sukses profil/password. Sebelum
+  4.8, bagian ini adalah satu-satunya permukaan admin yang masih berbahasa
+  Inggris dari starter kit, sehingga admin melihat campuran dua bahasa.
+- **Pengujian 4.8 fokus pada bagian yang dimiliki backend**: halaman profil,
+  keamanan, dan tampilan bisa dibuka admin, profil dan password benar-benar
+  berubah, password salah ditolak, dan pesan validasi tampil dalam bahasa
+  Indonesia. Perpindahan tema sendiri berjalan di browser, jadi yang diuji
+  adalah halaman dan route-nya.
 
 **Deliverable Fase 2:** Admin dapat menjalankan seluruh operasional secara mandiri.
 
