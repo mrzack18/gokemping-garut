@@ -270,7 +270,11 @@ export default function AdminBookingDetail({
 
                                     {payment.verified_by !== null ? (
                                         <DetailRow
-                                            label="Diverifikasi"
+                                            label={
+                                                payment.status === 'ditolak'
+                                                    ? 'Ditolak oleh'
+                                                    : 'Diverifikasi oleh'
+                                            }
                                             value={`${payment.verified_by} · ${
                                                 payment.verified_at_label ?? '-'
                                             }`}

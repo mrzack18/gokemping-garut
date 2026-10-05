@@ -442,3 +442,66 @@ export type AdminCustomerShowPageProps = {
     customer: AdminCustomerDetail;
     bookings: AdminCustomerBookingRow[];
 };
+
+/**
+ * Status pembayaran. Nilainya sama persis dengan enum `PaymentStatus` di
+ * backend, jadi filter dan tombol aksi di frontend memakai sumber yang sama
+ * dengan aturan transisi.
+ */
+export type PaymentStatusValue =
+    | 'belum_dibayar'
+    | 'menunggu_verifikasi'
+    | 'lunas'
+    | 'ditolak';
+
+/**
+ * Baris daftar pembayaran admin (PRD section 26, ROADMAP 4.6).
+ *
+ * `can_verify` dan `can_reject` dihitung server dari aturan transisi, jadi
+ * halaman ini tidak pernah menawarkan keputusan yang pasti ditolak backend.
+ * Cash yang belum dibayar bisa langsung `can_verify`, sedangkan `can_reject`
+ * hanya true untuk pembayaran yang sedang menunggu verifikasi.
+ *
+ * `verified_by` dan `verified_at_label` terisi untuk keputusan apa pun, lunas
+ * maupun ditolak, karena keduanya sama-sama keputusan admin yang perlu dicatat.
+ */
+export type AdminPaymentRow = {
+    id: number;
+    booking_code: string;
+    customer_name: string;
+    method: string;
+    method_label: string;
+    amount: number;
+    amount_label: string;
+    proof_url: string | null;
+    status: PaymentStatusValue;
+    status_label: string;
+    rejection_reason: string | null;
+    can_verify: boolean;
+    can_reject: boolean;
+    created_at_label: string;
+    verified_at_label: string | null;
+    verified_by: string | null;
+};
+
+export type AdminPaymentFilters = {
+    status: PaymentStatusValue | null;
+    method: string | null;
+};
+
+export type AdminPaymentPaginator = {
+    data: AdminPaymentRow[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+};
+
+export type AdminPaymentsPageProps = {
+    payments: AdminPaymentPaginator;
+    filters: AdminPaymentFilters;
+    statusOptions: { value: PaymentStatusValue; label: string }[];
+    methodOptions: { value: string; label: string }[];
+};

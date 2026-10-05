@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use Illuminate\Support\Facades\Route;
@@ -18,8 +19,7 @@ use Illuminate\Support\Facades\Route;
 | mengaksesnya. Query di dalamnya otomatis ter-scope oleh BusinessScope
 | berdasarkan business_id user (BR-05).
 |
-| Modul penyewa, pembayaran, laporan, dan pengaturan akan ditambahkan pada
-| fase berikutnya.
+| Modul laporan dan pengaturan akan ditambahkan pada fase berikutnya.
 |
 */
 
@@ -78,4 +78,15 @@ Route::middleware(['auth', 'business'])
          */
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+
+        /*
+         * Pembayaran memakai id numerik karena tidak punya kode alami seperti
+         * booking. Route binding membaca `payments` lewat `BusinessScope`, jadi
+         * pembayaran unit lain berhenti sebagai 404.
+         */
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::patch('payments/{payment}/verify', [PaymentController::class, 'verify'])
+            ->name('payments.verify');
+        Route::patch('payments/{payment}/reject', [PaymentController::class, 'reject'])
+            ->name('payments.reject');
     });

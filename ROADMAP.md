@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 2 berjalan — 4.1 s/d 4.5 selesai
+**Status:** Fase 2 berjalan — 4.1 s/d 4.6 selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -969,13 +969,53 @@ Catatan implementasi 4.5:
 
 ### 4.6 Manajemen Pembayaran
 
-- [ ] Tabel: metode, nominal, bukti, status
-- [ ] Filter status & metode
-- [ ] Lihat bukti pembayaran (modal preview)
-- [ ] Verifikasi pembayaran → Lunas
-- [ ] Tolak pembayaran (dengan alasan)
-- [ ] Catat `verified_at` dan `verified_by`
-- [ ] Cash: ubah langsung menjadi Lunas
+- [x] Tabel: metode, nominal, bukti, status
+- [x] Filter status & metode
+- [x] Lihat bukti pembayaran (modal preview)
+- [x] Verifikasi pembayaran → Lunas
+- [x] Tolak pembayaran (dengan alasan)
+- [x] Catat `verified_at` dan `verified_by`
+- [x] Cash: ubah langsung menjadi Lunas
+
+Catatan implementasi 4.6:
+
+- **Keputusan pembayaran lewat `PaymentVerificationService`, bukan langsung
+  mengubah kolom.** Satu keputusan punya dua efek yang harus selalu bersama:
+  `payments.status` dan salinan `bookings.payment_status` yang dipakai daftar
+  booking serta dashboard. Keduanya ditulis dalam satu transaksi dengan
+  `lockForUpdate` pada baris pembayaran, dan aturan perpindahannya dipegang
+  `PaymentStatus::canTransitionTo()` yang sama dengan form request.
+- **Aturan transisinya mengikuti PRD section 26.** Cash berjalan
+  `belum_dibayar → lunas`, sedangkan QRIS dan transfer lewat
+  `menunggu_verifikasi` sebelum `lunas` atau `ditolak`. Karena itu cash yang
+  belum dibayar punya tombol verifikasi, tetapi tidak punya tombol tolak;
+  pembayaran yang sudah `lunas` atau `ditolak` tidak bisa diapa-apakan lagi dan
+  ditandai "Final" di tabel.
+- **Tombol yang tampil dihitung server lewat `can_verify` dan `can_reject`.**
+  Frontend tidak menyalin aturan transisi ke TypeScript, jadi tombol yang
+  muncul tidak pernah menawarkan keputusan yang pasti ditolak backend.
+- **`verified_at` dan `verified_by` mencatat keputusan, bukan hanya
+  persetujuan.** Keduanya terisi baik saat pembayaran dilunasi maupun ditolak,
+  karena siapa yang memutuskan dan kapan itu bagian dari jejak audit. Detail
+  booking menyesuaikan labelnya: "Diverifikasi oleh" untuk lunas dan "Ditolak
+  oleh" untuk ditolak. Kolom `rejection_reason` dikosongkan saat verifikasi
+  supaya alasan lama tidak tertinggal di pembayaran yang sudah lunas.
+- **Penolakan wajib memakai alasan (maks 255 karakter, mengikuti lebar kolom).**
+  Status `ditolak` tidak bisa ditindaklanjuti tanpa alasan: penyewa tidak tahu
+  apakah harus mengunggah ulang bukti, memperbaiki nominal, atau menghubungi
+  admin. Alasan yang sama juga tampil di detail booking.
+- **Bukti pembayaran dibuka di modal tanpa memindahkan halaman.** Cash yang
+  tidak punya berkas tetap bisa melihat modalnya, dengan keterangan bahwa cash
+  memang tidak memerlukan bukti unggahan. Berkas aslinya tetap bisa dibuka di
+  tab lain lewat tautan pada gambar.
+- **Filter status dan metode membaca query string, dan nilai yang tidak valid
+  diabaikan.** Daftar pembayaran adalah halaman kerja, bukan form. Pembayaran
+  terbaru tampil lebih dulu karena antrean verifikasi datang dari sana, dan
+  kode booking di tiap baris tertaut ke detail booking-nya.
+- Setelah keputusan disimpan, admin dikembalikan ke `back()` supaya filter
+  yang sedang aktif tidak hilang. Menu "Pembayaran" ditambahkan ke sidebar
+  admin, dan `resources/js/routes/admin/payments` di-generate ulang oleh
+  Wayfinder.
 
 ### 4.7 Pengaturan Pembayaran
 

@@ -5,6 +5,7 @@ import {
     LayoutGrid,
     Package,
     Users,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -23,11 +24,12 @@ import { dashboard } from '@/routes/admin';
 import bookingRoutes from '@/routes/admin/bookings';
 import categoryRoutes from '@/routes/admin/categories';
 import customerRoutes from '@/routes/admin/customers';
+import paymentRoutes from '@/routes/admin/payments';
 import productRoutes from '@/routes/admin/products';
 import type { NavItem } from '@/types';
 
-// Menu modul lain (pembayaran, laporan, pengaturan) sengaja belum ditambahkan
-// dan akan menyusul sesuai fase pengerjaan pada ROADMAP.md.
+// Menu modul lain (laporan, pengaturan) sengaja belum ditambahkan dan akan
+// menyusul sesuai fase pengerjaan pada ROADMAP.md.
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -53,6 +55,11 @@ const mainNavItems: NavItem[] = [
         title: 'Penyewa',
         href: customerRoutes.index(),
         icon: Users,
+    },
+    {
+        title: 'Pembayaran',
+        href: paymentRoutes.index(),
+        icon: Wallet,
     },
 ];
 
