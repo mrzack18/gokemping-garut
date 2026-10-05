@@ -744,15 +744,99 @@ Catatan implementasi 4.2:
 
 ### 4.3 Manajemen Produk
 
-- [ ] Tabel produk: foto, nama, kategori, harga, stok, status
-- [ ] Search + filter kategori + filter status
-- [ ] Form tambah produk
-- [ ] Form edit produk
-- [ ] Upload multiple foto + gallery
-- [ ] Kompresi gambar (Intervention)
-- [ ] Hapus / nonaktifkan produk (soft delete)
-- [ ] Atur harga, stok, deskripsi, spesifikasi, ketentuan sewa
-- [ ] Produk nonaktif tidak muncul di katalog publik
+- [x] Tabel produk: foto, nama, kategori, harga, stok, status
+- [x] Search + filter kategori + filter status
+- [x] Form tambah produk
+- [x] Form edit produk
+- [x] Upload multiple foto + gallery
+- [x] Kompresi gambar (Intervention)
+- [x] Hapus / nonaktifkan produk (soft delete)
+- [x] Atur harga, stok, deskripsi, spesifikasi, ketentuan sewa
+- [x] Produk nonaktif tidak muncul di katalog publik
+
+Catatan implementasi 4.3:
+
+- **Slug produk dibuat dari nama, tetapi tidak bisa diubah lewat form edit.**
+  `Product::generateSlug()` membuat slug unik di dalam satu unit bisnis, dan
+  `UpdateProductRequest` mempertahankan slug lama. Slug ada di URL katalog dan
+  halaman booking yang sudah dibagikan ke pelanggan, jadi nama boleh berubah
+  tanpa memutus tautan.
+- **Slug terlarang untuk path publik dapat akhiran angka, bukan nama produknya
+  ditolak.** `booking`, `biodata`, `review`, `payment`, dan `success` sudah
+  dipakai route halaman booking (lihat catatan ROADMAP 3.3), jadi nama produk
+  "Success" tetap boleh dipakai hanya URL-nya menjadi `success-2`. Menolak nama
+  produk karena nama route akan terasa seperti aplikasi yang melarang istilah yang
+  sedang dipakai pelanggan. Slug yang tidak menghasilkan huruf latin memakai
+  `produk` sebagai dasarnya, dan penomoran ikut memakai basis itu, jadi URL seperti
+  `-2` tidak pernah muncul.
+- **Kategori wajib saat menambah, boleh dikosongkan saat edit.** Katalog
+  mengelompokkan dan memfilter produk berdasarkan kategori, jadi produk tanpa
+  kategori tidak muncul di filter mana pun. `products.category_id` tetap
+  nullable supaya data lama tidak ikut rusak dan produk yang sudah tervalidasi
+  bisa dikembalikan ke kondisi tanpa kategori. Validasi memakai `exists` dengan
+  batas `business_id`, bukan `exists` polos: `products.category_id` hanya punya
+  batasan FK di database, jadi tanpa batas eksplisit kategori milik unit lain
+  bisa lolos.
+- **Spesifikasi dikirim sebagai baris label-isi, disimpan sebagai objek JSON.**
+  Baris yang kosong tidak ikut disimpan, baris setengah terisi ditolak, dan label
+  ganda ditolak karena dua baris dengan label sama akan saling menimpa di kolom
+  JSON dan satu baris hilang tanpa ada yang menyadarinya. Urutan baris mengikuti
+  urutan key di JSON: MySQL menormalkan urutan itu, jadi urutannya bisa berbeda
+  dari urutan saat admin mengetik, tapi urutan yang dikirim balik selalu sama
+  dengan yang dimuat sehingga baris tidak saling bertukar tempat setiap kali
+  produk disimpan ulang.
+- **Foto produk dikompresi ulang, berkas asli tidak disimpan.** Semua foto ditulis
+  sebagai WebP dengan sisi terpanjang 1200 piksel dan kualitas 80 lewat
+  Intervention Image. Alasannya dua: foto dari kamera HP bisa 5 MB sedangkan kartu
+  katalog memuat belasan foto sekaligus, dan foto HP membawa EXIF berisi lokasi
+  pengambilan yang ikut hilang saat gambar di-encode ulang. Nama berkas memakai
+  UUID seperti bukti pembayaran, jadi nama asli dari perangkat admin tidak pernah
+  menyentuh disk.
+- **Batas foto: 8 per produk, 5 MB per berkas, hanya JPG/PNG/WebP.** Batas mime
+  dan ukuran mengikuti BR-08 supaya aturannya sama dengan bukti pembayaran. Sisa
+  kapasitas dihitung server pada `StoreProductImagesRequest`, jadi admin yang
+  galerinya penuh mendapat error validasi sebelum berkas diproses, bukan
+  kegagalan di tengah unggahan. Sisa kapasitas juga dikirim ke halaman edit
+  supaya tombol unggah langsung dimatikan.
+- **Galeri punya form sendiri, terpisah dari form produk.** Unggah foto lewat
+  form produk akan mengirim ulang seluruh isian yang belum disimpan. Foto boleh
+  ikut dipilih di form tambah, dan diproses setelah produknya tersimpan, karena
+  nama folder fotonya butuh `products/{id}/{uuid}.webp`.
+- **Foto utama selalu ada selama produk punya foto.** Foto pertama otomatis jadi
+  foto utama, menghapus foto utama langsung mengangkat foto berikutnya, dan
+  menukar foto utama lain memakai satu transaksi supaya tidak pernah terlihat
+  dua foto utama sekaligus.
+- **Baris foto dan berkasnya dibatalkan bersama kalau unggahan gagal di tengah.**
+  Kalau barisnya dibiarkan tapi berkasnya dihapus, katalog akan menampilkan foto
+  yang isinya 404 tanpa ada baris yang bisa dicari untuk membersihkannya.
+- **`product_images` tidak punya `business_id`, jadi foto hanya dijangkau lewat
+  produknya.** Setiap aksi foto memuat `$product->images()` yang sudah ter-scope
+  `BusinessScope`, lalu memeriksa keanggotaannya. Foto milik produk lain pada URL
+  yang benar berakhir 404, termasuk saat produknya milik unit yang sama.
+- **Hapus produk memakai soft delete, dan produknya ikut dinonaktifkan.**
+  `booking_items` menunjuk produk, dan nama serta harga produk sudah disalin ke
+  detail booking saat transaksi dibuat (BR-09), jadi produk yang dihapus tidak
+  merusak riwayat yang sudah lewat. Toast menyebut jumlah booking yang memakai
+  produk itu. Foto di disk juga tidak dihapus supaya produknya masih bisa
+  dipulihkan tanpa mengunggah ulang; `products.deleted_at` sudah menyediakan
+  kolomnya, dan pemulihan belum ada di halaman admin.
+- **Produk nonaktif ikut tampil di daftar admin.** Katalog publik menyembunyikannya
+  lewat `scopeActive()`, jadi hide dari daftar akan membuat produk yang sedang
+  tidak disewakan jadi mustahil dinyalakan lagi tanpa mencari lewat halaman lain.
+  Sebaliknya produk yang sudah di-soft-delete tidak ikut tampil, karena memang
+  sudah dihapus dari tempat kerja admin.
+- **Checkbox "tampilkan di katalog" mengirim hidden `is_active=0`.** Checkbox HTML
+  yang tidak dicentang tidak mengirim apa pun, jadi backend akan membaca statusnya
+  tidak berubah dan admin tidak akan bisa menonaktifkan produk dari form edit.
+  Hidden di depan checkbox membuat `is_active` selalu terkirim, dan nilai terakhir
+  yang dibaca PHP tetap nilai checkbox kalau dicentang. Backend juga tidak
+  mengarang nilai: request yang memang tidak mengirim `is_active` mempertahankan
+  status yang sudah ada.
+- **Filter membaca query string, dan nilai yang tidak valid diabaikan.** Daftar
+  adalah halaman kerja, bukan form: admin tidak boleh terkunci karena URL yang
+  tersalin tidak lengkap.
+- Menu "Produk" ditambahkan ke sidebar admin, dan `resources/js/routes/admin/products`
+  beserta `images` di-generate ulang oleh Wayfinder.
 
 ### 4.4 Manajemen Booking
 

@@ -73,3 +73,121 @@ export type AdminCategory = {
 export type AdminCategoriesPageProps = {
     categories: AdminCategory[];
 };
+
+/**
+ * Opsi kategori untuk form dan filter produk (PRD section 23, ROADMAP 4.3).
+ *
+ * `products_count` diikutkan supaya form bisa memberi tahu admin berapa produk
+ * yang ikut bergerak kalau kategorinya diganti.
+ */
+export type AdminCategoryOption = {
+    id: number;
+    name: string;
+    products_count: number;
+};
+
+/**
+ * Satuan harga sewa. Nilainya berasal dari daftar yang sama dengan validasi
+ * backend (`StoreProductRequest::PRICE_UNITS`) supaya pilihan di form dan
+ * nilai yang disimpan tidak mungkin berbeda.
+ */
+export type ProductPriceUnit = 'hari' | 'jam' | 'paket' | 'event';
+
+/**
+ * Baris daftar produk admin.
+ *
+ * `price` dipakai form edit sebagai angka, `price_label` dipakai tabel sebagai
+ * teks siap tampil. Keduanya dikirim supaya daftar dan form tidak bisa
+ * menampilkan angka yang berbeda.
+ *
+ * `is_available` memakai definisi yang sama dengan katalog: stok lebih dari nol.
+ * Admin perlu tahu status yang dilihat pengunjung, bukan hanya angka stok.
+ */
+export type AdminProductRow = {
+    id: number;
+    name: string;
+    slug: string;
+    category: string | null;
+    price: number;
+    price_label: string;
+    price_unit: string;
+    stock: number;
+    is_active: boolean;
+    is_available: boolean;
+    photo: string | null;
+    images_count: number;
+    updated_at_label: string;
+};
+
+export type AdminProductFilters = {
+    q: string;
+    category: number | null;
+    status: 'semua' | 'aktif' | 'nonaktif';
+};
+
+export type AdminProductPaginatorLink = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+export type AdminProductPaginator = {
+    data: AdminProductRow[];
+    links: AdminProductPaginatorLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+};
+
+export type AdminProductsPageProps = {
+    products: AdminProductPaginator;
+    categories: AdminCategoryOption[];
+    filters: AdminProductFilters;
+};
+
+export type AdminProductPhoto = {
+    id: number;
+    url: string;
+    is_primary: boolean;
+};
+
+/**
+ * Produk pada halaman edit.
+ *
+ * Spesifikasi dikirim sebagai baris label-isi, bukan objek, karena form
+ * menampilkan baris yang bisa ditambah dan dihapus admin. Baris kosong yang
+ * tidak ikut dikirim tidak akan pernah sampai ke backend.
+ */
+export type AdminProductDetail = {
+    id: number;
+    name: string;
+    slug: string;
+    category_id: number | null;
+    description: string | null;
+    specification: { key: string; value: string }[];
+    rental_terms: string | null;
+    price: number;
+    price_unit: string;
+    stock: number;
+    is_active: boolean;
+    photos: AdminProductPhoto[];
+    bookingCount: number;
+};
+
+export type AdminProductFormPageProps = {
+    categories: AdminCategoryOption[];
+    priceUnits: ProductPriceUnit[];
+    maxImages: number;
+};
+
+/**
+ * Halaman edit menambah sisa kapasitas foto. Halaman tambah tidak punya sisa
+ * kapasitas karena produknya belum ada, jadi tidak ada foto yang bisa terpakai.
+ */
+export type AdminProductEditPageProps = AdminProductFormPageProps & {
+    product: AdminProductDetail;
+    remainingImages: number;
+};

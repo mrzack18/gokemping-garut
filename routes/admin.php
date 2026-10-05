@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductImageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,8 +16,8 @@ use Illuminate\Support\Facades\Route;
 | mengaksesnya. Query di dalamnya otomatis ter-scope oleh BusinessScope
 | berdasarkan business_id user (BR-05).
 |
-| Modul produk, booking, penyewa, pembayaran, laporan, dan pengaturan akan
-| ditambahkan pada fase berikutnya.
+| Modul booking, penyewa, pembayaran, laporan, dan pengaturan akan ditambahkan
+| pada fase berikutnya.
 |
 */
 
@@ -31,4 +33,26 @@ Route::middleware(['auth', 'business'])
 
         Route::patch('categories/{category}/status', [CategoryController::class, 'updateStatus'])
             ->name('categories.status');
+
+        Route::resource('products', ProductController::class)
+            ->parameters(['products' => 'product'])
+            ->except(['show']);
+
+        Route::patch('products/{product}/status', [ProductController::class, 'updateStatus'])
+            ->name('products.status');
+
+        /*
+         * Foto produk memakai sub-resource dari produk, bukan resource terpisah.
+         * `product_images` tidak punya `business_id`, jadi foto hanya boleh
+         * dijangkau lewat produknya: setiap aksi memuat `$product->images()`
+         * (yang sudah ter-scope `BusinessScope`) lalu memeriksa keanggotaannya.
+         */
+        Route::post('products/{product}/images', [ProductController::class, 'storeImages'])
+            ->name('products.images.store');
+
+        Route::patch('products/{product}/images/{image}', [ProductImageController::class, 'update'])
+            ->name('products.images.update');
+
+        Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])
+            ->name('products.images.destroy');
     });
