@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 3 berjalan — 5.1 s/d 5.2 selesai
+**Status:** Fase 3 berjalan — 5.1 s/d 5.3 selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -1199,10 +1199,35 @@ Catatan implementasi 5.2:
 
 ### 5.3 Statistik
 
-- [ ] Grafik booking per bulan
-- [ ] Grafik pendapatan per bulan
-- [ ] Produk terlaris
-- [ ] Metode pembayaran paling banyak dipakai
+- [x] Grafik booking per bulan
+- [x] Grafik pendapatan per bulan
+- [x] Produk terlaris
+- [x] Metode pembayaran paling banyak dipakai
+
+Catatan implementasi 5.3:
+
+- **Satu tahun penuh, bukan periode bebas.** Berbeda dari laporan yang
+  mengikuti rentang tanggal apa pun, statistik selalu memakai satu tahun
+  supaya semua bagian halaman menjawab periode yang sama: tren bulanan,
+  produk terlaris, dan metode paling banyak dipakai pada tahun itu. Pemilih
+  tahun menampilkan tahun yang punya data ditambah tahun berjalan, dan nilai
+  yang tidak valid jatuh ke tahun berjalan alih-alih membalas 422.
+- **Grafik booking per bulan baru; grafik pendapatan dan semua peringkat
+  memakai `ReportService` untuk rentang setahun.** Angka di statistik karena
+  itu tidak mungkin berbeda dari laporan periode 1 Januari–31 Desember tahun
+  yang sama. Dua belas titik selalu dikirim, termasuk bulan tanpa data,
+  supaya batang kosong terbaca sebagai "belum ada" dan bukan bulan yang
+  hilang.
+- **Rekap metode diurutkan dari yang paling banyak dipakai**, dan itu yang
+  membedakannya dari rekap di laporan yang urutannya tetap cash–QRIS–transfer.
+  Tiga metode selalu tampil walau transaksinya nol, dengan penanda "Terbanyak"
+  pada peringkat pertama yang punya transaksi.
+- **`bar-chart.tsx` menggantikan `revenue-chart.tsx`.** Bentuk titik grafik
+  diseragamkan menjadi `value`/`value_label`, jadi satu komponen yang sama
+  dipakai untuk grafik booking (jumlah) dan pendapatan (rupiah) di laporan
+  maupun statistik. Tidak ada library chart baru.
+- Menu "Statistik" ditambahkan ke sidebar admin, dan
+  `resources/js/routes/admin/statistics` di-generate ulang oleh Wayfinder.
 
 ### 5.4 Content Management
 

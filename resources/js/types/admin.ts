@@ -602,3 +602,35 @@ export type AdminReportsPageProps = {
     filters: AdminReportFilters;
     report: AdminReport;
 };
+
+/**
+ * Statistik tahunan (ROADMAP 5.3).
+ *
+ * Dua grafik di halaman ini memakai bentuk titik yang sama (`value` dan
+ * `value_label`), jadi satu komponen grafik bisa dipakai untuk jumlah booking
+ * maupun nominal pendapatan.
+ */
+export type AdminStatisticChartPoint = {
+    key: string;
+    label: string;
+    full_label: string;
+    value: number;
+    value_label: string;
+};
+
+export type AdminStatisticRevenueChart = {
+    points: AdminStatisticChartPoint[];
+    total: number;
+    total_label: string;
+};
+
+export type AdminStatisticsPageProps = {
+    year: number;
+    years: number[];
+    booking_chart: {
+        points: AdminStatisticChartPoint[];
+    };
+    revenue_chart: AdminStatisticRevenueChart;
+    top_products: AdminReportTopProduct[];
+    payment_methods: AdminReportPaymentMethod[];
+};

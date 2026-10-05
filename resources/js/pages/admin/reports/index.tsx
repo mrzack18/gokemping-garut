@@ -13,7 +13,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
-import RevenueChart from '@/components/admin/revenue-chart';
+import BarChart from '@/components/admin/bar-chart';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -257,10 +257,18 @@ export default function AdminReports({
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <RevenueChart
-                                points={report.revenue_chart.points}
-                                granularity={report.revenue_chart.granularity}
-                                totalLabel={report.revenue_chart.total_label}
+                            <BarChart
+                                points={report.revenue_chart.points.map(
+                                    (point) => ({
+                                        key: point.key,
+                                        label: point.label,
+                                        full_label: point.full_label,
+                                        value: point.amount,
+                                        value_label: point.amount_label,
+                                    }),
+                                )}
+                                tooltipPrefix="Rp "
+                                summary={`Total pendapatan Rp ${report.revenue_chart.total_label} pada periode ini, digambar per ${report.revenue_chart.granularity}.`}
                             />
                         </CardContent>
                     </Card>

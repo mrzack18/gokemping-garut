@@ -1,42 +1,42 @@
 import { motion } from 'motion/react';
-import type { AdminReportRevenuePoint } from '@/types';
+import type { AdminStatisticChartPoint } from '@/types';
 
 /**
- * Grafik batang pendapatan laporan (ROADMAP 5.1).
+ * Grafik batang generik untuk laporan dan statistik (ROADMAP 5.1 & 5.3).
  *
- * Sama seperti grafik dashboard, dibuat dengan elemen biasa karena
- * kebutuhannya hanya batang sederhana dan titiknya sudah lengkap dari server,
- * termasuk periode tanpa pendapatan. Tinggi batang memakai rasio terhadap
- * titik tertinggi, sedangkan nominalnya dibaca lewat tooltip supaya label
- * angka tidak saling bertabrakan saat titiknya banyak.
+ * Dibuat dengan elemen biasa, bukan library chart, karena kebutuhannya hanya
+ * batang sederhana. Titik data selalu lengkap dari server, termasuk periode
+ * tanpa nilai, supaya batang kosong terlihat sebagai "tidak ada data" dan
+ * bukan periode yang hilang. Nominal dibaca lewat tooltip supaya label angka
+ * tidak saling bertabrakan saat titiknya banyak.
  */
-export default function RevenueChart({
+export default function BarChart({
     points,
-    granularity,
-    totalLabel,
+    summary,
+    tooltipPrefix = '',
 }: {
-    points: AdminReportRevenuePoint[];
-    granularity: 'harian' | 'bulanan';
-    totalLabel: string;
+    points: AdminStatisticChartPoint[];
+    summary: string;
+    tooltipPrefix?: string;
 }) {
-    const max = Math.max(...points.map((point) => point.amount), 1);
+    const max = Math.max(...points.map((point) => point.value), 1);
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex h-44 items-end gap-1">
                 {points.map((point, index) => {
                     const height =
-                        point.amount === 0
+                        point.value === 0
                             ? 2
                             : Math.max(
                                   10,
-                                  Math.round((point.amount / max) * 100),
+                                  Math.round((point.value / max) * 100),
                               );
 
                     return (
                         <div
                             key={point.key}
-                            className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                            className="flex h-full flex-1 flex-col items-center justify-end"
                         >
                             <motion.div
                                 initial={{ height: 0 }}
@@ -47,11 +47,11 @@ export default function RevenueChart({
                                     ease: 'easeOut',
                                 }}
                                 className={
-                                    point.amount === 0
+                                    point.value === 0
                                         ? 'w-full rounded-t-sm bg-muted'
                                         : 'w-full rounded-t-sm bg-primary'
                                 }
-                                title={`${point.full_label}: Rp ${point.amount_label}`}
+                                title={`${point.full_label}: ${tooltipPrefix}${point.value_label}`}
                             />
                         </div>
                     );
@@ -76,10 +76,7 @@ export default function RevenueChart({
                 </div>
             )}
 
-            <p className="text-xs text-muted-foreground">
-                Total pendapatan Rp {totalLabel} pada periode ini, digambar per{' '}
-                {granularity}.
-            </p>
+            <p className="text-xs text-muted-foreground">{summary}</p>
         </div>
     );
 }

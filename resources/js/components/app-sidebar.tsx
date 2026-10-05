@@ -6,6 +6,7 @@ import {
     LayoutGrid,
     Package,
     Settings2,
+    TrendingUp,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ import paymentRoutes from '@/routes/admin/payments';
 import paymentSettingRoutes from '@/routes/admin/payment-settings';
 import productRoutes from '@/routes/admin/products';
 import reportRoutes from '@/routes/admin/reports';
+import statisticRoutes from '@/routes/admin/statistics';
 import type { NavItem } from '@/types';
 
 // Menu Content Management (ROADMAP 5.4) belum ditambahkan dan akan menyusul
@@ -74,6 +76,11 @@ const mainNavItems: NavItem[] = [
         title: 'Laporan',
         href: reportRoutes.index(),
         icon: BarChart3,
+    },
+    {
+        title: 'Statistik',
+        href: statisticRoutes.index(),
+        icon: TrendingUp,
     },
 ];
 

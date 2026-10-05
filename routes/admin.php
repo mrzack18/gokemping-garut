@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\StatisticsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -111,6 +112,13 @@ Route::middleware(['auth', 'business'])
          * tautan berisi periode tertentu bisa dibagikan apa adanya.
          */
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+        /*
+         * Statistik memakai satu tahun penuh sebagai periodenya, dibaca dari
+         * query string supaya tahun yang sedang dilihat bisa dibagikan.
+         */
+        Route::get('statistics', [StatisticsController::class, 'index'])
+            ->name('statistics.index');
 
         /*
          * Ekspor memakai filter yang sama dengan halamannya, dibaca dari query
