@@ -505,3 +505,29 @@ export type AdminPaymentsPageProps = {
     statusOptions: { value: PaymentStatusValue; label: string }[];
     methodOptions: { value: string; label: string }[];
 };
+
+/**
+ * Konfigurasi satu metode pembayaran (PRD section 27, ROADMAP 4.7).
+ *
+ * `is_active` adalah pilihan admin, sedangkan `is_ready` dihitung server dari
+ * kelengkapan datanya: QRIS butuh gambar, transfer butuh bank dan nomor
+ * rekening, cash selalu siap. Metode bisa aktif tetapi belum siap, dan justru
+ * kondisi itulah yang perlu diperingatkan ke admin.
+ */
+export type AdminPaymentMethodSetting = {
+    type: string;
+    label: string;
+    requires_proof: boolean;
+    is_active: boolean;
+    is_ready: boolean;
+    merchant_name: string | null;
+    qris_image_url: string | null;
+    bank_name: string | null;
+    account_number: string | null;
+    account_name: string | null;
+    instructions: string | null;
+};
+
+export type AdminPaymentSettingsPageProps = {
+    methods: AdminPaymentMethodSetting[];
+};

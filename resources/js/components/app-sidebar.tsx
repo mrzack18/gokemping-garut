@@ -4,6 +4,7 @@ import {
     FolderTree,
     LayoutGrid,
     Package,
+    Settings2,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -25,10 +26,11 @@ import bookingRoutes from '@/routes/admin/bookings';
 import categoryRoutes from '@/routes/admin/categories';
 import customerRoutes from '@/routes/admin/customers';
 import paymentRoutes from '@/routes/admin/payments';
+import paymentSettingRoutes from '@/routes/admin/payment-settings';
 import productRoutes from '@/routes/admin/products';
 import type { NavItem } from '@/types';
 
-// Menu modul lain (laporan, pengaturan) sengaja belum ditambahkan dan akan
+// Menu modul lain (laporan, pengaturan akun) sengaja belum ditambahkan dan akan
 // menyusul sesuai fase pengerjaan pada ROADMAP.md.
 const mainNavItems: NavItem[] = [
     {
@@ -60,6 +62,11 @@ const mainNavItems: NavItem[] = [
         title: 'Pembayaran',
         href: paymentRoutes.index(),
         icon: Wallet,
+    },
+    {
+        title: 'Pengaturan Pembayaran',
+        href: paymentSettingRoutes.index(),
+        icon: Settings2,
     },
 ];
 

@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 2 berjalan — 4.1 s/d 4.6 selesai
+**Status:** Fase 2 berjalan — 4.1 s/d 4.7 selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -1019,12 +1019,51 @@ Catatan implementasi 4.6:
 
 ### 4.7 Pengaturan Pembayaran
 
-- [ ] Upload QRIS merchant
-- [ ] Nama merchant
-- [ ] Data bank: nama bank, nomor rekening, pemilik
-- [ ] Keterangan pembayaran cash
-- [ ] Aktif/nonaktifkan tiap metode
-- [ ] Simpan per `business_id`
+- [x] Upload QRIS merchant
+- [x] Nama merchant
+- [x] Data bank: nama bank, nomor rekening, pemilik
+- [x] Keterangan pembayaran cash
+- [x] Aktif/nonaktifkan tiap metode
+- [x] Simpan per `business_id`
+
+Catatan implementasi 4.7:
+
+- **Satu kartu, satu form, satu endpoint per metode.** Menyimpan keterangan cash
+  tidak mengirim ulang dan tidak memvalidasi field rekening bank. Data yang
+  salah di satu kartu tidak boleh menghalangi admin memperbaiki kartu lain, dan
+  endpoint-nya dibatasi `whereIn` dari `PaymentMethodType`, jadi jenis metode
+  yang tidak dikenal berakhir 404, bukan membuat baris baru.
+- **Baris disimpan lewat `business_id` admin yang login, tidak pernah dari
+  request.** `firstOrNew` menyiapkan baris yang belum ada sekaligus mengisi
+  `business_id` dan `is_active` awal, sehingga `unique(business_id, type)`
+  tetap terjaga dan tidak ada field yang bisa memindahkan konfigurasi ke unit
+  lain. Halaman selalu menampilkan ketiga metode, termasuk yang belum
+  dikonfigurasi, karena dari halaman itulah konfigurasi dimulai.
+- **Gambar QRIS disimpan apa adanya, bukan dikompresi ulang seperti foto
+  produk.** Kode QR harus tetap tajam saat dipindai dari layar, dan berkasnya
+  sudah kecil karena berasal dari aplikasi merchant. Berkas ditulis ke
+  `qris/{business_id}/{uuid}`, jadi nama asli dari perangkat admin tidak pernah
+  menyentuh disk dan gambar tiap unit terpisah. Urutan penyimpanannya: berkas
+  baru ditulis dulu, baris disimpan, baru gambar lama dihapus; kalau penyimpanan
+  baris gagal, berkas baru ikut dihapus supaya tidak ada berkas yatim.
+- **Aktif dan siap adalah dua hal berbeda.** `is_active` pilihan admin,
+  sedangkan `is_ready` dihitung dari kelengkapan data lewat
+  `PaymentMethods::isReady()`: QRIS butuh gambar, transfer butuh nama bank dan
+  nomor rekening, cash selalu siap. Metode yang aktif tetapi belum lengkap
+  diberi badge "Belum lengkap", bukan diblokir saat disimpan, karena halaman
+  pembayaran publik memang sudah menanganinya dengan `is_ready: false` dan
+  admin perlu melihat peringatan di tempat ia bisa memperbaikinya.
+- **Validasi gambar mengikuti BR-08**: JPG, PNG, atau WebP, maksimal 5 MB. Nama
+  kolom dan pesan errornya disebut per field supaya admin tidak menebak bagian
+  mana yang salah.
+- **Perubahan langsung terbaca halaman pembayaran publik.** Tidak ada langkah
+  publikasi terpisah: halaman pengaturan menulis baris yang sama dengan yang
+  dibaca `PaymentMethods::activeFor()`, jadi mematikan metode menghilangkannya
+  dari pilihan penyewa pada request berikutnya. Perilaku itu diuji langsung
+  agar pengaturan dan alur booking tidak bisa berbeda diam-diam.
+- Menu "Pengaturan Pembayaran" ditambahkan ke sidebar admin, dan halaman
+  Pembayaran punya pintasan "Atur Metode". `resources/js/routes/admin/payment-settings`
+  di-generate ulang oleh Wayfinder.
 
 ### 4.8 Pengaturan Akun Admin
 

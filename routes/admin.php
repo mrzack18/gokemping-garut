@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\PaymentMethodType;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use Illuminate\Support\Facades\Route;
@@ -89,4 +91,16 @@ Route::middleware(['auth', 'business'])
             ->name('payments.verify');
         Route::patch('payments/{payment}/reject', [PaymentController::class, 'reject'])
             ->name('payments.reject');
+
+        /*
+         * Pengaturan pembayaran memakai jenis metode sebagai segmen URL, bukan
+         * id baris, karena yang diedit selalu satu konfigurasi per jenis.
+         * Batasannya diambil dari enum supaya jenis yang tidak dikenal berhenti
+         * sebagai 404, bukan membuat baris baru.
+         */
+        Route::get('payment-settings', [PaymentSettingController::class, 'index'])
+            ->name('payment-settings.index');
+        Route::patch('payment-settings/{type}', [PaymentSettingController::class, 'update'])
+            ->whereIn('type', array_column(PaymentMethodType::cases(), 'value'))
+            ->name('payment-settings.update');
     });

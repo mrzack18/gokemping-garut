@@ -6,6 +6,7 @@ import {
     FileText,
     RotateCcw,
     Search,
+    Settings2,
     Wallet,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -39,6 +40,7 @@ import {
 } from '@/components/ui/table';
 import bookingRoutes from '@/routes/admin/bookings';
 import paymentRoutes from '@/routes/admin/payments';
+import paymentSettingRoutes from '@/routes/admin/payment-settings';
 import type {
     AdminPaymentFilters,
     AdminPaymentRow,
@@ -116,16 +118,26 @@ export default function AdminPayments({
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-1"
+                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
                 >
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Pembayaran
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Antrean verifikasi pembayaran. Periksa bukti transfer
-                        sebelum menandai lunas, dan tulis alasan yang jelas saat
-                        menolak supaya penyewa tahu apa yang harus diperbaiki.
-                    </p>
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            Pembayaran
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Antrean verifikasi pembayaran. Periksa bukti
+                            transfer sebelum menandai lunas, dan tulis alasan
+                            yang jelas saat menolak supaya penyewa tahu apa yang
+                            harus diperbaiki.
+                        </p>
+                    </div>
+
+                    <Button asChild variant="outline">
+                        <Link href={paymentSettingRoutes.index()}>
+                            <Settings2 />
+                            Atur Metode
+                        </Link>
+                    </Button>
                 </motion.div>
 
                 <Card>
