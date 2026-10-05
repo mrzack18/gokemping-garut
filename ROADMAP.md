@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 2 selesai — siap lanjut Fase 3
+**Status:** Fase 3 berjalan — 5.1 selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -1110,15 +1110,52 @@ Catatan implementasi 4.8:
 
 ### 5.1 Laporan
 
-- [ ] Filter tanggal mulai & tanggal akhir
-- [ ] Jumlah booking
-- [ ] Booking selesai
-- [ ] Booking dibatalkan
-- [ ] Total pendapatan
-- [ ] Produk paling banyak disewa
-- [ ] Jumlah penyewa
-- [ ] Rekap metode pembayaran
-- [ ] Grafik pendapatan (harian/bulanan)
+- [x] Filter tanggal mulai & tanggal akhir
+- [x] Jumlah booking
+- [x] Booking selesai
+- [x] Booking dibatalkan
+- [x] Total pendapatan
+- [x] Produk paling banyak disewa
+- [x] Jumlah penyewa
+- [x] Rekap metode pembayaran
+- [x] Grafik pendapatan (harian/bulanan)
+
+Catatan implementasi 5.1:
+
+- **Dua sumbu waktu dipisahkan dengan sengaja.** `bookings` dihitung dari
+  `created_at` (kapan transaksi masuk), `finished` dan `cancelled` dari
+  `completed_at` dan `cancelled_at` (kapan peristiwanya terjadi), sedangkan
+  pendapatan dari `verified_at` pembayaran `lunas` (kapan uangnya dikonfirmasi
+  admin). Booking yang dibuat bulan lalu tapi selesai bulan ini dihitung di
+  bulan ini, karena laporan operasional menanyakan pekerjaan yang diselesaikan
+  pada periode itu. Definisi pendapatan sama persis dengan dashboard, jadi
+  angka di kedua halaman tidak bisa berbeda.
+- **Filter tanggal punya default bulan berjalan sampai hari ini, dan tanggal
+  yang tertukar ditukar otomatis.** Periode ini yang paling sering dibuka
+  admin, jadi halaman tidak terbuka dengan rentang kosong. Tanggal tidak valid
+  diabaikan (bukan 422) mengikuti pola daftar booking, dan rentang yang
+  tertukar dinormalkan karena admin yang salah urut jelas bermaksud melihat
+  periode di antara kedua tanggal itu.
+- **Grafik berpindah harian ke bulanan di atas 31 hari.** Di bawah batas itu
+  tiap hari digambar satu batang; lebih dari itu satu batang per bulan supaya
+  batangnya tidak menjadi garis rambut. Titik data selalu lengkap termasuk
+  periode tanpa pendapatan, dan nominalnya dibaca lewat tooltip karena label
+  angka tidak muat saat titiknya banyak. Tidak ada library chart baru: sama
+  seperti grafik dashboard, ini elemen biasa.
+- **Produk paling banyak disewa dibaca dari snapshot `booking_items`, bukan
+  dari `products`.** Booking lama tetap masuk rekap dengan nama yang tersimpan
+  di booking itu (BR-09), dan booking yang dibatalkan tidak ikut dihitung
+  karena barangnya tidak pernah benar-benar disewa. Diurutkan berdasarkan
+  jumlah unit, lima teratas.
+- **Rekap metode pembayaran selalu menampilkan ketiga metode, termasuk yang
+  tidak dipakai.** Angka nol lebih jujur daripada baris yang hilang. Kolomnya
+  memisahkan `Nominal` (seluruh transaksi yang dibuat pada periode) dari
+  `Lunas` (yang sudah dibayar), supaya selisih nilai transaksi dan uang masuk
+  terlihat.
+- **Jumlah penyewa menghitung orang, bukan transaksi.** Penyewa yang booking
+  dua kali pada periode yang sama tetap dihitung satu.
+- Menu "Laporan" ditambahkan ke sidebar admin, dan
+  `resources/js/routes/admin/reports` di-generate ulang oleh Wayfinder.
 
 ### 5.2 Export
 

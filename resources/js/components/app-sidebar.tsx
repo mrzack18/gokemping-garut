@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    BarChart3,
     CalendarRange,
     FolderTree,
     LayoutGrid,
@@ -28,10 +29,11 @@ import customerRoutes from '@/routes/admin/customers';
 import paymentRoutes from '@/routes/admin/payments';
 import paymentSettingRoutes from '@/routes/admin/payment-settings';
 import productRoutes from '@/routes/admin/products';
+import reportRoutes from '@/routes/admin/reports';
 import type { NavItem } from '@/types';
 
-// Menu modul lain (laporan, pengaturan akun) sengaja belum ditambahkan dan akan
-// menyusul sesuai fase pengerjaan pada ROADMAP.md.
+// Menu Content Management (ROADMAP 5.4) belum ditambahkan dan akan menyusul
+// sesuai fase pengerjaan pada ROADMAP.md.
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -67,6 +69,11 @@ const mainNavItems: NavItem[] = [
         title: 'Pengaturan Pembayaran',
         href: paymentSettingRoutes.index(),
         icon: Settings2,
+    },
+    {
+        title: 'Laporan',
+        href: reportRoutes.index(),
+        icon: BarChart3,
     },
 ];
 

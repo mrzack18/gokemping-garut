@@ -531,3 +531,74 @@ export type AdminPaymentMethodSetting = {
 export type AdminPaymentSettingsPageProps = {
     methods: AdminPaymentMethodSetting[];
 };
+
+/**
+ * Laporan periode (PRD section 29, ROADMAP 5.1).
+ *
+ * Dua sumbu waktu dipisahkan dengan sengaja: `bookings` dihitung dari kapan
+ * transaksi masuk, `finished`/`cancelled` dari kapan peristiwanya terjadi, dan
+ * `revenue` dari kapan pembayarannya diverifikasi. Karena itu angka-angka ini
+ * tidak selalu saling menjumlah, dan itu memang jawaban yang benar untuk
+ * pertanyaan yang berbeda.
+ */
+export type AdminReportFilters = {
+    from: string;
+    to: string;
+};
+
+export type AdminReportStats = {
+    bookings: number;
+    finished: number;
+    cancelled: number;
+    customers: number;
+    revenue: number;
+    revenue_label: string;
+};
+
+export type AdminReportTopProduct = {
+    product_name: string;
+    quantity: number;
+    revenue: number;
+    revenue_label: string;
+};
+
+export type AdminReportPaymentMethod = {
+    method: string;
+    method_label: string;
+    transactions: number;
+    amount: number;
+    amount_label: string;
+    paid: number;
+    paid_label: string;
+};
+
+export type AdminReportRevenuePoint = {
+    key: string;
+    label: string;
+    full_label: string;
+    amount: number;
+    amount_label: string;
+};
+
+export type AdminReport = {
+    period: {
+        from: string;
+        to: string;
+        label: string;
+        days: number;
+    };
+    stats: AdminReportStats;
+    top_products: AdminReportTopProduct[];
+    payment_methods: AdminReportPaymentMethod[];
+    revenue_chart: {
+        granularity: 'harian' | 'bulanan';
+        points: AdminReportRevenuePoint[];
+        total: number;
+        total_label: string;
+    };
+};
+
+export type AdminReportsPageProps = {
+    filters: AdminReportFilters;
+    report: AdminReport;
+};

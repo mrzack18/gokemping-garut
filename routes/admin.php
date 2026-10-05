@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -103,4 +104,10 @@ Route::middleware(['auth', 'business'])
         Route::patch('payment-settings/{type}', [PaymentSettingController::class, 'update'])
             ->whereIn('type', array_column(PaymentMethodType::cases(), 'value'))
             ->name('payment-settings.update');
+
+        /*
+         * Laporan periode. Rentang tanggalnya dibaca dari query string, jadi
+         * tautan berisi periode tertentu bisa dibagikan apa adanya.
+         */
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     });

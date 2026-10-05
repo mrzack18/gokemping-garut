@@ -74,4 +74,31 @@ final class BookingPeriod
 
         return $date->locale('id')->translatedFormat('j M');
     }
+
+    /**
+     * Bulan dan tahun siap tampil, contoh `Oktober 2026`.
+     *
+     * Dipakai grafik laporan saat periodenya terlalu panjang untuk digambar
+     * per hari.
+     */
+    public static function readableMonth(string|CarbonInterface $date): string
+    {
+        $date = $date instanceof CarbonInterface
+            ? $date
+            : Carbon::parse($date);
+
+        return $date->locale('id')->translatedFormat('F Y');
+    }
+
+    /**
+     * Bulan singkat dan tahun, contoh `Okt 2026`.
+     */
+    public static function readableShortMonth(string|CarbonInterface $date): string
+    {
+        $date = $date instanceof CarbonInterface
+            ? $date
+            : Carbon::parse($date);
+
+        return $date->locale('id')->translatedFormat('M Y');
+    }
 }
