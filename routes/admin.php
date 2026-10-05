@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
@@ -16,8 +17,8 @@ use Illuminate\Support\Facades\Route;
 | mengaksesnya. Query di dalamnya otomatis ter-scope oleh BusinessScope
 | berdasarkan business_id user (BR-05).
 |
-| Modul booking, penyewa, pembayaran, laporan, dan pengaturan akan ditambahkan
-| pada fase berikutnya.
+| Modul penyewa, pembayaran, laporan, dan pengaturan akan ditambahkan pada
+| fase berikutnya.
 |
 */
 
@@ -55,4 +56,16 @@ Route::middleware(['auth', 'business'])
 
         Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])
             ->name('products.images.destroy');
+
+        /*
+         * Booking memakai kode booking sebagai route model binding, bukan id.
+         * Kode itulah yang disebut penyewa saat menghubungi admin, jadi URL
+         * detailnya bisa dibaca tanpa membuka daftar lebih dulu.
+         */
+        Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
+        Route::get('bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+        Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus'])
+            ->name('bookings.status');
+        Route::delete('bookings/{booking}', [BookingController::class, 'cancel'])
+            ->name('bookings.cancel');
     });

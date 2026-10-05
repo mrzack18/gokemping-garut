@@ -32,6 +32,11 @@ use Illuminate\Support\Carbon;
  * @property BookingStatus $booking_status
  * @property int|null $renter_count
  * @property string|null $notes
+ * @property Carbon|null $confirmed_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
  */
 #[Fillable([
     'booking_code',
@@ -99,6 +104,33 @@ class Booking extends Model
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
+    }
+
+    /**
+     * Riwayat perubahan status, dari yang paling lama.
+     *
+     * Relasi ini juga membaca baris pertama saat booking dibuat, jadi riwayat
+     * selalu dimulai dari `menunggu_konfirmasi` tanpa perlu menyisipkan baris
+     * secara manual saat booking disimpan.
+     *
+     * @return HasMany<BookingStatusHistory, $this>
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(BookingStatusHistory::class)->orderBy('id');
+    }
+
+    /**
+     * Booking dipakai di URL dengan kode booking, bukan id angka.
+     *
+     * Kode booking sudah unik di seluruh tabel dan justru kode itulah yang
+     * disebut penyewa saat menghubungi admin, jadi memakai kode membuat URL
+     * halaman detailnya bisa dibaca penyewa langsung, tanpa admin harus membuka
+     * daftar booking lebih dulu untuk mencocokkan kode.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'booking_code';
     }
 
     /**

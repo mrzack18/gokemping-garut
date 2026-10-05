@@ -191,3 +191,172 @@ export type AdminProductEditPageProps = AdminProductFormPageProps & {
     product: AdminProductDetail;
     remainingImages: number;
 };
+
+/**
+ * Status booking. Nilainya sama persis dengan enum `BookingStatus` di backend,
+ * jadi filter dan label status di frontend memakai sumber yang sama dengan
+ * validasi transisi.
+ */
+export type BookingStatusValue =
+    | 'menunggu_konfirmasi'
+    | 'dikonfirmasi'
+    | 'sedang_disewa'
+    | 'selesai'
+    | 'dibatalkan';
+
+/**
+ * Baris daftar booking admin.
+ *
+ * Nama dan harga produk dibaca dari `booking_items`, bukan dari tabel produk,
+ * jadi daftar ini tetap menampilkan booking lama walaupun produknya sudah
+ * diubah atau dihapus.
+ */
+export type AdminBookingRow = {
+    booking_code: string;
+    customer_name: string;
+    customer_whatsapp: string | null;
+    product_label: string;
+    quantity: number;
+    period_label: string;
+    total: number;
+    total_label: string;
+    payment_method_label: string;
+    payment_status: string;
+    payment_status_label: string;
+    status: BookingStatusValue;
+    status_label: string;
+    created_at_label: string;
+};
+
+export type AdminBookingFilters = {
+    q: string;
+    status: BookingStatusValue | null;
+    from: string | null;
+    to: string | null;
+};
+
+/**
+ * Paginator daftar booking.
+ *
+ * `links` bawaan Laravel tidak dikirim karena labelnya berisi markup navigasi
+ * yang sudah dirender server. Halaman ini memakai daftar nomor halaman sendiri
+ * supaya filter tetap ikut di URL.
+ */
+export type AdminBookingPaginator = {
+    data: AdminBookingRow[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+};
+
+export type AdminBookingsPageProps = {
+    bookings: AdminBookingPaginator;
+    filters: AdminBookingFilters;
+    statusOptions: { value: BookingStatusValue; label: string }[];
+};
+
+export type AdminBookingItem = {
+    product_name: string;
+    price: number;
+    price_label: string;
+    price_unit: string;
+    quantity: number;
+    total_days: number;
+    subtotal: number;
+    subtotal_label: string;
+};
+
+/**
+ * Penyewa pada detail booking.
+ *
+ * `nik` selalu berasal dari `Customer::maskedNik()`, jadi NIK penuh tidak pernah
+ * dikirim ke browser halaman ini. NIK penuh hanya bisa dibaca di Manajemen
+ * Penyewa (ROADMAP 4.5).
+ */
+export type AdminBookingCustomer = {
+    name: string;
+    whatsapp: string;
+    email: string | null;
+    nik: string;
+    address: string | null;
+    city: string | null;
+};
+
+/**
+ * Pembayaran pada detail booking.
+ *
+ * `needs_verification` menandai pembayaran yang masih menunggu keputusan admin.
+ * Verifikasi pembayaran sendiri dikerjakan di ROADMAP 4.6, jadi halaman ini
+ * hanya menampilkan statusnya dan bukti transfernya.
+ */
+export type AdminBookingPayment = {
+    method_label: string;
+    amount: number;
+    amount_label: string;
+    status: string;
+    status_label: string;
+    proof_url: string | null;
+    rejection_reason: string | null;
+    verified_at_label: string | null;
+    verified_by: string | null;
+    needs_verification: boolean;
+};
+
+export type AdminBookingDetail = {
+    booking_code: string;
+    status: BookingStatusValue;
+    status_label: string;
+    /** Tahap berikutnya, null kalau booking sudah selesai atau dibatalkan. */
+    next_status: BookingStatusValue | null;
+    next_status_label: string | null;
+    is_cancellable: boolean;
+    period: {
+        start_date: string;
+        end_date: string;
+        start_date_label: string;
+        end_date_label: string;
+        total_days: number;
+        total_days_label: string;
+    };
+    items: AdminBookingItem[];
+    total: number;
+    total_label: string;
+    subtotal: number;
+    subtotal_label: string;
+    notes: string | null;
+    renter_count: number | null;
+    cancellation_reason: string | null;
+    timestamps: {
+        created_at_label: string;
+        confirmed_at_label: string | null;
+        started_at_label: string | null;
+        completed_at_label: string | null;
+        cancelled_at_label: string | null;
+    };
+    customer: AdminBookingCustomer | null;
+    payment: AdminBookingPayment | null;
+};
+
+/**
+ * Satu baris riwayat status, dari yang paling lama.
+ *
+ * `author` null untuk baris pertama yang dibuat sistem saat penyewa mengirim
+ * booking, karena saat itu belum ada admin yang bertindak.
+ */
+export type AdminBookingHistoryEntry = {
+    from_status: BookingStatusValue | null;
+    from_status_label: string | null;
+    to_status: BookingStatusValue;
+    to_status_label: string;
+    note: string | null;
+    author: string | null;
+    created_at_label: string;
+};
+
+export type AdminBookingShowPageProps = {
+    booking: AdminBookingDetail;
+    history: AdminBookingHistoryEntry[];
+};

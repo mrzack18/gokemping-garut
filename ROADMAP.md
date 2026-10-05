@@ -2,8 +2,8 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 1 selesai
-**Terakhir diperbarui:** 2026-10-04
+**Status:** Fase 2 berjalan — 4.1 s/d 4.4 selesai
+**Terakhir diperbarui:** 2026-10-05
 
 ---
 
@@ -840,13 +840,86 @@ Catatan implementasi 4.3:
 
 ### 4.4 Manajemen Booking
 
-- [ ] Tabel: kode, penyewa, produk, periode, total, pembayaran, status
-- [ ] Search + filter status + filter rentang tanggal
-- [ ] Halaman detail booking
-- [ ] Ubah status: menunggu → dikonfirmasi → sedang disewa → selesai
-- [ ] Batalkan booking
-- [ ] Riwayat status booking
-- [ ] Konfirmasi pembatalan otomatis pada `payments`
+- [x] Tabel: kode, penyewa, produk, periode, total, pembayaran, status
+- [x] Search + filter status + filter rentang tanggal
+- [x] Halaman detail booking
+- [x] Ubah status: menunggu → dikonfirmasi → sedang disewa → selesai
+- [x] Batalkan booking
+- [x] Riwayat status booking
+- [x] Konfirmasi pembatalan otomatis pada `payments`
+
+Catatan implementasi 4.4:
+
+- **URL admin memakai `booking_code`, bukan id numerik.** `Booking` sekarang
+  memakai `getRouteKeyName()` yang mengembalikan `booking_code`, jadi admin dan
+  penyewa membicarakan hal yang sama dan kode booking yang sudah dikirim lewat
+  WhatsApp bisa langsung dibuka. `BusinessScope` tetap menyaring barisnya, jadi
+  kode booking milik unit lain berakhir sebagai 404, bukan 403.
+- **Status hanya boleh maju satu tahap.** `BookingStatus::canTransitionTo()`
+  menjadi satu-satunya sumber aturan dan dipakai form request, service, dan
+  test. Melompati tahap, mundur, dan mengubah booking yang sudah `selesai`
+  ditolak dengan pesan yang menyebut status sekarang dan status tujuan, bukan
+  diam-diam diabaikan. Aturan yang sama tidak ditulis ulang di frontend:
+  halaman detail hanya menampilkan satu tombol, yaitu tahap berikutnya.
+- **Semua perubahan status lewat `BookingStatusService` dalam satu transaksi
+  dengan `lockForUpdate`.** Satu perubahan status selalu punya tiga efek:
+  `bookings.booking_status`, satu timestamp tahapan, dan satu baris riwayat.
+  Status dibaca ulang dari database di dalam transaksi, bukan dari instance yang
+  dioper controller, karena instance itu sudah dimuat sebelum transaksi dimulai
+  dan bisa saja basi. Tanpa lock itu, dua admin yang menekan tombol sama hampir
+  bersamaan akan sama-sama menjalankan tahap yang sama dan menulis dua baris
+  riwayat untuk perubahan yang sama.
+- **Baris riwayat baru menyimpan urutan, alasan, dan pelaku saja.** Kapan sebuah
+  tahap terjadi dibaca dari timestamp yang sudah ada di `bookings`
+  (`confirmed_at` sampai `cancelled_at`), jadi tidak ada waktu yang dicatat dua
+  kali. Migration baru mengisi satu baris riwayat untuk booking yang sudah ada,
+  supaya halaman detail booking lama tidak kosong total.
+- **Baris pertama riwayat dibuat tanpa pelaku.** Booking yang disewa penyewa
+  selalu dimulai dari `menunggu_konfirmasi`, jadi `changed_by` boleh null dan
+  riwayat menuliskannya sebagai "Penyewa (booking masuk)". Null dipakai juga
+  untuk perubahan status di luar halaman admin, mis. saat perbaikan data.
+- **Pembatalan tidak menghapus apa pun.** Booking tetap ada, barang yang
+  sebelumnya menahan stok otomatis terbaca tersedia lagi karena
+  `Booking::scopeHoldingStock()` tidak menghitung status `dibatalkan`, dan
+  history-nya tetap utuh. Alasan pembatalan wajib diisi (maksimal 200 karakter)
+  karena penyewa menerimanya lewat pesan pembatalan dan riwayat tanpa alasan
+  tidak bisa ditindaklanjuti.
+- **Pembatalan hanya mungkin sebelum selesai.** Status `selesai` dan `dibatalkan`
+  tidak bisa dibatalkan lagi: membatalkan dua kali akan menulis baris riwayat
+  kedua untuk perubahan yang sama. Booking `sedang_disewa` masih bisa dibatalkan
+  karena barang bisa sudah dibawa atau tidak.
+- **Pembatalan menutup pembayaran yang masih terbuka, dan tidak menyentuh yang
+  sudah final.** `belum_dibayar` dan `menunggu_verifikasi` menjadi `ditolak`
+  dengan alasan yang menyebut pembatalan, lalu `bookings.payment_status`
+  disinkronkan supaya angka ringkasan tidak berbeda dari pembayarannya. Pembayaran
+  `lunas` sengaja tidak diubah: uangnya sudah masuk, jadi pengembalian uang adalah
+  keputusan manual admin, bukan efek samping menekan tombol pembatalan. Membalik
+  `lunas` jadi `ditolak` juga akan ikut mengubah angka pendapatan dashboard.
+  Berkas bukti pembayaran tidak dihapus, jadi bukti yang sudah ditolak masih bisa
+  dibaca kalau dibutuhkan.
+- **Pencarian mencakup kode booking, nama dan WhatsApp penyewa, serta nama
+  produk di `booking_items`.** Nama produk dicari dari `booking_items`, bukan dari
+  `products`, supaya booking lama tetap bisa dicari dengan nama yang tersimpan di
+  booking itu walaupun produknya sudah diubah atau dihapus (BR-09). Karakter
+  `%`, `_`, dan `\` diescaped lebih dulu supaya pencarian tidak berubah jadi
+  wildcard diam-diam.
+- **Filter tanggal memakai tanggal mulai sewa, bukan tanggal booking dibuat.**
+  Admin yang bekerja dengan jadwal bertanya "barang ini terpakai tanggal berapa",
+  dan booking untuk bulan depan memang sering dibuat minggu ini. Tanggal
+  diverifikasi dengan `Carbon::createFromFormat()` supaya nilai seperti
+  `2026-02-31` ditolak di awal dan tidak diam-diam tidak cocok dengan apa pun.
+- **Nilai filter yang tidak valid dibuang, bukan membalas 422.** Daftar booking
+  adalah halaman kerja, bukan form: admin tidak boleh terkunci karena tautan yang
+  disalin tidak lengkap. Filter default juga tidak ikut ditulis ke URL supaya
+  alamat halaman tetap pendek.
+- **Warna badge status booking dan pembayaran dipusatkan di
+  `booking-status-badge.tsx`.** Dashboard, daftar, dan detail memakai komponen
+  yang sama supaya admin tidak membaca warna yang berbeda untuk status yang sama.
+  Booking `dibatalkan` memakai warna `destructive`, bukan `outline` seperti
+  `selesai`: yang selesai adalah akhir yang wajar, yang dibatalkan adalah masalah.
+- Kode booking di dashboard kini tertaut ke detail booking, dan menu "Booking"
+  ditambahkan ke sidebar admin. `resources/js/routes/admin/bookings` di-generate
+  ulang oleh Wayfinder.
 
 ### 4.5 Manajemen Penyewa
 

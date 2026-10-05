@@ -132,6 +132,20 @@ final class BookingService
                 'status' => $paymentStatus->value,
             ]);
 
+            // Baris pertama riwayat status ditulis saat booking dibuat, bukan
+            // saat admin pertama kali mengubah status, supaya halaman riwayat
+            // selalu punya titik awal yang jelas: booking ini masuk pada status
+            // apa, dan sejak kapan.
+            //
+            // `changed_by` dikosongkan karena yang membuat booking adalah penyewa
+            // lewat halaman publik, bukan admin.
+            $booking->statusHistories()->create([
+                'from_status' => null,
+                'to_status' => BookingStatus::MenungguKonfirmasi,
+                'note' => null,
+                'changed_by' => null,
+            ]);
+
             return $booking;
         }, 3);
     }

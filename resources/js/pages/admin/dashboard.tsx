@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { BadgeCheck, Clock, Package, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +18,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import BookingChart from '@/components/admin/booking-chart';
+import { BookingStatusBadge } from '@/components/admin/booking-status-badge';
 import type { AdminDashboardPageProps } from '@/types';
 import { dashboard } from '@/routes/admin';
+import bookingRoutes from '@/routes/admin/bookings';
 
 const statCards = [
     { key: 'totalProducts', label: 'Total Produk', icon: Package },
@@ -34,16 +36,9 @@ const statCards = [
 ] as const;
 
 /**
- * Warna badge mengikuti status booking, supaya admin bisa memindai daftar
- * booking terbaru tanpa membaca labelnya.
+ * Warna badge status booking diambil dari komponen badge bersama supaya
+ * dashboard dan halaman booking memberi pembacaan yang sama.
  */
-const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
-    menunggu_konfirmasi: 'secondary',
-    dikonfirmasi: 'default',
-    sedang_disewa: 'default',
-    selesai: 'outline',
-    dibatalkan: 'outline',
-};
 
 export default function AdminDashboard({
     business,
@@ -198,9 +193,16 @@ export default function AdminDashboard({
                                                         }
                                                     >
                                                         <TableCell className="font-mono text-xs">
-                                                            {
-                                                                booking.booking_code
-                                                            }
+                                                            <Link
+                                                                href={bookingRoutes.show(
+                                                                    booking.booking_code,
+                                                                )}
+                                                                className="underline underline-offset-4"
+                                                            >
+                                                                {
+                                                                    booking.booking_code
+                                                                }
+                                                            </Link>
                                                         </TableCell>
                                                         <TableCell>
                                                             {
@@ -231,19 +233,14 @@ export default function AdminDashboard({
                                                             }
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Badge
-                                                                variant={
-                                                                    statusVariants[
-                                                                        booking
-                                                                            .status
-                                                                    ] ??
-                                                                    'secondary'
+                                                            <BookingStatusBadge
+                                                                status={
+                                                                    booking.status
                                                                 }
-                                                            >
-                                                                {
+                                                                label={
                                                                     booking.status_label
                                                                 }
-                                                            </Badge>
+                                                            />
                                                         </TableCell>
                                                     </TableRow>
                                                 ),
