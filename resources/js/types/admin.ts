@@ -360,3 +360,85 @@ export type AdminBookingShowPageProps = {
     booking: AdminBookingDetail;
     history: AdminBookingHistoryEntry[];
 };
+
+/**
+ * Baris daftar penyewa (PRD section 25, ROADMAP 4.5).
+ *
+ * `bookings_count` menghitung seluruh booking penyewa di unit bisnis admin,
+ * termasuk yang dibatalkan, sedangkan `total_transaction` hanya menjumlahkan
+ * booking yang tidak dibatalkan. Dua angka ini sengaja tidak dijumlahkan dari
+ * dimensi yang sama: admin perlu tahu berapa kali penyewa pernah datang, tapi
+ * nominal uang yang tidak pernah dibayar tidak boleh ikut terhitung.
+ *
+ * `nik` selalu dikirim dalam bentuk tersamar, bahkan di halaman ini.
+ */
+export type AdminCustomerRow = {
+    id: number;
+    name: string;
+    whatsapp: string;
+    nik: string;
+    address: string;
+    city: string | null;
+    bookings_count: number;
+    total_transaction: number;
+    total_transaction_label: string;
+};
+
+export type AdminCustomerFilters = {
+    q: string;
+};
+
+export type AdminCustomerPaginator = {
+    data: AdminCustomerRow[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+};
+
+export type AdminCustomersPageProps = {
+    customers: AdminCustomerPaginator;
+    filters: AdminCustomerFilters;
+};
+
+export type AdminCustomerDetail = {
+    id: number;
+    name: string;
+    whatsapp: string;
+    email: string | null;
+    nik: string;
+    address: string;
+    city: string | null;
+    notes: string | null;
+    /** Tanggal booking pertama penyewa di unit ini. */
+    first_booking_at_label: string;
+    bookings_count: number;
+    total_transaction: number;
+    total_transaction_label: string;
+};
+
+/**
+ * Satu baris riwayat booking di halaman detail penyewa.
+ *
+ * Hanya booking unit bisnis ini yang dikirim, dan tidak ada nama produk di
+ * sini: halaman detail penyewa fokus ke transaksinya, sedangkan isi booking
+ * dibaca di halaman booking masing-masing.
+ */
+export type AdminCustomerBookingRow = {
+    booking_code: string;
+    status: BookingStatusValue;
+    status_label: string;
+    payment_status: string;
+    payment_status_label: string;
+    period_label: string;
+    total: number;
+    total_label: string;
+    created_at_label: string;
+};
+
+export type AdminCustomerShowPageProps = {
+    customer: AdminCustomerDetail;
+    bookings: AdminCustomerBookingRow[];
+};

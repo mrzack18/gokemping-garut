@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 2 berjalan — 4.1 s/d 4.4 selesai
+**Status:** Fase 2 berjalan — 4.1 s/d 4.5 selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -923,10 +923,49 @@ Catatan implementasi 4.4:
 
 ### 4.5 Manajemen Penyewa
 
-- [ ] Tabel: nama, WhatsApp, NIK (masked), alamat, jumlah booking, total transaksi
-- [ ] Search by nama / WhatsApp / NIK
-- [ ] Halaman detail penyewa + riwayat booking
-- [ ] NIK ditampilkan tersamar (masking) di seluruh halaman
+- [x] Tabel: nama, WhatsApp, NIK (masked), alamat, jumlah booking, total transaksi
+- [x] Search by nama / WhatsApp / NIK
+- [x] Halaman detail penyewa + riwayat booking
+- [x] NIK ditampilkan tersamar (masking) di seluruh halaman
+
+Catatan implementasi 4.5:
+
+- **Penyewa tidak punya `business_id`, jadi isolasi tenant dilakukan lewat
+  booking-nya.** Satu orang bisa menyewa di kedua unit bisnis (lihat catatan
+  4.4), jadi daftar penyewa tidak menyaring baris `customers`, melainkan
+  menyaring customer yang punya booking di unit bisnis admin yang login. Detail
+  penyewa yang hanya punya booking di unit lain berakhir sebagai 404, dan
+  riwayatnya juga hanya menampilkan booking unit ini.
+- **Jumlah booking menghitung semua booking, total transaksi tidak menghitung
+  yang dibatalkan.** Dua kolom ini sengaja memakai dimensi berbeda: admin perlu
+  tahu berapa kali penyewa pernah datang (termasuk yang dibatalkan, karena itu
+  bagian dari rekam jejaknya), tetapi nominal booking yang dibatalkan tidak
+  pernah masuk sebagai uang. Menjumlahkan keduanya dari daftar yang sama akan
+  membuat total transaksi lebih besar dari uang yang benar-benar diterima.
+- **NIK selalu tampil tersamar, tetapi tetap bisa dicari dalam bentuk aslinya.**
+  Nilai aslinya tetap disimpan justru untuk pencarian dan verifikasi (PRD
+  section 33). Kotak pencarian mencocokkan kolom `nik` apa adanya, sedangkan
+  yang dikirim ke browser selalu `Customer::maskedNik()`, termasuk di halaman
+  detail. Kata kunci yang hanya ada di tengah NIK tetap menemukan penyewanya
+  walaupun angka yang tampil di tabel berbeda.
+- **Pencarian mencakup nama, WhatsApp, dan NIK dalam satu kotak.** Karakter
+  `%`, `_`, dan `\` diescaped lebih dulu supaya pencarian tidak berubah jadi
+  wildcard diam-diam, dan panjang kata kunci dibatasi 100 karakter seperti
+  daftar produk. Nilai yang tidak valid tidak pernah membalas 422: daftar
+  penyewa adalah halaman kerja, bukan form.
+- **URL detail memakai id numerik karena penyewa tidak punya kode alami.**
+  Berbeda dari booking yang memakai `booking_code`, penyewa tidak punya
+  identifier yang dikenal pelanggan. Pembatasan tenant karena itu dilakukan di
+  controller lewat `whereHas('bookings')`, bukan lewat route model binding.
+- **Agregat dihitung dengan `withCount()` dan `withSum()` pada query yang
+  sama.** Keduanya dibatasi `business_id` admin, jadi penyewa yang juga booking
+  di unit lain tidak menampilkan angka gabungan. Tidak ada query per baris.
+- **Tanggal "Booking pertama" dihitung dari booking pertama di unit ini, bukan
+  dari `customers.created_at`.** Baris customer dipakai bersama dua unit, jadi
+  tanggal dibuatnya bisa jauh lebih awal dari perkenalan pertamanya dengan unit
+  ini.
+- Menu "Penyewa" ditambahkan ke sidebar admin, dan
+  `resources/js/routes/admin/customers` di-generate ulang oleh Wayfinder.
 
 ### 4.6 Manajemen Pembayaran
 

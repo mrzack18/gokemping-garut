@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
@@ -68,4 +69,13 @@ Route::middleware(['auth', 'business'])
             ->name('bookings.status');
         Route::delete('bookings/{booking}', [BookingController::class, 'cancel'])
             ->name('bookings.cancel');
+
+        /*
+         * Penyewa memakai id numerik karena `Customer` sengaja tidak punya
+         * `business_id`: satu orang bisa menyewa di dua unit. Pembatasan
+         * tenant dilakukan di controller lewat booking-nya, dan penyewa yang
+         * tidak punya booking di unit ini berakhir sebagai 404.
+         */
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     });

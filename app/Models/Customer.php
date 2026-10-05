@@ -22,6 +22,8 @@ use Illuminate\Support\Str;
  * @property string $address
  * @property string|null $city
  * @property string|null $notes
+ * @property-read int|null $bookings_count Hanya terisi saat query memakai `withCount()`.
+ * @property-read numeric-string|int|float|null $total_transaction Hanya terisi saat query memakai `withSum()`.
  */
 #[Fillable([
     'name',

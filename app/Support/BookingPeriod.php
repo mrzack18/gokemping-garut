@@ -9,7 +9,7 @@ use Carbon\CarbonInterface;
  * Perhitungan periode dan total booking yang dipakai bersama oleh halaman
  * review (ROADMAP 3.8) dan penyimpanan booking (ROADMAP 3.11).
  *
- *_aturan durasi mengikuti keputusan ROADMAP 3.5: durasi adalah selisih tanggal
+ * Aturan durasi mengikuti keputusan ROADMAP 3.5: durasi adalah selisih tanggal
  * selesai dikurangi tanggal mulai, tanggal selesai diperlakukan sebagai batas
  * pengembalian sehingga tidak ikut dihitung, dan periode satu hari tetap
  * bernilai 1 hari supaya tidak ada booking bernilai nol rupiah.

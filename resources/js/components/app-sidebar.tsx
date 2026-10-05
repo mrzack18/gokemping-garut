@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { CalendarRange, FolderTree, LayoutGrid, Package } from 'lucide-react';
+import {
+    CalendarRange,
+    FolderTree,
+    LayoutGrid,
+    Package,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -16,11 +22,12 @@ import {
 import { dashboard } from '@/routes/admin';
 import bookingRoutes from '@/routes/admin/bookings';
 import categoryRoutes from '@/routes/admin/categories';
+import customerRoutes from '@/routes/admin/customers';
 import productRoutes from '@/routes/admin/products';
 import type { NavItem } from '@/types';
 
-// Menu modul lain (penyewa, pembayaran, laporan, pengaturan) sengaja belum
-// ditambahkan dan akan menyusul sesuai fase pengerjaan pada ROADMAP.md.
+// Menu modul lain (pembayaran, laporan, pengaturan) sengaja belum ditambahkan
+// dan akan menyusul sesuai fase pengerjaan pada ROADMAP.md.
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -41,6 +48,11 @@ const mainNavItems: NavItem[] = [
         title: 'Booking',
         href: bookingRoutes.index(),
         icon: CalendarRange,
+    },
+    {
+        title: 'Penyewa',
+        href: customerRoutes.index(),
+        icon: Users,
     },
 ];
 
