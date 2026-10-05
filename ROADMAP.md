@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 3 berjalan — 5.1 selesai
+**Status:** Fase 3 berjalan — 5.1 s/d 5.2 selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -1159,9 +1159,43 @@ Catatan implementasi 5.1:
 
 ### 5.2 Export
 
-- [ ] Export Excel — data booking
-- [ ] Export Excel — rekap laporan
-- [ ] Export PDF — laporan periode + kop surat
+- [x] Export Excel — data booking
+- [x] Export Excel — rekap laporan
+- [x] Export PDF — laporan periode + kop surat
+
+Catatan implementasi 5.2:
+
+- **Filter ekspor dibaca dari query string lewat kelas yang sama dengan
+  halamannya.** Daftar booking memakai `BookingFilters` yang diekstrak dari
+  `BookingController`, laporan memakai `ReportFilters` yang diekstrak dari
+  `ReportController`. Berkas yang diunduh selalu berisi baris yang sedang
+  dilihat admin; kalau keduanya menyusun query sendiri-sendiri, lambat laun
+  filter di layar dan di berkas akan berbeda.
+- **Excel ditulis dengan OpenSpout ke berkas sementara lalu dibaca kembali
+  sebagai string biner** (`Spreadsheets::bytes()`), dan berkas sementaranya
+  selalu dihapus di blok `finally`. Helper ini membuat controller mengembalikan
+  response yang seragam dan test bisa membaca hasil ekspor seperti berkas Excel
+  biasa. Header kolom dicetak tebal; nominal dikirim sebagai angka, bukan teks
+  berformat, supaya bisa dijumlahkan di Excel.
+- **Ekspor Excel data booking memuat identitas transaksi yang dibutuhkan untuk
+  rekonsiliasi**: kode, tanggal masuk, penyewa dan WhatsApp, produk dari
+  snapshot `booking_items` (BR-09), unit, periode sewa, total, metode, serta
+  status pembayaran dan booking. Nama produk tanpa jumlah per baris karena
+  jumlah total unit sudah punya kolom sendiri.
+- **PDF dibuat dengan dompdf dari view Blade biasa, bukan Inertia**, karena
+  dompdf mencetak HTML statis dan tidak menjalankan JavaScript. View-nya memakai
+  kop surat berisi nama unit, alamat, WhatsApp, dan email dari data bisnis,
+  lalu ringkasan, produk terlaris, rekap metode, dan pendapatan per periode.
+- **Nama berkas laporan memuat periode** (`laporan-{slug}-{dari}-{ke}.xlsx` /
+  `.pdf`), jadi dua unduhan dari periode berbeda tidak saling menimpa di folder
+  unduhan admin. Ekspor booking memakai stempel waktu.
+- **Unduhan di frontend memakai anchor biasa, bukan `Link` Inertia**, karena
+  responsnya berkas biner. Tombolnya ada di halaman daftar booking ("Unduh
+  Excel") dan halaman laporan ("Excel" dan "PDF"), dengan filter yang sedang
+  aktif ikut dikirim.
+- Route ekspor berada di bawah `admin/exports` dengan middleware `auth` +
+  `business` yang sama, dan `resources/js/routes/admin/exports` di-generate
+  ulang oleh Wayfinder.
 
 ### 5.3 Statistik
 

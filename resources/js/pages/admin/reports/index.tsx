@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import {
     CalendarRange,
     CircleCheck,
+    Download,
+    FileText,
     RotateCcw,
     Search,
     TrendingUp,
@@ -31,6 +33,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import reportRoutes from '@/routes/admin/reports';
+import exportRoutes from '@/routes/admin/exports';
 import type { AdminReportFilters, AdminReportsPageProps } from '@/types';
 
 /**
@@ -87,17 +90,52 @@ export default function AdminReports({
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-1"
+                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
                 >
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Laporan
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Ringkasan operasional dan pendapatan pada periode yang
-                        dipilih. Booking dihitung dari kapan transaksinya masuk,
-                        sedangkan pendapatan dihitung dari kapan pembayarannya
-                        diverifikasi.
-                    </p>
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            Laporan
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Ringkasan operasional dan pendapatan pada periode
+                            yang dipilih. Booking dihitung dari kapan
+                            transaksinya masuk, sedangkan pendapatan dihitung
+                            dari kapan pembayarannya diverifikasi.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/*
+                         * Unduhan memakai anchor biasa, bukan Link Inertia:
+                         * responsnya berkas biner, bukan halaman Inertia.
+                         */}
+                        <Button asChild variant="outline">
+                            <a
+                                href={exportRoutes.report.url({
+                                    query: {
+                                        from: filters.from,
+                                        to: filters.to,
+                                    },
+                                })}
+                            >
+                                <Download />
+                                Excel
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <a
+                                href={exportRoutes.reportPdf.url({
+                                    query: {
+                                        from: filters.from,
+                                        to: filters.to,
+                                    },
+                                })}
+                            >
+                                <FileText />
+                                PDF
+                            </a>
+                        </Button>
+                    </div>
                 </motion.div>
 
                 <Card>

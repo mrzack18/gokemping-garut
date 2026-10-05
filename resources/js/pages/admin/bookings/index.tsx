@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import {
     ArrowRight,
     CalendarRange,
+    Download,
     RotateCcw,
     Search,
     Ticket,
@@ -38,6 +39,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import bookingRoutes from '@/routes/admin/bookings';
+import exportRoutes from '@/routes/admin/exports';
 import type {
     AdminBookingFilters,
     AdminBookingRow,
@@ -118,16 +120,35 @@ export default function AdminBookings({
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-1"
+                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
                 >
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Booking
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Semua booking yang masuk di unit ini, dari yang masih
-                        menunggu konfirmasi sampai yang sudah selesai atau
-                        dibatalkan.
-                    </p>
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            Booking
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Semua booking yang masuk di unit ini, dari yang
+                            masih menunggu konfirmasi sampai yang sudah selesai
+                            atau dibatalkan.
+                        </p>
+                    </div>
+
+                    {/*
+                     * Unduhan memakai anchor biasa, bukan Link Inertia:
+                     * responsnya berkas biner, bukan halaman Inertia. Filter
+                     * yang sedang aktif ikut dikirim supaya berkasnya berisi
+                     * baris yang sama dengan yang dilihat admin.
+                     */}
+                    <Button asChild variant="outline">
+                        <a
+                            href={exportRoutes.bookings.url({
+                                query: buildQuery(filters),
+                            })}
+                        >
+                            <Download />
+                            Unduh Excel
+                        </a>
+                    </Button>
                 </motion.div>
 
                 <Card>

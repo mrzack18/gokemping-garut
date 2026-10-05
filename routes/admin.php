@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\ProductController;
@@ -110,4 +111,16 @@ Route::middleware(['auth', 'business'])
          * tautan berisi periode tertentu bisa dibagikan apa adanya.
          */
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+        /*
+         * Ekspor memakai filter yang sama dengan halamannya, dibaca dari query
+         * string, jadi tautan unduhan yang disalin menghasilkan berkas yang
+         * sama dengan tampilan yang sedang dilihat admin.
+         */
+        Route::get('exports/bookings', [ExportController::class, 'bookings'])
+            ->name('exports.bookings');
+        Route::get('exports/report', [ExportController::class, 'report'])
+            ->name('exports.report');
+        Route::get('exports/report-pdf', [ExportController::class, 'reportPdf'])
+            ->name('exports.report-pdf');
     });

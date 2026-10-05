@@ -15,12 +15,12 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\BookingStatusService;
+use App\Support\BookingFilters;
 use App\Support\BookingPeriod;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,18 +48,13 @@ class BookingController extends Controller
     public const PER_PAGE = 20;
 
     /**
-     * Nilai filter yang berarti "semua" pada filter status.
-     */
-    private const ALL_STATUSES = 'semua';
-
-    /**
      * Daftar booking dengan pencarian, filter status, dan filter tanggal mulai
      * sewa.
      */
     public function index(Request $request): Response
     {
         $business = $request->user()->business;
-        $filters = $this->filters($request);
+        $filters = BookingFilters::fromRequest($request);
 
         return Inertia::render('admin/bookings/index', [
             'bookings' => $this->rows($business, $filters),
@@ -165,15 +160,7 @@ class BookingController extends Controller
     {
         $query = $this->query($business);
 
-        if ($filters['q'] !== '') {
-            $this->search($query, $filters['q']);
-        }
-
-        if ($filters['status'] !== null) {
-            $query->where('bookings.booking_status', $filters['status']);
-        }
-
-        $this->period($query, $filters['from'], $filters['to']);
+        BookingFilters::apply($query, $filters);
 
         $bookings = $query
             ->orderByDesc('bookings.start_date')
@@ -193,108 +180,6 @@ class BookingController extends Controller
             'total' => $bookings->total(),
             'per_page' => $bookings->perPage(),
         ];
-    }
-
-    /**
-     * Pencarian bebas pada kode booking, nama dan WhatsApp penyewa, serta nama
-     * produk yang di-booking.
-     *
-     * Nama produk dicari lewat `booking_items`, bukan lewat `products`. Kalau
-     * produknya sudah dihapus atau namanya sudah diganti, booking lama tetap
-     * bisa dicari dengan nama yang tersimpan di booking itu (BR-09).
-     *
-     * @param  Builder<Booking>  $query
-     */
-    private function search(Builder $query, string $term): void
-    {
-        $term = '%'.addcslashes($term, '\\%_').'%';
-
-        $query->where(function (Builder $query) use ($term): void {
-            $query->where('bookings.booking_code', 'like', $term)
-                ->orWhereHas('customer', function (Builder $query) use ($term): void {
-                    $query->where('name', 'like', $term)
-                        ->orWhere('whatsapp', 'like', $term);
-                })
-                ->orWhereHas('items', function (Builder $query) use ($term): void {
-                    $query->where('product_name', 'like', $term);
-                });
-        });
-    }
-
-    /**
-     * Filter tanggal periode sewa.
-     *
-     * Yang difilter adalah tanggal mulai sewa, bukan tanggal booking dibuat.
-     * Admin yang bekerja dengan jadwal bertanya "barang ini terpakai tanggal
-     * berapa", sedangkan tanggal booking dibuat jarang menjawab pertanyaan itu:
-     * booking untuk bulan depan bisa dibuat minggu ini.
-     *
-     * @param  Builder<Booking>  $query
-     */
-    private function period(Builder $query, ?string $from, ?string $to): void
-    {
-        if ($from !== null) {
-            $query->whereDate('bookings.start_date', '>=', $from);
-        }
-
-        if ($to !== null) {
-            $query->whereDate('bookings.start_date', '<=', $to);
-        }
-    }
-
-    /**
-     * Filter dari query string, sudah ternormalisasi.
-     *
-     * Nilai yang tidak valid dibuang, bukan dibalas 422. Daftar booking adalah
-     * halaman kerja, bukan form: admin tidak boleh terkunci karena tautan yang
-     * disalin tidak lengkap atau tanggalnya salah ketik.
-     *
-     * @return array{q: string, status: string|null, from: string|null, to: string|null}
-     */
-    private function filters(Request $request): array
-    {
-        return [
-            'q' => trim((string) $request->query('q', '')),
-            'status' => $this->statusFilter($request->query('status')),
-            'from' => $this->dateFilter($request->query('from')),
-            'to' => $this->dateFilter($request->query('to')),
-        ];
-    }
-
-    /**
-     * Status dari query string, atau null untuk "semua status".
-     *
-     * Daftar case enum adalah sumber kebenarannya, jadi filter ini tidak bisa
-     * mengarah ke status yang tidak ada di enum.
-     */
-    private function statusFilter(mixed $value): ?string
-    {
-        if (! is_string($value) || $value === '' || $value === self::ALL_STATUSES) {
-            return null;
-        }
-
-        return BookingStatus::tryFrom($value)?->value;
-    }
-
-    /**
-     * Tanggal dari query string dalam bentuk `YYYY-MM-DD`, atau null kalau tidak
-     * valid.
-     *
-     * Tanggal tidak dipakai langsung dari query string, karena `whereDate` akan
-     * memperlakukannya sebagai teks dan nilainya bisa disisipkan apa adanya.
-     * `Carbon::createFromFormat()` dipakai supaya tanggal yang tidak benar-benar
-     * ada, seperti `2026-02-31`, ditolak di sini dan tidak sampai jadi filter
-     * yang diam-diam tidak cocok dengan apa pun.
-     */
-    private function dateFilter(mixed $value): ?string
-    {
-        if (! is_string($value) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
-            return null;
-        }
-
-        $date = Carbon::createFromFormat('Y-m-d', $value);
-
-        return $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /**
