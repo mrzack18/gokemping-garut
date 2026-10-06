@@ -1346,12 +1346,45 @@ Catatan Definition of Done:
 
 Paling berisiko salah adalah pemesanan melebihi stok. Urutan implementasi wajib:
 
-1. Query stok terpakai dengan filter overlap tanggal
-2. Bungkus pembuatan booking dalam `DB::transaction`
-3. `lockForUpdate()` pada row produk & booking aktif terkait
-4. Hitung ulang ketersediaan **di dalam** transaksi
-5. Tolak dengan 422 jika tidak cukup
-6. Otomatis lepas stok reserved pada status `dibatalkan`
+- [x] Query stok terpakai dengan filter overlap tanggal
+- [x] Bungkus pembuatan booking dalam `DB::transaction`
+- [x] `lockForUpdate()` pada row produk & booking aktif terkait
+- [x] Hitung ulang ketersediaan **di dalam** transaksi
+- [x] Tolak dengan 422 jika tidak cukup
+- [x] Otomatis lepas stok reserved pada status `dibatalkan`
+
+Catatan anti-overbooking:
+
+- **Query overlap** ada di `Booking::scopeOverlappingPeriod()` dan dipakai
+  `AvailabilityService::usedUnits()`. Tanggal selesai diperlakukan sebagai
+  batas pengembalian (eksklusif), jadi booking 10–12 tidak menahan tanggal 12,
+  dan booking satu hari tetap dihitung satu hari penuh.
+- **Pembuatan booking dibungkus `DB::transaction`** di `BookingService::store()`
+  bersama item dan pembayarannya, jadi tidak pernah ada booking tanpa item atau
+  tanpa record pembayaran.
+- **Kunci baris diambil pada baris `business` lalu baris `product`**, selalu
+  dalam urutan itu. Baris produk adalah mutex yang membuat dua booking
+  bersamaan untuk produk yang sama berjalan berurutan, sehingga hitungan stok
+  terpakai tidak bisa dibaca dari kondisi basi. Baris `booking` yang belum ada
+  tidak bisa dikunci; nilainya baru ada setelah baris produk terkunci, jadi
+  penguncian booking aktif terjadi lewat baris produknya. Endpoint
+  ketersediaan publik tidak mengunci baris apa pun karena hanya informatif —
+  pengaman sebenarnya ada di dalam transaksi penyimpanan.
+- **Ketersediaan dihitung ulang di dalam transaksi** tepat sebelum total dan
+  baris booking dibuat, dengan harga dibaca ulang dari baris produk yang sudah
+  terkunci (BR-09).
+- **Stok tidak cukup ditolak sebagai error, bukan 500**:
+  `BookingService` melempar `InsufficientStockException`, dan
+  `BookingStoreController` mengubahnya menjadi error `period` sambil membawa
+  penyewa kembali ke halaman review — draft dan bukti pembayarannya tetap
+  utuh. Endpoint ketersediaan publik terpisah membalas 422 hanya untuk input
+  yang tidak valid, dan melaporkan cukup/tidak cukup lewat `is_available`
+  tanpa melempar exception. Pengecekan ulang di dalam transaksi itulah yang
+  memastikan tidak pernah ada overbooking.
+- **Pelepasan stok otomatis** berasal dari
+  `BookingStatus::holdsStock()` yang tidak menghitung status `dibatalkan` dan
+  `selesai`, diuji di `AvailabilityServiceTest` dan
+  `BookingManagementTest::test_cancelling_releases_the_booked_stock`.
 
 ---
 
@@ -1372,12 +1405,26 @@ Paling berisiko salah adalah pemesanan melebihi stok. Urutan implementasi wajib:
 
 ## 9. Checklist Pelepasan (Release)
 
-- [ ] Seluruh Phase 1–3 selesai
+- [x] Seluruh Phase 1–3 selesai
 - [ ] Data seed demo dibersihkan sebelum production
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`
-- [ ] `php artisan config:cache` + `route:cache` + `view:cache`
-- [ ] `pnpm build`
+- [x] `php artisan config:cache` + `route:cache` + `view:cache`
+- [x] `pnpm build`
 - [ ] Password admin default diganti
+
+Catatan checklist pelepasan:
+
+- **Phase 1–3 selesai** dan Definition of Done terpenuhi; seluruh test lulus.
+- **Cache produksi diverifikasi lokal**: `php artisan optimize` berhasil
+  men-cache config, events, routes, dan views, lalu `optimize:clear`
+  mengembalikan keadaan pengembangan. Artinya tidak ada route berbasis closure
+  yang menghalangi `route:cache`.
+- **`pnpm build`** menghasilkan aset produksi tanpa error.
+- Tiga item sisanya adalah langkah operasional saat deploy, bukan pekerjaan
+  kode: membersihkan data seed demo, menyetel `APP_ENV`/`APP_DEBUG` di server,
+  dan mengganti password admin bawaan dari seeder. Ketiganya sengaja dibiarkan
+  terbuka supaya tidak ada yang menganggapnya sudah beres hanya karena
+  aplikasinya lulus test.
 - [ ] Backup MySQL terjadwal
 - [ ] HTTPS aktif
 - [ ] Uji seluruh alur booking pada 2 unit bisnis
