@@ -167,5 +167,6 @@ Route::middleware(['auth', 'business'])
             ->middleware('throttle:'.TicketController::THROTTLE)
             ->name('tickets.lookup');
         Route::get('tickets/scan/{booking}', [TicketController::class, 'scan'])
+            ->middleware('no-store')
             ->name('tickets.scan');
     });

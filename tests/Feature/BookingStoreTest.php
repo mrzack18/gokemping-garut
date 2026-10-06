@@ -20,6 +20,7 @@ use App\Support\TicketToken;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -387,6 +388,46 @@ class BookingStoreTest extends TestCase
     public function test_halaman_sukses_tanpa_receipt_mengarah_ke_beranda(): void
     {
         $this->get(route('booking.gokemping.success'))->assertRedirect(route('home'));
+    }
+
+    /**
+     * Halaman sukses memuat data penyewa tanpa login, jadi tidak boleh
+     * tersimpan di cache proxy/peramban maupun terindeks mesin pencari.
+     */
+    public function test_halaman_sukses_melarang_cache_dan_indeks(): void
+    {
+        $this->cashMethod($this->camping);
+        $this->prepareDraft($this->camping, $this->tent, 'cash');
+        $this->storeBooking($this->camping);
+
+        $this->get(route('booking.gokemping.success'))
+            ->assertOk()
+            ->assertHeader('cache-control', 'must-revalidate, no-cache, no-store, private')
+            ->assertHeader('pragma', 'no-cache')
+            ->assertHeader('referrer-policy', 'no-referrer')
+            ->assertHeader('x-robots-tag', 'noindex, nofollow');
+    }
+
+    /**
+     * Receipt punya masa berlaku supaya peramban bersama tidak bisa dipakai
+     * membaca booking orang sebelumnya dari riwayat.
+     */
+    public function test_receipt_kedaluwarsa_setelah_batas_waktu(): void
+    {
+        $this->cashMethod($this->camping);
+        $this->prepareDraft($this->camping, $this->tent, 'cash');
+        $this->storeBooking($this->camping);
+
+        $this->get(route('booking.gokemping.success'))->assertOk();
+
+        Carbon::setTestNow(now()->addHours(BookingReceipt::TTL_HOURS + 1));
+
+        try {
+            $this->get(route('booking.gokemping.success'))
+                ->assertRedirect(route('home'));
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_stok_terpakai_booking_lain_dikembalikan_ke_review(): void
@@ -760,7 +801,7 @@ class BookingStoreTest extends TestCase
      */
     private function receipt(): array
     {
-        $receipt = session(BookingReceipt::SESSION_KEY);
+        $receipt = app(BookingReceipt::class)->read();
 
         $this->assertIsArray($receipt);
 

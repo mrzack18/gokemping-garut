@@ -29,6 +29,7 @@ Route::post('/cek-tiket', [LandingController::class, 'checkTicket'])
 // URL pindai dari QR tiket: tokennya HMAC dari kode booking, jadi halaman ini
 // membuka tiket tanpa mengetik kode dan nomor WhatsApp.
 Route::get('/cek-tiket/{booking}', [LandingController::class, 'scan'])
+    ->middleware('no-store')
     ->name('tickets.scan');
 
 // Pencarian data penyewa lama tidak butuh unit bisnis karena `customers` tidak
@@ -80,6 +81,7 @@ Route::get('/gokemping/booking/payment/{method}', [BookingPaymentController::cla
     ->name('booking.gokemping.payment.show');
 
 Route::get('/gokemping/booking/success', [BookingStoreController::class, 'success'])
+    ->middleware('no-store')
     ->defaults('business', 'gokemping')
     ->name('booking.gokemping.success');
 
@@ -137,6 +139,7 @@ Route::get('/sewa-sepeda-garut/booking/payment/{method}', [BookingPaymentControl
     ->name('booking.sewaSepedaGarut.payment.show');
 
 Route::get('/sewa-sepeda-garut/booking/success', [BookingStoreController::class, 'success'])
+    ->middleware('no-store')
     ->defaults('business', 'sewa-sepeda-garut')
     ->name('booking.sewaSepedaGarut.success');
 

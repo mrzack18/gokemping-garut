@@ -41,6 +41,17 @@ class TicketScanTest extends TestCase
             );
     }
 
+    public function test_scan_tidak_di_cache_dan_tidak_diindeks(): void
+    {
+        $booking = $this->booking(Business::factory()->create());
+
+        $this->get(TicketToken::url((string) $booking->booking_code))
+            ->assertOk()
+            ->assertHeader('cache-control', 'must-revalidate, no-cache, no-store, private')
+            ->assertHeader('referrer-policy', 'no-referrer')
+            ->assertHeader('x-robots-tag', 'noindex, nofollow');
+    }
+
     public function test_scan_dengan_token_salah_menghasilkan_404(): void
     {
         $booking = $this->booking(Business::factory()->create());

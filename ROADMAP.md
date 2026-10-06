@@ -1339,6 +1339,27 @@ Catatan implementasi 5.5:
 - QR dari domain lain ditolak oleh frontend sebelum navigasi, jadi tautan asing
   yang kebetulan terbaca kamera tidak pernah membuka halaman luar dari halaman
   cek tiket.
+- **Halaman sukses booking tidak pernah memuat data di URL.** Isinya dibaca
+  dari session receipt yang ditulis setelah booking tersimpan, jadi membuka
+  `/gokemping/booking/success` tanpa receipt langsung dialihkan ke beranda.
+  Receipt punya masa berlaku 12 jam (`BookingReceipt::TTL_HOURS`) supaya
+  peramban bersama tidak bisa dipakai membaca booking orang sebelumnya dari
+  riwayat; setelah kedaluwarsa penyewa tetap bisa membuka tiket lewat cek tiket
+  atau QR.
+- **Halaman sukses dan halaman pindai memakai middleware `no-store`**:
+  `Cache-Control: no-store, private`, `Pragma: no-cache`,
+  `Referrer-Policy: no-referrer` (URL pindai membawa token tiket), dan
+  `X-Robots-Tag: noindex, nofollow`, sehingga halaman berisi data penyewa tidak
+  tersimpan di cache proxy/peramban maupun terindeks mesin pencari.
+- **Sesi dienkripsi di `.env.example` (`SESSION_ENCRYPT=true`)** karena receipt
+  disimpan di tabel `sessions`. Di production juga wajib HTTPS dan
+  `SESSION_SECURE_COOKIE=true` supaya cookie sesi tidak pernah lewat HTTP.
+- **Batas yang disadari**: `booking/customer-lookup` tetap membalas data
+  biodata milik nomor yang diberikan pemanggil (untuk prefill penyewa lama),
+  dibatasi throttle 30/menit. NIK hanya dikembalikan kalau pemanggil memang
+  sudah mengetiknya (lookup lewat NIK), tidak pernah lewat lookup WhatsApp.
+  Endpoint ini tidak membuka tiket; yang membuka tiket tetap kode booking +
+  nomor WhatsApp atau token QR yang sah.
 
 **Deliverable Fase 3:** Admin dapat menganalisis bisnis dan mengelola konten tanpa sentuh kode.
 
