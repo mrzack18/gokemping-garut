@@ -5,14 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TicketLookupRequest;
 use App\Models\Banner;
 use App\Models\Booking;
-use App\Models\BookingItem;
 use App\Models\Business;
-use App\Models\Customer;
 use App\Models\Faq;
 use App\Models\Product;
 use App\Models\Scopes\BusinessScope;
-use App\Support\BookingPeriod;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\TicketLookupService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -76,7 +73,7 @@ class LandingController extends Controller
      * lengkap dengan data landing lainnya, supaya penyewa atau staf tidak
      * berpindah halaman.
      */
-    public function checkTicket(TicketLookupRequest $request): Response|RedirectResponse
+    public function checkTicket(TicketLookupRequest $request, TicketLookupService $tickets): Response|RedirectResponse
     {
         $whatsapp = $request->normalizedWhatsapp();
 
@@ -86,17 +83,10 @@ class LandingController extends Controller
             ]);
         }
 
-        /**
-         * Scope tenancy dinonaktifkan karena halaman ini lintas unit dan tidak
-         * butuh login. Kalau admin sedang login, scope akan menyaring tiket
-         * unit lain dan halaman cek tiket justru rusak untuk staf.
-         */
-        $booking = BusinessScope::withoutBusinessScope(
-            Booking::query()
-                ->with(['business', 'customer', 'items', 'payment'])
-                ->where('booking_code', $request->code())
-                ->whereHas('customer', fn (Builder $query): Builder => $query->where('whatsapp', $whatsapp))
-        )->first();
+        // Publik mencari lintas unit (tanpa business), karena landing page
+        // memang lintas tenant dan admin yang login pun harus tetap bisa
+        // memeriksa tiket unit lain dari sini.
+        $booking = $tickets->find($request->code(), $whatsapp);
 
         if (! $booking instanceof Booking) {
             return back()->withInput()->withErrors([
@@ -104,7 +94,7 @@ class LandingController extends Controller
             ]);
         }
 
-        return $this->page($this->ticket($booking));
+        return $this->page($tickets->payload($booking));
     }
 
     /**
@@ -123,49 +113,6 @@ class LandingController extends Controller
             'faqs' => $this->faqs($businesses),
             'ticket' => $ticket,
         ]);
-    }
-
-    /**
-     * Data tiket yang boleh dilihat publik, tanpa NIK dan tanpa alamat.
-     *
-     * @return array<string, mixed>
-     */
-    private function ticket(Booking $booking): array
-    {
-        $business = $booking->business;
-        $customer = $booking->customer;
-
-        return [
-            'booking_code' => (string) $booking->booking_code,
-            'business' => [
-                'name' => $business instanceof Business ? $business->name : '-',
-                'whatsapp' => $business instanceof Business ? $business->whatsapp : null,
-            ],
-            'customer_name' => $customer instanceof Customer ? $customer->name : '-',
-            'status' => $booking->booking_status->value,
-            'status_label' => $booking->booking_status->label(),
-            'payment_status' => $booking->payment_status->value,
-            'payment_status_label' => $booking->payment_status->label(),
-            'payment_method_label' => $booking->payment_method->label(),
-            'items' => array_values(
-                $booking->items
-                    ->map(fn (BookingItem $item): array => [
-                        'product_name' => $item->product_name,
-                        'quantity' => (int) $item->quantity,
-                        'subtotal_label' => number_format((int) $item->subtotal, 0, ',', '.'),
-                    ])
-                    ->all()
-            ),
-            'period' => [
-                'start_date_label' => BookingPeriod::readableDate($booking->start_date),
-                'end_date_label' => BookingPeriod::readableDate($booking->end_date),
-                'total_days_label' => ((int) $booking->total_days).' hari',
-            ],
-            'total' => (int) $booking->total,
-            'total_label' => number_format((int) $booking->total, 0, ',', '.'),
-            'cancellation_reason' => $booking->cancellation_reason,
-            'created_at_label' => BookingPeriod::readableDate($booking->created_at),
-        ];
     }
 
     /**

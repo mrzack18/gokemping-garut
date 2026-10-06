@@ -34,3 +34,11 @@ export type TicketDetail = {
     cancellation_reason: string | null;
     created_at_label: string;
 };
+
+/**
+ * Props halaman cek tiket panel admin: tiket hasil pencarian, atau null
+ * sebelum dicari.
+ */
+export type AdminTicketPageProps = {
+    ticket: TicketDetail | null;
+};

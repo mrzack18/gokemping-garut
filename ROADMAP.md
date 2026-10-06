@@ -1290,11 +1290,11 @@ Catatan implementasi 5.5:
   hanya dengan kode akan membocorkan data booking orang lain. Nomor WhatsApp
   dinormalkan lewat `WhatsappNumber` supaya `0812...`, `+62 812...`, dan
   `62812...` sama-sama cocok, dan kode booking dinormalkan ke huruf besar.
-- **Cek tiket tinggal di landing page sebagai section `#cek-tiket`, bukan
-  halaman terpisah.** Penyewa dan staf menemukannya di tempat yang sama dengan
-  informasi layanan, dan hasil pencariannya dirender di section yang sama
-  sehingga tidak ada perpindahan halaman. Route GET khusus cek tiket tidak
-  ada; yang tersisa hanya POST pencarian.
+- **Cek tiket publik tinggal di landing page sebagai section `#cek-tiket`,
+  bukan halaman terpisah.** Penyewa dan staf menemukannya di tempat yang sama
+  dengan informasi layanan, dan hasil pencariannya dirender di section yang
+  sama sehingga tidak ada perpindahan halaman. Route GET khusus cek tiket
+  tidak ada; yang tersisa hanya POST pencarian.
 - **Pencarian hanya tersedia lewat POST**, supaya kode booking dan nomor
   telepon tidak ikut tercatat di URL, riwayat peramban, atau log akses.
 - **Endpoint dibatasi `throttle:30,1`**, lebih longgar dari lookup biodata
@@ -1309,11 +1309,18 @@ Catatan implementasi 5.5:
   penyewa (untuk verifikasi staf), produk dari snapshot `booking_items`,
   periode, total, status booking, status pembayaran, metode pembayaran, alasan
   pembatalan bila ada, serta tombol WhatsApp admin unit pemilik booking.
-- **Tautan cek tiket ada di tiga tempat**: navbar publik dan menu mobile
-  memakai anchor `#cek-tiket`, halaman sukses booking menaut ke
-  `/#cek-tiket`, dan sidebar admin punya menu "Cek Tiket" yang mengarah ke
-  section yang sama. Inertia menggulir otomatis ke elemen dengan id tersebut.
-  `resources/js/routes/tickets` di-generate ulang oleh Wayfinder.
+- **Cek tiket tersedia di dua tempat dengan lingkup berbeda, memakai
+  `TicketLookupService` yang sama.** Section landing mencari lintas unit tanpa
+  login; halaman panel admin `admin/tickets` mencari hanya di unit admin yang
+  login (BR-05), sehingga staf tidak bisa memeriksa tiket unit lain. Keduanya
+  memakai verifikasi kode booking + nomor WhatsApp dan menampilkan komponen
+  hasil yang sama.
+- **Tautan cek tiket**: navbar publik dan menu mobile memakai anchor
+  `#cek-tiket`, halaman sukses booking menaut ke `/#cek-tiket`, dan sidebar
+  admin punya menu "Cek Tiket" yang mengarah ke halaman panel admin, bukan ke
+  landing publik. Inertia menggulir otomatis ke section saat dituju memakai
+  anchor. `resources/js/routes/tickets` dan `resources/js/routes/admin/tickets`
+  di-generate ulang oleh Wayfinder.
 
 **Deliverable Fase 3:** Admin dapat menganalisis bisnis dan mengelola konten tanpa sentuh kode.
 

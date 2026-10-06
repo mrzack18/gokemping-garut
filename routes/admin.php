@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\StatisticsController;
+use App\Http\Controllers\Admin\TicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -155,4 +156,14 @@ Route::middleware(['auth', 'business'])
             ->parameters(['faqs' => 'faq'])
             ->only(['store', 'update', 'destroy'])
             ->names('content.faqs');
+
+        /*
+         * Cek tiket dari panel admin. Pencarian dibatasi ke unit admin yang
+         * login, jadi staf tidak bisa memeriksa tiket unit lain.
+         */
+        Route::get('tickets', [TicketController::class, 'index'])
+            ->name('tickets.index');
+        Route::post('tickets', [TicketController::class, 'lookup'])
+            ->middleware('throttle:'.TicketController::THROTTLE)
+            ->name('tickets.lookup');
     });
