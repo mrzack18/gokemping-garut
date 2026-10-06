@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import PublicLayout from '@/layouts/public-layout';
-import tickets from '@/routes/tickets';
+import { home } from '@/routes';
 import type { BookingSuccessPageProps } from '@/types';
 import {
     ArrowLeft,
@@ -94,7 +94,7 @@ export default function BookingSuccess({
                             ) : null}
 
                             <Button asChild variant="outline" size="lg">
-                                <Link href={tickets.check()}>
+                                <Link href={`${home.url()}#cek-tiket`}>
                                     <Ticket />
                                     Cek Status Tiket
                                 </Link>

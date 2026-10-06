@@ -1,8 +1,7 @@
 import type { BookingStatusValue, PaymentStatusValue } from './admin';
-import type { LandingBusiness } from './landing';
 
 /**
- * Cek tiket publik (kode booking + nomor WhatsApp).
+ * Cek tiket publik (kode booking + nomor WhatsApp) di landing page.
  *
  * Payload tiket sengaja tanpa NIK dan tanpa alamat: halaman ini milik publik.
  */
@@ -34,9 +33,4 @@ export type TicketDetail = {
     total_label: string;
     cancellation_reason: string | null;
     created_at_label: string;
-};
-
-export type TicketCheckPageProps = {
-    ticket: TicketDetail | null;
-    businesses: LandingBusiness[];
 };

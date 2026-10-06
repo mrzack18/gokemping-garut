@@ -11,6 +11,7 @@ import FeaturedProducts from '@/components/landing/featured-products';
 import Hero from '@/components/landing/hero';
 import RentalSteps from '@/components/landing/rental-steps';
 import Services from '@/components/landing/services';
+import TicketCheck from '@/components/landing/ticket-check';
 import PublicLayout from '@/layouts/public-layout';
 import type { LandingPageProps } from '@/types';
 
@@ -19,6 +20,7 @@ export default function Welcome({
     featuredProducts,
     banners,
     faqs,
+    ticket,
 }: LandingPageProps) {
     return (
         <PublicLayout businesses={businesses}>
@@ -50,6 +52,8 @@ export default function Welcome({
             <FeaturedProducts products={featuredProducts} />
 
             <RentalSteps businesses={businesses} />
+
+            <TicketCheck ticket={ticket} />
 
             <Advantages />
 

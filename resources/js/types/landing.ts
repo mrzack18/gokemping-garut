@@ -1,3 +1,5 @@
+import type { TicketDetail } from './ticket';
+
 export type LandingBusiness = {
     id: number;
     name: string;
@@ -51,6 +53,8 @@ export type LandingPageProps = {
     featuredProducts: LandingProduct[];
     banners: LandingBanner[];
     faqs: LandingFaq[];
+    /** Tiket hasil pencarian di section `#cek-tiket`, null sebelum dicari. */
+    ticket: TicketDetail | null;
 };
 
 export type ServiceSelectionProduct = {

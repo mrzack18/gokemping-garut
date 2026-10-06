@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/sheet';
 import { login } from '@/routes';
 import { dashboard } from '@/routes/admin';
-import tickets from '@/routes/tickets';
 import type { LandingBusiness } from '@/types';
 import { Menu } from 'lucide-react';
 import { useState, type PropsWithChildren } from 'react';
@@ -29,6 +28,7 @@ const navigation = [
     { label: 'Layanan', href: '#layanan' },
     { label: 'Produk', href: '#produk' },
     { label: 'Cara Sewa', href: '#cara-sewa' },
+    { label: 'Cek Tiket', href: '#cek-tiket' },
     { label: 'Keunggulan', href: '#keunggulan' },
     { label: 'FAQ', href: '#faq' },
     { label: 'Kontak', href: '#kontak' },
@@ -66,13 +66,6 @@ export default function PublicLayout({
                                 {item.label}
                             </a>
                         ))}
-
-                        <Link
-                            href={tickets.check()}
-                            className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                            Cek Tiket
-                        </Link>
                     </nav>
 
                     <div className="flex items-center gap-2">
@@ -112,14 +105,6 @@ export default function PublicLayout({
                                             {item.label}
                                         </a>
                                     ))}
-
-                                    <Link
-                                        href={tickets.check()}
-                                        onClick={() => setOpen(false)}
-                                        className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                    >
-                                        Cek Tiket
-                                    </Link>
                                 </nav>
                             </SheetContent>
                         </Sheet>

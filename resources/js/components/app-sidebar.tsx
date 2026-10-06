@@ -7,6 +7,7 @@ import {
     LayoutTemplate,
     Package,
     Settings2,
+    Ticket,
     TrendingUp,
     Users,
     Wallet,
@@ -87,6 +88,13 @@ const mainNavItems: NavItem[] = [
         title: 'Konten',
         href: contentRoutes.index(),
         icon: LayoutTemplate,
+    },
+    {
+        // Cek tiket tinggal di landing page, jadi menu ini mengarah ke section
+        // `#cek-tiket` dan Inertia akan menggulir ke sana.
+        title: 'Cek Tiket',
+        href: '/#cek-tiket',
+        icon: Ticket,
     },
 ];
 

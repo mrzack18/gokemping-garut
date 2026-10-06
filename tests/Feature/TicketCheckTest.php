@@ -26,14 +26,14 @@ class TicketCheckTest extends TestCase
 
     private const WHATSAPP = '628123456789';
 
-    public function test_halaman_cek_tiket_dapat_diakses_tanpa_login(): void
+    public function test_landing_page_menampilkan_section_cek_tiket_tanpa_tiket(): void
     {
         $this->assertGuest();
 
-        $this->get(route('tickets.check'))
+        $this->get(route('home'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('tickets/check')
+                ->component('welcome')
                 ->where('ticket', null)
                 ->has('businesses')
             );
@@ -50,7 +50,7 @@ class TicketCheckTest extends TestCase
         ])
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('tickets/check')
+                ->component('welcome')
                 ->where('ticket.booking_code', $booking->booking_code)
                 ->where('ticket.business.name', 'GoKemping')
                 ->where('ticket.customer_name', 'Budi Santoso')
@@ -100,12 +100,12 @@ class TicketCheckTest extends TestCase
     {
         $booking = $this->booking(Business::factory()->create());
 
-        $this->from(route('tickets.check'))
+        $this->from(route('home'))
             ->post(route('tickets.lookup'), [
                 'booking_code' => $booking->booking_code,
                 'whatsapp' => '628999999999',
             ])
-            ->assertRedirect(route('tickets.check'))
+            ->assertRedirect(route('home'))
             ->assertSessionHasErrors('booking_code');
     }
 
@@ -115,7 +115,7 @@ class TicketCheckTest extends TestCase
         $booking = $this->booking($business);
         Customer::factory()->withWhatsapp('628999999999')->create();
 
-        $this->from(route('tickets.check'))
+        $this->from(route('home'))
             ->post(route('tickets.lookup'), [
                 'booking_code' => $booking->booking_code,
                 'whatsapp' => '628999999999',
@@ -125,7 +125,7 @@ class TicketCheckTest extends TestCase
 
     public function test_kode_yang_tidak_dikenal_menghasilkan_error(): void
     {
-        $this->from(route('tickets.check'))
+        $this->from(route('home'))
             ->post(route('tickets.lookup'), [
                 'booking_code' => 'GK-99999999-999',
                 'whatsapp' => self::WHATSAPP,
@@ -137,7 +137,7 @@ class TicketCheckTest extends TestCase
     {
         $booking = $this->booking(Business::factory()->create());
 
-        $this->from(route('tickets.check'))
+        $this->from(route('home'))
             ->post(route('tickets.lookup'), [
                 'booking_code' => $booking->booking_code,
                 'whatsapp' => 'bukan-nomor',
@@ -147,7 +147,7 @@ class TicketCheckTest extends TestCase
 
     public function test_kode_dan_nomor_wajib_diisi(): void
     {
-        $this->from(route('tickets.check'))
+        $this->from(route('home'))
             ->post(route('tickets.lookup'), [])
             ->assertSessionHasErrors(['booking_code', 'whatsapp']);
     }
