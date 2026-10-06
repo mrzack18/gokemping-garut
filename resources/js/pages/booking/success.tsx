@@ -11,8 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import PublicLayout from '@/layouts/public-layout';
+import tickets from '@/routes/tickets';
 import type { BookingSuccessPageProps } from '@/types';
-import { ArrowLeft, CalendarClock, MessageCircle, Receipt } from 'lucide-react';
+import {
+    ArrowLeft,
+    CalendarClock,
+    MessageCircle,
+    Receipt,
+    Ticket,
+} from 'lucide-react';
 
 /**
  * Halaman konfirmasi booking (ROADMAP 3.11 dan 3.12).
@@ -85,6 +92,13 @@ export default function BookingSuccess({
                                     {receipt.business_name} ({whatsapp.number}).
                                 </p>
                             ) : null}
+
+                            <Button asChild variant="outline" size="lg">
+                                <Link href={tickets.check()}>
+                                    <Ticket />
+                                    Cek Status Tiket
+                                </Link>
+                            </Button>
                         </div>
 
                         <Card className="mt-8">

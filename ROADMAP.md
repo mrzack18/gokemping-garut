@@ -1276,6 +1276,39 @@ Catatan implementasi 5.4:
 - Menu "Konten" ditambahkan ke sidebar admin, dan
   `resources/js/routes/admin/content` di-generate ulang oleh Wayfinder.
 
+### 5.5 Cek Tiket Publik (tambahan)
+
+- [x] Halaman publik cek tiket dengan kode booking + nomor WhatsApp
+- [x] Ringkasan status booking, pembayaran, produk, periode, dan total
+- [x] Dipakai penyewa maupun staf saat verifikasi pengambilan
+- [x] Tautan di navbar publik dan halaman sukses booking
+
+Catatan implementasi 5.5:
+
+- **Verifikasinya kode booking + nomor WhatsApp penyewa, bukan kode booking
+  saja.** Kode booking berurutan per hari dan bisa ditebak, jadi membuka tiket
+  hanya dengan kode akan membocorkan data booking orang lain. Nomor WhatsApp
+  dinormalkan lewat `WhatsappNumber` supaya `0812...`, `+62 812...`, dan
+  `62812...` sama-sama cocok, dan kode booking dinormalkan ke huruf besar.
+- **Pencarian hanya tersedia lewat POST**, supaya kode booking dan nomor
+  telepon tidak ikut tercatat di URL, riwayat peramban, atau log akses. Route
+  GET hanya menampilkan formulir kosong.
+- **Endpoint dibatasi `throttle:30,1`**, lebih longgar dari lookup biodata
+  karena staf bisa memeriksa banyak tiket berurutan saat jam pengambilan,
+  tetapi tetap jauh di bawah jumlah percobaan yang dibutuhkan untuk menebak
+  kode booking.
+- **`BusinessScope` dinonaktifkan untuk halaman ini** karena tiket lintas unit
+  dan tidak butuh login. Tanpa itu, admin yang sedang login justru tidak bisa
+  memeriksa tiket unit lain. Verifikasi nomor WhatsApp tetap yang menentukan
+  tiket mana yang terbuka.
+- **Payload tiket tidak memuat NIK maupun alamat.** Yang ditampilkan hanya nama
+  penyewa (untuk verifikasi staf), produk dari snapshot `booking_items`,
+  periode, total, status booking, status pembayaran, metode pembayaran, alasan
+  pembatalan bila ada, serta tombol WhatsApp admin unit pemilik booking.
+- Tautan "Cek Tiket" ditambahkan di navbar publik (desktop dan menu mobile)
+  dan di halaman sukses booking, dan `resources/js/routes/tickets` di-generate
+  ulang oleh Wayfinder.
+
 **Deliverable Fase 3:** Admin dapat menganalisis bisnis dan mengelola konten tanpa sentuh kode.
 
 ---

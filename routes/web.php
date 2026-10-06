@@ -13,10 +13,19 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProductDetailController;
 use App\Http\Controllers\ServiceSelectionController;
+use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingController::class)->name('home');
 Route::get('/pilih-layanan', ServiceSelectionController::class)->name('services.index');
+
+// Cek tiket publik: penyewa memeriksa status booking, staf memverifikasi tiket
+// saat pengambilan. Verifikasinya kode booking + nomor WhatsApp penyewa, dan
+// endpoint pencariannya dibatasi throttle.
+Route::get('/cek-tiket', [TicketController::class, 'check'])->name('tickets.check');
+Route::post('/cek-tiket', [TicketController::class, 'lookup'])
+    ->middleware('throttle:'.TicketController::THROTTLE)
+    ->name('tickets.lookup');
 
 // Pencarian data penyewa lama tidak butuh unit bisnis karena `customers` tidak
 // punya business_id: satu orang bisa menyewa di kedua unit.
