@@ -57,7 +57,11 @@ class ServiceSelectionController extends Controller
                 'name',
                 'slug',
                 'description',
+                'service_intro',
+                'service_highlights',
+                'rental_terms',
                 'whatsapp',
+                'phone',
                 'address',
                 'booking_code_prefix',
             ]);

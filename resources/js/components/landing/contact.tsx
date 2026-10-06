@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { whatsappLink } from '@/lib/format';
 import type { LandingBusiness } from '@/types';
-import { Mail, MapPin, MessageCircle } from 'lucide-react';
+import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 
 type ContactProps = {
     businesses: LandingBusiness[];
@@ -58,6 +58,21 @@ export default function Contact({ businesses }: ContactProps) {
                                         </div>
                                     ) : null}
 
+                                    {business.phone ? (
+                                        <div className="flex gap-2">
+                                            <dt className="sr-only">Telepon</dt>
+                                            <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                            <dd>
+                                                <a
+                                                    href={`tel:${business.phone}`}
+                                                    className="underline underline-offset-4 hover:text-foreground"
+                                                >
+                                                    {business.phone}
+                                                </a>
+                                            </dd>
+                                        </div>
+                                    ) : null}
+
                                     <div className="flex gap-2">
                                         <dt className="sr-only">WhatsApp</dt>
                                         <MessageCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -76,6 +91,16 @@ export default function Contact({ businesses }: ContactProps) {
                                         </dd>
                                     </div>
                                 </dl>
+
+                                {business.maps_embed_url ? (
+                                    <iframe
+                                        src={business.maps_embed_url}
+                                        title={`Lokasi ${business.name}`}
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        className="aspect-video w-full rounded-lg border"
+                                    />
+                                ) : null}
 
                                 <div className="flex flex-col gap-2 sm:flex-row">
                                     <Button asChild>

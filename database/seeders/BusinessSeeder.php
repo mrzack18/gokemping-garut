@@ -19,7 +19,15 @@ class BusinessSeeder extends Seeder
             [
                 'name' => 'GoKemping',
                 'description' => 'Penyewaan perlengkapan camping terlengkap di Garut.',
+                'service_intro' => 'Sewa perlengkapan camping lengkap untuk kebutuhan camping dan outdoor.',
+                'service_highlights' => [
+                    'Tenda, sleeping bag, matras, dan kursi lipat',
+                    'Kompor camping serta carrier siap pakai',
+                    'Perlengkapan dibersihkan sebelum disewakan',
+                ],
+                'rental_terms' => 'Penyewa wajib membawa KTP asli. Kerusakan atau kehilangan barang menjadi tanggung jawab penyewa selama masa sewa.',
                 'whatsapp' => '6281234567890',
+                'phone' => '081234567890',
                 'email' => 'admin@gokemping.test',
                 'address' => 'Jl. Raya Garut No. 1, Garut, Jawa Barat',
                 'booking_code_prefix' => 'GK',
@@ -32,7 +40,15 @@ class BusinessSeeder extends Seeder
             [
                 'name' => 'Sewa Sepeda Garut',
                 'description' => 'Penyewaan sepeda untuk gowes dan rekreasi di Garut.',
+                'service_intro' => 'Sewa sepeda untuk gowes, rekreasi, maupun aktivitas outdoor di Garut.',
+                'service_highlights' => [
+                    'MTB, city bike, dan sepeda anak',
+                    'Wajib membawa KTP dan memakai helm',
+                    'Sepeda dicek sebelum dan sesudah disewa',
+                ],
+                'rental_terms' => 'Penyewa wajib membawa KTP asli dan memakai helm. Sepeda dikembalikan dalam kondisi seperti saat diambil.',
                 'whatsapp' => '6289876543210',
+                'phone' => '089876543210',
                 'email' => 'admin@sewasepedagarut.test',
                 'address' => 'Jl. Sudirman No. 2, Garut, Jawa Barat',
                 'booking_code_prefix' => 'SSG',
@@ -42,6 +58,41 @@ class BusinessSeeder extends Seeder
 
         $this->seedGoKempingCatalog($gokemping);
         $this->seedSepedaCatalog($sewaSepeda);
+        $this->seedFaqs($gokemping);
+        $this->seedFaqs($sewaSepeda);
+    }
+
+    /**
+     * FAQ awal tiap unit. Isinya umum dan disesuaikan lagi lewat halaman
+     * konten admin.
+     */
+    private function seedFaqs(Business $business): void
+    {
+        $faqs = [
+            [
+                'question' => 'Apakah harus membuat akun sebelum menyewa?',
+                'answer' => 'Tidak. Anda cukup memilih barang, mengisi data penyewa, lalu konfirmasi pesanan melalui WhatsApp admin.',
+            ],
+            [
+                'question' => 'Bagaimana cara membayar?',
+                'answer' => 'Pembayaran manual setelah pesanan dibuat: cash saat pengambilan, QRIS, atau transfer bank. Admin mengonfirmasi status pembayarannya.',
+            ],
+            [
+                'question' => 'Apakah barang dijamin tersedia?',
+                'answer' => 'Ya. Halaman booking menghitung stok terpakai dari booking aktif pada tanggal yang dipilih, jadi tidak ada overbooking.',
+            ],
+        ];
+
+        foreach ($faqs as $index => $faq) {
+            $business->faqs()->updateOrCreate(
+                ['question' => $faq['question']],
+                [
+                    'answer' => $faq['answer'],
+                    'sort_order' => $index,
+                    'is_active' => true,
+                ],
+            );
+        }
     }
 
     private function seedGoKempingCatalog(Business $business): void

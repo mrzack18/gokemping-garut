@@ -2,7 +2,7 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 3 berjalan — 5.1 s/d 5.3 selesai
+**Status:** Fase 3 selesai — seluruh roadmap selesai
 **Terakhir diperbarui:** 2026-10-05
 
 ---
@@ -1231,13 +1231,50 @@ Catatan implementasi 5.3:
 
 ### 5.4 Content Management
 
-- [ ] Banner / hero carousel
-- [ ] Informasi layanan
-- [ ] FAQ (CRUD)
-- [ ] Ketentuan sewa
-- [ ] Kontak (WhatsApp, telepon, alamat)
-- [ ] Informasi lokasi (embed maps)
-- [ ] Semua konten ter-scope `business_id`
+- [x] Banner / hero carousel
+- [x] Informasi layanan
+- [x] FAQ (CRUD)
+- [x] Ketentuan sewa
+- [x] Kontak (WhatsApp, telepon, alamat)
+- [x] Informasi lokasi (embed maps)
+- [x] Semua konten ter-scope `business_id`
+
+Catatan implementasi 5.4:
+
+- **Informasi layanan, ketentuan sewa, kontak tambahan, dan URL peta
+  disimpan di baris `businesses`; banner dan FAQ punya tabel sendiri.**
+  Informasi layanan dan kontak memang sifatnya satu per unit, jadi menambah
+  tabel baru hanya akan membuat join yang tidak perlu. Banner dan FAQ
+  jumlahnya banyak dan punya urutan tayang serta status aktif sendiri, jadi
+  keduanya layak berdiri sendiri. Semua tetap terikat `business_id`.
+- **Copy bawaan PRD tetap jadi cadangan.** `service-copy.ts` masih dipakai
+  selama admin belum mengisi `service_intro`/`service_highlights`, dan FAQ
+  landing memakai daftar bawaan selama tabel `faqs` kosong. Halaman publik
+  tidak boleh mendadak kosong hanya karena konten belum diisi.
+- **Banner hanya menerima gambar JPG/PNG/WebP maksimal 5 MB, dikompresi ulang
+  ke WebP 1600 piksel seperti foto produk.** Banner tampil besar di landing
+  page, jadi berkas asli dari perangkat admin tidak pernah disimpan apa adanya.
+  Mengubah banner tanpa mengunggah gambar baru mempertahankan gambar lama;
+  gambar lama dihapus setelah barisnya berhasil disimpan, dan gambar baru
+  dibatalkan kalau penyimpanan baris gagal.
+- **Poin informasi layanan diedit sebagai textarea satu poin per baris,**
+  maksimal 6 baris dan 120 karakter per baris, lalu disimpan sebagai array di
+  kolom JSON. Menyimpannya sebagai array membuat frontend tidak perlu memecah
+  teks lagi, dan batas baris menjaga section layanan tidak berubah jadi
+  dinding teks.
+- **URL peta dibatasi harus berupa tautan embed Google Maps.** Nilainya
+  dirender sebagai `<iframe>` di landing page, jadi tanpa batasan domain
+  halaman publik bisa dipakai menampilkan iframe dari mana pun. Admin
+  menempel URL dari Google Maps &rarr; Bagikan &rarr; Sematkan peta.
+- **Banner dan FAQ nonaktif tetap tersimpan di halaman admin tapi tidak
+  dikirim ke halaman publik**, jadi admin bisa menyiapkan konten lalu
+  menayangkannya belakangan. Landing page memang lintas tenant, jadi scope
+  dinonaktifkan eksplisit dan hanya konten unit aktif yang ikut.
+- **Banner carousel memakai komponen carousel yang sudah ada**, dengan teks di
+  atas gradient gelap agar tetap terbaca di gambar apa pun. Tautan internal
+  memakai Link Inertia, tautan luar memakai anchor biasa.
+- Menu "Konten" ditambahkan ke sidebar admin, dan
+  `resources/js/routes/admin/content` di-generate ulang oleh Wayfinder.
 
 **Deliverable Fase 3:** Admin dapat menganalisis bisnis dan mengelola konten tanpa sentuh kode.
 

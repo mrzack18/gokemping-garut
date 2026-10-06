@@ -13,9 +13,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string $slug
  * @property string|null $description
+ * @property string|null $service_intro
+ * @property list<string>|null $service_highlights
+ * @property string|null $rental_terms
  * @property string $whatsapp
+ * @property string|null $phone
  * @property string|null $email
  * @property string|null $address
+ * @property string|null $maps_embed_url
  * @property string $booking_code_prefix
  * @property bool $is_active
  */
@@ -23,9 +28,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'slug',
     'description',
+    'service_intro',
+    'service_highlights',
+    'rental_terms',
     'whatsapp',
+    'phone',
     'email',
     'address',
+    'maps_embed_url',
     'booking_code_prefix',
     'is_active',
 ])]
@@ -41,6 +51,7 @@ class Business extends Model
     {
         return [
             'is_active' => 'boolean',
+            'service_highlights' => 'array',
         ];
     }
 
@@ -83,5 +94,17 @@ class Business extends Model
     public function paymentMethods(): HasMany
     {
         return $this->hasMany(PaymentMethod::class);
+    }
+
+    /** @return HasMany<Banner, $this> */
+    public function banners(): HasMany
+    {
+        return $this->hasMany(Banner::class);
+    }
+
+    /** @return HasMany<Faq, $this> */
+    public function faqs(): HasMany
+    {
+        return $this->hasMany(Faq::class);
     }
 }

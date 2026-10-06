@@ -4,6 +4,7 @@ import {
     CalendarRange,
     FolderTree,
     LayoutGrid,
+    LayoutTemplate,
     Package,
     Settings2,
     TrendingUp,
@@ -26,6 +27,7 @@ import {
 import { dashboard } from '@/routes/admin';
 import bookingRoutes from '@/routes/admin/bookings';
 import categoryRoutes from '@/routes/admin/categories';
+import contentRoutes from '@/routes/admin/content';
 import customerRoutes from '@/routes/admin/customers';
 import paymentRoutes from '@/routes/admin/payments';
 import paymentSettingRoutes from '@/routes/admin/payment-settings';
@@ -34,8 +36,7 @@ import reportRoutes from '@/routes/admin/reports';
 import statisticRoutes from '@/routes/admin/statistics';
 import type { NavItem } from '@/types';
 
-// Menu Content Management (ROADMAP 5.4) belum ditambahkan dan akan menyusul
-// sesuai fase pengerjaan pada ROADMAP.md.
+// Seluruh menu modul sesuai ROADMAP.md sudah tersedia di sidebar ini.
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -81,6 +82,11 @@ const mainNavItems: NavItem[] = [
         title: 'Statistik',
         href: statisticRoutes.index(),
         icon: TrendingUp,
+    },
+    {
+        title: 'Konten',
+        href: contentRoutes.index(),
+        icon: LayoutTemplate,
     },
 ];
 

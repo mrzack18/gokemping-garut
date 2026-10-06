@@ -4,6 +4,7 @@ import services from '@/routes/services';
 import { ArrowRight } from 'lucide-react';
 import About from '@/components/landing/about';
 import Advantages from '@/components/landing/advantages';
+import BannerCarousel from '@/components/landing/banner-carousel';
 import Contact from '@/components/landing/contact';
 import Faq from '@/components/landing/faq';
 import FeaturedProducts from '@/components/landing/featured-products';
@@ -16,12 +17,16 @@ import type { LandingPageProps } from '@/types';
 export default function Welcome({
     businesses,
     featuredProducts,
+    banners,
+    faqs,
 }: LandingPageProps) {
     return (
         <PublicLayout businesses={businesses}>
             <Head title="Sewa Camping dan Sepeda di Garut" />
 
             <Hero businesses={businesses} />
+
+            <BannerCarousel banners={banners} />
 
             <div className="border-b">
                 <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
@@ -48,7 +53,7 @@ export default function Welcome({
 
             <Advantages />
 
-            <Faq />
+            <Faq faqs={faqs} />
 
             <Contact businesses={businesses} />
         </PublicLayout>

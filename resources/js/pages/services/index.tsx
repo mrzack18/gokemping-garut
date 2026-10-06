@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { serviceCopyFor } from '@/components/landing/service-copy';
 import { formatRupiah } from '@/lib/format';
 import type { ServiceSelectionPageProps } from '@/types';
-import { ArrowRight, Bike, MapPin, Tent } from 'lucide-react';
+import { ArrowRight, Bike, MapPin, Phone, Tent } from 'lucide-react';
 
 const icons: Record<string, typeof Tent> = {
     gokemping: Tent,
@@ -57,6 +57,15 @@ export default function ServiceSelection({
                             const preview = previewProducts.find(
                                 (entry) => entry.business_id === business.id,
                             );
+                            // Informasi layanan dari admin dipakai lebih dulu;
+                            // copy bawaan PRD hanya menjadi cadangan selama
+                            // admin belum mengisinya (ROADMAP 5.4).
+                            const intro = business.service_intro ?? copy.intro;
+                            const highlights =
+                                business.service_highlights !== null &&
+                                business.service_highlights.length > 0
+                                    ? business.service_highlights
+                                    : copy.highlights;
 
                             return (
                                 <motion.div
@@ -84,28 +93,43 @@ export default function ServiceSelection({
                                                             {business.address}
                                                         </p>
                                                     ) : null}
+                                                    {business.phone ? (
+                                                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                                                            <Phone className="size-3" />
+                                                            {business.phone}
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                             </div>
 
                                             <p className="text-sm text-muted-foreground">
-                                                {copy.intro}
+                                                {intro}
                                             </p>
 
                                             <ul className="space-y-2 text-sm">
-                                                {copy.highlights.map(
-                                                    (highlight) => (
-                                                        <li
-                                                            key={highlight}
-                                                            className="flex gap-2 text-muted-foreground"
-                                                        >
-                                                            <span aria-hidden>
-                                                                &middot;
-                                                            </span>
-                                                            {highlight}
-                                                        </li>
-                                                    ),
-                                                )}
+                                                {highlights.map((highlight) => (
+                                                    <li
+                                                        key={highlight}
+                                                        className="flex gap-2 text-muted-foreground"
+                                                    >
+                                                        <span aria-hidden>
+                                                            &middot;
+                                                        </span>
+                                                        {highlight}
+                                                    </li>
+                                                ))}
                                             </ul>
+
+                                            {business.rental_terms ? (
+                                                <div className="rounded-lg border bg-muted/40 p-3">
+                                                    <p className="text-xs font-medium">
+                                                        Ketentuan sewa
+                                                    </p>
+                                                    <p className="mt-1 text-xs whitespace-pre-line text-muted-foreground">
+                                                        {business.rental_terms}
+                                                    </p>
+                                                </div>
+                                            ) : null}
 
                                             {preview &&
                                             preview.products.length > 0 ? (

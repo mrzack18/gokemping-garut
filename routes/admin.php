@@ -1,11 +1,14 @@
 <?php
 
 use App\Enums\PaymentMethodType;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\ProductController;
@@ -131,4 +134,25 @@ Route::middleware(['auth', 'business'])
             ->name('exports.report');
         Route::get('exports/report-pdf', [ExportController::class, 'reportPdf'])
             ->name('exports.report-pdf');
+
+        /*
+         * Konten unit: informasi layanan disimpan di baris `businesses`,
+         * sedangkan banner dan FAQ punya tabelnya sendiri dengan
+         * `business_id` masing-masing. Route model binding banner/FAQ memakai
+         * `BusinessScope`, jadi konten unit lain berakhir sebagai 404.
+         */
+        Route::get('content', [ContentController::class, 'index'])
+            ->name('content.index');
+        Route::patch('content/profile', [ContentController::class, 'updateProfile'])
+            ->name('content.profile');
+
+        Route::resource('content/banners', BannerController::class)
+            ->parameters(['banners' => 'banner'])
+            ->only(['store', 'update', 'destroy'])
+            ->names('content.banners');
+
+        Route::resource('content/faqs', FaqController::class)
+            ->parameters(['faqs' => 'faq'])
+            ->only(['store', 'update', 'destroy'])
+            ->names('content.faqs');
     });

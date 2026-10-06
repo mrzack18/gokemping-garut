@@ -634,3 +634,45 @@ export type AdminStatisticsPageProps = {
     top_products: AdminReportTopProduct[];
     payment_methods: AdminReportPaymentMethod[];
 };
+
+/**
+ * Konten unit (PRD section 28, ROADMAP 5.4).
+ *
+ * `service_highlights` datang sebagai array dari server dan diedit sebagai
+ * textarea satu poin per baris, jadi form perlu menggabungkannya saat menampil
+ * dan backend memecahnya lagi saat menyimpan.
+ */
+export type AdminBusinessContent = {
+    whatsapp: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    service_intro: string | null;
+    service_highlights: string[];
+    rental_terms: string | null;
+    maps_embed_url: string | null;
+};
+
+export type AdminBannerRow = {
+    id: number;
+    title: string;
+    subtitle: string | null;
+    image_url: string | null;
+    link_url: string | null;
+    sort_order: number;
+    is_active: boolean;
+};
+
+export type AdminFaqRow = {
+    id: number;
+    question: string;
+    answer: string;
+    sort_order: number;
+    is_active: boolean;
+};
+
+export type AdminContentPageProps = {
+    content: AdminBusinessContent;
+    banners: AdminBannerRow[];
+    faqs: AdminFaqRow[];
+};

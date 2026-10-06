@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\Business;
+use App\Models\Faq;
 use App\Models\Product;
 use App\Models\Scopes\BusinessScope;
 use Illuminate\Support\Collection;
@@ -49,6 +51,8 @@ class LandingController extends Controller
         return Inertia::render('welcome', [
             'businesses' => $businesses,
             'featuredProducts' => $this->featuredProducts($businesses),
+            'banners' => $this->banners($businesses),
+            'faqs' => $this->faqs($businesses),
         ]);
     }
 
@@ -60,7 +64,58 @@ class LandingController extends Controller
         return Business::query()
             ->where('is_active', true)
             ->orderBy('id')
-            ->get(['id', 'name', 'slug', 'description', 'whatsapp', 'email', 'address']);
+            ->get([
+                'id',
+                'name',
+                'slug',
+                'description',
+                'service_intro',
+                'service_highlights',
+                'rental_terms',
+                'whatsapp',
+                'phone',
+                'email',
+                'address',
+                'maps_embed_url',
+            ]);
+    }
+
+    /**
+     * Banner aktif dari seluruh unit, digabung dengan unitnya.
+     *
+     * Landing page memang lintas tenant, jadi scope dinonaktifkan secara
+     * eksplisit. Banner nonaktif tidak pernah dikirim supaya admin bisa
+     * menyiapkan banner lalu menayangkannya belakangan.
+     *
+     * @param  Collection<int, Business>  $businesses
+     * @return Collection<int, Banner>
+     */
+    private function banners(Collection $businesses): Collection
+    {
+        return BusinessScope::withoutBusinessScope(
+            Banner::query()
+                ->whereIn('business_id', $businesses->pluck('id'))
+                ->active()
+                ->ordered()
+                ->with('business:id,name,slug')
+        )->get();
+    }
+
+    /**
+     * FAQ aktif dari seluruh unit, diurutkan mengikuti urutan unitnya.
+     *
+     * @param  Collection<int, Business>  $businesses
+     * @return Collection<int, Faq>
+     */
+    private function faqs(Collection $businesses): Collection
+    {
+        return BusinessScope::withoutBusinessScope(
+            Faq::query()
+                ->whereIn('business_id', $businesses->pluck('id'))
+                ->active()
+                ->ordered()
+                ->with('business:id,name,slug')
+        )->get();
     }
 
     /**

@@ -6,8 +6,17 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
+import type { LandingFaq } from '@/types';
 
-const faqs = [
+/**
+ * FAQ landing page (PRD section 28, ROADMAP 5.4).
+ *
+ * FAQ berasal dari tabel `faqs` per unit. Selama admin belum mengisi FAQ-nya,
+ * daftar bawaan dari PRD tetap dipakai supaya section ini tidak kosong di
+ * halaman publik. Nama unitnya ditampilkan karena satu halaman memuat FAQ dari
+ * beberapa unit.
+ */
+const fallbackFaqs: { question: string; answer: string }[] = [
     {
         question: 'Apakah harus membuat akun sebelum menyewa?',
         answer: 'Tidak. GoKemping tidak memakai pendaftaran akun. Anda cukup memilih barang, mengisi data penyewa, lalu konfirmasi pesanan melalui WhatsApp admin.',
@@ -34,7 +43,22 @@ const faqs = [
     },
 ];
 
-export default function Faq() {
+export default function Faq({ faqs }: { faqs: LandingFaq[] }) {
+    const items =
+        faqs.length > 0
+            ? faqs.map((faq) => ({
+                  key: `faq-${faq.id}`,
+                  question: faq.question,
+                  answer: faq.answer,
+                  business: faq.business.name,
+              }))
+            : fallbackFaqs.map((faq, index) => ({
+                  key: `fallback-${index}`,
+                  question: faq.question,
+                  answer: faq.answer,
+                  business: null,
+              }));
+
     return (
         <Section
             id="faq"
@@ -44,14 +68,20 @@ export default function Faq() {
         >
             <Reveal className="mx-auto max-w-3xl">
                 <Accordion type="single" collapsible className="w-full">
-                    {faqs.map((faq, index) => (
-                        <AccordionItem
-                            key={faq.question}
-                            value={`faq-${index}`}
-                        >
-                            <AccordionTrigger>{faq.question}</AccordionTrigger>
+                    {items.map((item) => (
+                        <AccordionItem key={item.key} value={item.key}>
+                            <AccordionTrigger>
+                                <span className="flex flex-col items-start gap-0.5 text-left">
+                                    {item.business !== null ? (
+                                        <span className="text-xs font-normal text-muted-foreground">
+                                            {item.business}
+                                        </span>
+                                    ) : null}
+                                    {item.question}
+                                </span>
+                            </AccordionTrigger>
                             <AccordionContent className="text-muted-foreground">
-                                {faq.answer}
+                                {item.answer}
                             </AccordionContent>
                         </AccordionItem>
                     ))}
