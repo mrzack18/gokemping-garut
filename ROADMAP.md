@@ -1281,6 +1281,8 @@ Catatan implementasi 5.4:
 - [x] Section cek tiket di landing page dengan kode booking + nomor WhatsApp
 - [x] Ringkasan status booking, pembayaran, produk, periode, dan total
 - [x] Dipakai penyewa maupun staf saat verifikasi pengambilan
+- [x] QR tiket yang bisa diunduh di halaman sukses booking
+- [x] Scan QR di cek tiket publik dan panel admin
 - [x] Tautan di navbar publik, halaman sukses booking, dan sidebar admin
 
 Catatan implementasi 5.5:
@@ -1321,6 +1323,22 @@ Catatan implementasi 5.5:
   landing publik. Inertia menggulir otomatis ke section saat dituju memakai
   anchor. `resources/js/routes/tickets` dan `resources/js/routes/admin/tickets`
   di-generate ulang oleh Wayfinder.
+- **QR tiket di halaman sukses berisi URL pindai bertanda tangan.** Tokennya
+  HMAC dari kode booking memakai `APP_KEY` (`TicketToken`), jadi URL hanya bisa
+  dibuat aplikasi ini dan kode booking yang diubah berhenti sebagai 404. QR
+  dibuat di browser (`qrcode`) sehingga tidak perlu mengirim kode booking ke
+  layanan gambar mana pun, dan bisa diunduh sebagai PNG dari halaman yang sama.
+- **Pemindaian memakai kamera perangkat lewat `@zxing/browser`.** Tombol
+  "Scan QR" ada di section cek tiket landing dan di panel admin. Kamera hanya
+  hidup selama dialog terbuka dan selalu dimatikan saat dialog ditutup.
+- **Dua route pindai dengan lingkup berbeda**: publik
+  `GET /cek-tiket/{booking}?token=` menampilkan tiket di landing page, sedangkan
+  admin `GET admin/tickets/scan/{booking}?token=` menampilkannya di panel dan
+  tetap dibatasi unit admin yang login. Token yang salah, hilang, atau kode
+  yang tidak dikenal semuanya berhenti sebagai 404.
+- QR dari domain lain ditolak oleh frontend sebelum navigasi, jadi tautan asing
+  yang kebetulan terbaca kamera tidak pernah membuka halaman luar dari halaman
+  cek tiket.
 
 **Deliverable Fase 3:** Admin dapat menganalisis bisnis dan mengelola konten tanpa sentuh kode.
 

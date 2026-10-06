@@ -16,6 +16,7 @@ use App\Models\Scopes\BusinessScope;
 use App\Services\AvailabilityService;
 use App\Support\BookingDraft;
 use App\Support\BookingReceipt;
+use App\Support\TicketToken;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -340,6 +341,10 @@ class BookingStoreTest extends TestCase
         );
         $this->assertStringContainsString('Kode Booking: '.$code, $whatsapp['message']);
         $this->assertStringContainsString('Halo Admin GoKemping,', $whatsapp['message']);
+
+        // QR tiket memakai URL pindai bertanda tangan dari kode booking yang
+        // baru saja dibuat.
+        $this->assertSame(TicketToken::url($code), $this->receipt()['ticket_url']);
 
         $this->get(route('booking.gokemping.success'))
             ->assertOk()

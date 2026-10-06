@@ -166,4 +166,6 @@ Route::middleware(['auth', 'business'])
         Route::post('tickets', [TicketController::class, 'lookup'])
             ->middleware('throttle:'.TicketController::THROTTLE)
             ->name('tickets.lookup');
+        Route::get('tickets/scan/{booking}', [TicketController::class, 'scan'])
+            ->name('tickets.scan');
     });

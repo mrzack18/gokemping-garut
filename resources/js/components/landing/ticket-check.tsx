@@ -1,13 +1,16 @@
-import { Form } from '@inertiajs/react';
+import { Form, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import Reveal from '@/components/landing/reveal';
 import Section from '@/components/landing/section';
 import TicketResult from '@/components/ticket/ticket-result';
+import TicketScanner from '@/components/ticket/ticket-scanner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { parseTicketScan } from '@/lib/ticket';
 import { home } from '@/routes';
 import tickets from '@/routes/tickets';
 import type { TicketDetail } from '@/types';
@@ -28,6 +31,23 @@ export default function TicketCheck({
 }: {
     ticket: TicketDetail | null;
 }) {
+    const [scanError, setScanError] = useState<string | null>(null);
+
+    function handleScan(text: string) {
+        const parsed = parseTicketScan(text);
+
+        if (parsed === null) {
+            setScanError(
+                'QR tidak dikenali. Pastikan yang dipindai adalah QR tiket dari aplikasi ini.',
+            );
+
+            return;
+        }
+
+        setScanError(null);
+        router.get(text, { preserveScroll: false });
+    }
+
     return (
         <Section
             id="cek-tiket"
@@ -78,18 +98,25 @@ export default function TicketCheck({
                                         <InputError message={errors.whatsapp} />
                                     </div>
 
-                                    <div className="sm:col-span-2">
+                                    <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
                                         <Button
                                             type="submit"
                                             disabled={processing}
-                                            className="w-full sm:w-auto"
                                         >
                                             <Search className="size-4" />
                                             {processing
                                                 ? 'Mencari...'
                                                 : 'Cek Tiket'}
                                         </Button>
+
+                                        <TicketScanner onScan={handleScan} />
                                     </div>
+
+                                    {scanError !== null ? (
+                                        <p className="text-sm text-destructive sm:col-span-2">
+                                            {scanError}
+                                        </p>
+                                    ) : null}
                                 </>
                             )}
                         </Form>

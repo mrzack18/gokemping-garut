@@ -16,6 +16,7 @@ use App\Support\BookingReceipt;
 use App\Support\BookingRoutes;
 use App\Support\BookingWhatsappMessage;
 use App\Support\PaymentMethods;
+use App\Support\TicketToken;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -139,6 +140,11 @@ class BookingStoreController extends Controller
             'booking_code' => $booking->booking_code,
             'business_slug' => $context['business']->slug,
             'business_name' => $context['business']->name,
+            /**
+             * URL pindai tiket yang dipasang di QR halaman sukses. Tokennya
+             * ditandatangani server supaya QR hanya berlaku untuk booking ini.
+             */
+            'ticket_url' => TicketToken::url((string) $booking->booking_code),
             'product_name' => $item instanceof BookingItem
                 ? $item->product_name
                 : $context['product']->name,

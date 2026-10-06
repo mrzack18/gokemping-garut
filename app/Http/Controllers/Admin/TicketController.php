@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TicketLookupRequest;
 use App\Models\Booking;
 use App\Services\TicketLookupService;
+use App\Support\TicketToken;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -68,6 +70,29 @@ class TicketController extends Controller
 
         return Inertia::render('admin/tickets/index', [
             'ticket' => $tickets->payload($booking),
+        ]);
+    }
+
+    /**
+     * Tampilkan tiket dari QR yang dipindai di panel admin.
+     *
+     * Token di URL menggantikan ketikan manual. Pencariannya tetap dibatasi
+     * unit admin yang login, jadi memindai QR tiket unit lain berhenti sebagai
+     * 404 meskipun tokennya sah.
+     */
+    public function scan(Request $request, string $booking, TicketLookupService $tickets): Response
+    {
+        $business = $request->user()->business;
+        $token = $request->query('token');
+
+        abort_unless(is_string($token) && TicketToken::matches($booking, $token), 404);
+
+        $found = $tickets->findByCode($booking, $business);
+
+        abort_if($found === null, 404);
+
+        return Inertia::render('admin/tickets/index', [
+            'ticket' => $tickets->payload($found),
         ]);
     }
 }

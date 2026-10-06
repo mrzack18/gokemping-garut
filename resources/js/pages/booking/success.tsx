@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import TicketQr from '@/components/ticket/ticket-qr';
 import PublicLayout from '@/layouts/public-layout';
 import { home } from '@/routes';
 import type { BookingSuccessPageProps } from '@/types';
@@ -178,6 +179,27 @@ export default function BookingSuccess({
                                         Rp {receipt.total_label}
                                     </p>
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mt-6">
+                            <CardHeader>
+                                <CardTitle className="text-base">
+                                    QR tiket
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent className="flex flex-col items-center gap-3">
+                                <TicketQr
+                                    url={receipt.ticket_url}
+                                    fileName={`tiket-${receipt.booking_code}.png`}
+                                />
+                                <p className="max-w-sm text-center text-sm text-muted-foreground">
+                                    Tunjukkan atau pindai QR ini saat
+                                    pengambilan barang. Staf bisa memindainya
+                                    untuk membuka status tiket tanpa mengetik
+                                    kode.
+                                </p>
                             </CardContent>
                         </Card>
 

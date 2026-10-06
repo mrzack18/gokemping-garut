@@ -36,10 +36,35 @@ final class TicketLookupService
      */
     public function find(string $code, string $whatsapp, ?Business $business = null): ?Booking
     {
+        $query = $this->query($code, $business)
+            ->whereHas('customer', fn (Builder $query): Builder => $query->where('whatsapp', $whatsapp));
+
+        return $query->first();
+    }
+
+    /**
+     * Cari tiket hanya dengan kode booking.
+     *
+     * Dipakai jalur pindai QR: token di URL sudah membuktikan tiket ini memang
+     * dibawa pemegangnya, jadi nomor WhatsApp tidak perlu diketik lagi.
+     *
+     * @param  Business|null  $business  Unit yang membatasi pencarian, null untuk lintas unit.
+     */
+    public function findByCode(string $code, ?Business $business = null): ?Booking
+    {
+        return $this->query($code, $business)->first();
+    }
+
+    /**
+     * Query dasar pencarian tiket dengan lingkup yang sesuai pemanggil.
+     *
+     * @return Builder<Booking>
+     */
+    private function query(string $code, ?Business $business): Builder
+    {
         $query = Booking::query()
             ->with(['business', 'customer', 'items', 'payment'])
-            ->where('booking_code', $code)
-            ->whereHas('customer', fn (Builder $query): Builder => $query->where('whatsapp', $whatsapp));
+            ->where('booking_code', $code);
 
         if ($business === null) {
             $query = BusinessScope::withoutBusinessScope($query);
@@ -47,7 +72,7 @@ final class TicketLookupService
             $query->where('bookings.business_id', $business->getKey());
         }
 
-        return $query->first();
+        return $query;
     }
 
     /**

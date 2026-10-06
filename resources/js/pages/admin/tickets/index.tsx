@@ -1,7 +1,9 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
 import { Search, Ticket } from 'lucide-react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import TicketResult from '@/components/ticket/ticket-result';
+import TicketScanner from '@/components/ticket/ticket-scanner';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -12,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { parseTicketScan } from '@/lib/ticket';
 import adminTicketRoutes from '@/routes/admin/tickets';
 import type { AdminTicketPageProps } from '@/types';
 
@@ -25,6 +28,34 @@ import type { AdminTicketPageProps } from '@/types';
  * orang lain.
  */
 export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
+    const [scanError, setScanError] = useState<string | null>(null);
+
+    /**
+     * QR tiket berisi URL pindai publik. Di panel admin, yang diambil hanya
+     * kode booking dan tokennya, lalu pencarian diarahkan ke route admin
+     * supaya tiket tetap tampil di dalam panel dan tetap ter-scope unit.
+     */
+    function handleScan(text: string) {
+        const parsed = parseTicketScan(text);
+
+        if (parsed === null) {
+            setScanError(
+                'QR tidak dikenali. Pastikan yang dipindai adalah QR tiket dari aplikasi ini.',
+            );
+
+            return;
+        }
+
+        setScanError(null);
+        router.get(
+            adminTicketRoutes.scan.url(
+                { booking: parsed.booking },
+                { query: { token: parsed.token } },
+            ),
+            { preserveScroll: false },
+        );
+    }
+
     return (
         <>
             <Head title="Cek Tiket" />
@@ -91,7 +122,7 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
                                         <InputError message={errors.whatsapp} />
                                     </div>
 
-                                    <div className="sm:col-span-2">
+                                    <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
                                         <Button
                                             type="submit"
                                             disabled={processing}
@@ -101,7 +132,15 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
                                                 ? 'Mencari...'
                                                 : 'Cek Tiket'}
                                         </Button>
+
+                                        <TicketScanner onScan={handleScan} />
                                     </div>
+
+                                    {scanError !== null ? (
+                                        <p className="text-sm text-destructive sm:col-span-2">
+                                            {scanError}
+                                        </p>
+                                    ) : null}
                                 </>
                             )}
                         </Form>

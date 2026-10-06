@@ -10,7 +10,9 @@ use App\Models\Faq;
 use App\Models\Product;
 use App\Models\Scopes\BusinessScope;
 use App\Services\TicketLookupService;
+use App\Support\TicketToken;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -95,6 +97,26 @@ class LandingController extends Controller
         }
 
         return $this->page($tickets->payload($booking));
+    }
+
+    /**
+     * Tampilkan tiket dari QR yang dipindai.
+     *
+     * Token di URL menggantikan pasangan kode booking + nomor WhatsApp, jadi
+     * pemindai tidak perlu mengetik apa pun. Token yang tidak cocok atau kode
+     * yang tidak dikenal berhenti sebagai 404, bukan halaman kosong.
+     */
+    public function scan(Request $request, string $booking, TicketLookupService $tickets): Response
+    {
+        $token = $request->query('token');
+
+        abort_unless(is_string($token) && TicketToken::matches($booking, $token), 404);
+
+        $found = $tickets->findByCode($booking);
+
+        abort_if($found === null, 404);
+
+        return $this->page($tickets->payload($found));
     }
 
     /**

@@ -233,6 +233,8 @@ export type BookingReceipt = {
     booking_code: string;
     business_slug: string;
     business_name: string;
+    /** URL pindai tiket bertanda tangan yang dipasang di QR. */
+    ticket_url: string;
     product_name: string;
     period: {
         start_date_label: string;

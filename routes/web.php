@@ -26,6 +26,11 @@ Route::post('/cek-tiket', [LandingController::class, 'checkTicket'])
     ->middleware('throttle:'.LandingController::TICKET_THROTTLE)
     ->name('tickets.lookup');
 
+// URL pindai dari QR tiket: tokennya HMAC dari kode booking, jadi halaman ini
+// membuka tiket tanpa mengetik kode dan nomor WhatsApp.
+Route::get('/cek-tiket/{booking}', [LandingController::class, 'scan'])
+    ->name('tickets.scan');
+
 // Pencarian data penyewa lama tidak butuh unit bisnis karena `customers` tidak
 // punya business_id: satu orang bisa menyewa di kedua unit.
 Route::get('/booking/customer-lookup', BookingCustomerLookupController::class)
