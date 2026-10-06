@@ -2,8 +2,8 @@
 
 **Dasar dokumen:** [PRD.md](./PRD.md)
 **Tech Stack:** Laravel 13 · Inertia.js 3 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Motion · MySQL 8 · pnpm
-**Status:** Fase 3 selesai — seluruh roadmap selesai
-**Terakhir diperbarui:** 2026-10-05
+**Status:** Seluruh fase selesai — Definition of Done terpenuhi
+**Terakhir diperbarui:** 2026-10-06
 
 ---
 
@@ -1284,16 +1284,61 @@ Catatan implementasi 5.4:
 
 Sebuah task dianggap selesai bila:
 
-- [ ] Fitur berfungsi sesuai PRD
-- [ ] Validasi input tersedia di server (`FormRequest`), bukan hanya di frontend
-- [ ] Query ter-scope `business_id` untuk seluruh data admin
-- [ ] Ter-cover automated test (Pest/PHPUnit) untuk logic kritis: availability, booking code, booking total, scoping
-- [ ] Lolos `pint` dan `phpstan`
-- [ ] Lolos ESLint + TypeScript check (`pnpm run lint`, `pnpm tsc --noEmit`)
-- [ ] Loading & empty state ditangani
-- [ ] Responsive di mobile, tablet, desktop
-- [ ] Nominal Rupiah ter-format konsisten
-- [ ] NIK tidak pernah ditampilkan penuh di halaman publik
+- [x] Fitur berfungsi sesuai PRD
+- [x] Validasi input tersedia di server (`FormRequest`), bukan hanya di frontend
+- [x] Query ter-scope `business_id` untuk seluruh data admin
+- [x] Ter-cover automated test (Pest/PHPUnit) untuk logic kritis: availability, booking code, booking total, scoping
+- [x] Lolos `pint` dan `phpstan`
+- [x] Lolos ESLint + TypeScript check (`pnpm run check`, `pnpm run types:check`)
+- [x] Loading & empty state ditangani
+- [x] Responsive di mobile, tablet, desktop
+- [x] Nominal Rupiah ter-format konsisten
+- [x] NIK tidak pernah ditampilkan penuh di halaman publik
+
+Catatan Definition of Done:
+
+- **Fitur berfungsi sesuai PRD**: seluruh fase 0–3 selesai; alur publik dari
+  landing sampai booking tersimpan, back-office lengkap, laporan, ekspor, dan
+  konten semuanya terhubung dan terverifikasi 587 test.
+- **Validasi server**: setiap endpoint yang menerima input memakai
+  `FormRequest`; yang tidak memakainya hanya aksi tanpa input (menjadikan foto
+  utama, menghapus, refresh status 2FA) yang kelayakannya dijaga route model
+  binding, middleware `auth` + `business`, dan pemeriksaan keanggotaan di
+  controller. Daftar booking/laporan memakai normalisasi filter sendiri yang
+  membuang nilai tidak valid, bukan membalas 422, karena keduanya halaman
+  kerja, bukan form.
+- **Scoping `business_id`**: model ber-tenancy memakai `BusinessScope`, dan
+  setiap modul punya test isolasi tenant (kategori, produk, booking, penyewa,
+  pembayaran, pengaturan pembayaran, konten, laporan, statistik, ekspor).
+  `customers` sengaja global karena satu orang bisa menyewa di dua unit;
+  aksesnya dibatasi lewat booking dan diuji. Endpoint publik memakai scope
+  eksplisit karena `BusinessScope` tidak aktif tanpa admin.
+- **Test logic kritis**: `AvailabilityServiceTest` dan
+  `BookingAvailabilityEndpointTest` untuk ketersediaan, `BookingCodeGeneratorTest`
+  plus unique index `bookings.booking_code` di database untuk kode booking,
+  `BookingPeriodTest` dan `BookingStoreTest` untuk total booking, serta test
+  isolasi tenant pada tiap modul untuk scoping.
+- **Pint & PHPStan**: keduanya lulus tanpa error, dan `pnpm run check`
+  (formatter + lint) serta `pnpm run types:check` (tsc) juga lulus.
+- **Loading & empty state**: Inertia menampilkan progress bar global
+  (`app.tsx`), tombol form menampilkan status proses, dan setiap daftar punya
+  empty state yang membedakan "belum ada data" dari "tidak cocok dengan
+  filter": kategori, produk, booking (admin dan publik), penyewa, pembayaran,
+  banner, FAQ, produk terlaris, dashboard, serta halaman layanan.
+- **Responsive**: navigasi publik memakai sheet di layar kecil, grid form dan
+  kartu bertingkat (`sm:`/`lg:`/`xl:`), dan tabel dibungkus `overflow-x-auto`
+  oleh komponen `Table`.
+- **Format Rupiah**: server selalu mengirim nominal siap tampil (`*_label`
+  dengan pemisah ribuan `,`/`.` dan tanpa desimal); halaman publik memakai
+  `formatRupiah()` (Intl `id-ID`) dan halaman admin memakai label server dengan
+  prefiks `Rp `. Tidak ada `toLocaleString` atau angka rupiah mentah di
+  frontend.
+- **NIK**: halaman admin hanya menampilkan `masked_nik`, pesan WhatsApp
+  menyamarkan NIK, dan endpoint publik `booking/customer-lookup` tidak lagi
+  mengembalikan NIK saat lookup dilakukan lewat WhatsApp — hanya lookup lewat
+  NIK yang mengembalikan NIK yang memang sudah diketik pemanggil. Halaman
+  review menampilkan NIK yang baru diketik penyewa di sesinya sendiri, bukan
+  data yang dibaca dari database.
 
 ---
 

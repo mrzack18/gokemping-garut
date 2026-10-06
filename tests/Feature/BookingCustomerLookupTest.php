@@ -24,7 +24,9 @@ class BookingCustomerLookupTest extends TestCase
             ->assertOk()
             ->assertJsonPath('found', true)
             ->assertJsonPath('customer.name', 'Budi Santoso')
-            ->assertJsonPath('customer.whatsapp', self::WHATSAPP);
+            ->assertJsonPath('customer.whatsapp', self::WHATSAPP)
+            // NIK tidak ikut karena pemanggil tidak mengetik NIK-nya.
+            ->assertJsonPath('customer.nik', null);
     }
 
     public function test_lookup_menemukan_pelanggan_lama_lewat_nik(): void
@@ -39,7 +41,9 @@ class BookingCustomerLookupTest extends TestCase
         ]))
             ->assertOk()
             ->assertJsonPath('found', true)
-            ->assertJsonPath('customer.name', 'Siti Aminah');
+            ->assertJsonPath('customer.name', 'Siti Aminah')
+            // Pemanggil sudah mengetik NIK-nya, jadi tidak ada yang bocor.
+            ->assertJsonPath('customer.nik', '3201234567890001');
     }
 
     public function test_whatsapp_menang_atas_nik(): void
@@ -59,10 +63,11 @@ class BookingCustomerLookupTest extends TestCase
             'nik' => '3276543210987654',
         ]))
             ->assertOk()
-            ->assertJsonPath('customer.name', 'Budi Santoso');
+            ->assertJsonPath('customer.name', 'Budi Santoso')
+            ->assertJsonPath('customer.nik', null);
     }
 
-    public function test_lookup_mengembalikan_seluruh_field_biodata(): void
+    public function test_lookup_lewat_whatsapp_mengembalikan_biodata_tanpa_nik(): void
     {
         Customer::factory()->withWhatsapp(self::WHATSAPP)->create([
             'nik' => '3201234567890001',
@@ -78,7 +83,7 @@ class BookingCustomerLookupTest extends TestCase
         ]))
             ->assertOk()
             ->assertJsonPath('customer.email', 'budi@example.com')
-            ->assertJsonPath('customer.nik', '3201234567890001')
+            ->assertJsonPath('customer.nik', null)
             ->assertJsonPath('customer.address', 'Jl. Merdeka No. 10')
             ->assertJsonPath('customer.city', 'Bandung')
             ->assertJsonPath('customer.notes', 'Pelanggan rutin');

@@ -14,6 +14,11 @@ use Illuminate\Http\Request;
  * login. Konsekuensinya, endpoint ini hanya mengembalikan data milik
  * nomor yang memang diberikan pemanggil, tidak pernah daftar pelanggan, dan
  * dibatasi throttle supaya tidak dipakai menebak data orang.
+ *
+ * NIK hanya dikembalikan kalau pemanggil memang sudah mengetiknya (lookup
+ * lewat NIK). Lookup lewat WhatsApp mengosongkan field itu, karena kalau tidak,
+ * siapa pun yang tahu nomor telepon seseorang bisa membaca NIK lengkapnya dari
+ * halaman publik (PRD section 33: NIK tidak ditampilkan secara terbuka).
  */
 class BookingCustomerLookupController extends Controller
 {
@@ -66,9 +71,21 @@ class BookingCustomerLookupController extends Controller
             return $this->notFound();
         }
 
+        $payload = $customer->only(self::PUBLIC_FIELDS);
+
+        /**
+         * Lookup lewat WhatsApp tidak boleh mengembalikan NIK: pemanggil hanya
+         * membuktikan bahwa ia tahu nomor teleponnya, bukan bahwa ia pemilik
+         * NIK tersebut. Lookup lewat NIK justru sudah mengetik NIK-nya sendiri,
+         * jadi mengembalikannya tidak membocorkan apa pun.
+         */
+        if ($whatsapp !== null) {
+            $payload['nik'] = null;
+        }
+
         return response()->json([
             'found' => true,
-            'customer' => $customer->only(self::PUBLIC_FIELDS),
+            'customer' => $payload,
         ]);
     }
 
