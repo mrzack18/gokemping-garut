@@ -65,6 +65,7 @@ export default function Faq({ faqs }: { faqs: LandingFaq[] }) {
             eyebrow="FAQ"
             title="Pertanyaan yang sering diajukan"
             description="Kalau jawabannya belum ada di sini, langsung tanya admin lewat WhatsApp."
+            tone="sand"
         >
             <Reveal className="mx-auto max-w-3xl">
                 <Accordion type="single" collapsible className="w-full">

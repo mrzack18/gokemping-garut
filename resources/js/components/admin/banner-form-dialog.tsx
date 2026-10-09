@@ -1,4 +1,5 @@
 import { Form } from '@inertiajs/react';
+import FileInput from '@/components/admin/file-input';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -95,12 +96,10 @@ export default function BannerFormDialog({
                                         className="h-32 w-full rounded-md border object-cover"
                                     />
                                 ) : null}
-                                <input
+                                <FileInput
                                     id="image"
                                     name="image"
-                                    type="file"
                                     accept="image/jpeg,image/png,image/webp"
-                                    className="text-sm"
                                     required={!isEditing}
                                 />
                                 <p className="text-sm text-muted-foreground">
@@ -145,7 +144,7 @@ export default function BannerFormDialog({
                                 <InputError message={errors.sort_order} />
                             </div>
 
-                            <label className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+                            <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 text-sm">
                                 {/*
                                  * Hidden di depan checkbox membuat
                                  * `is_active` selalu terkirim walau tidak
@@ -161,7 +160,7 @@ export default function BannerFormDialog({
                                     name="is_active"
                                     value="1"
                                     defaultChecked={banner?.is_active ?? true}
-                                    className="mt-0.5 size-4"
+                                    className="mt-0.5 size-4 accent-pine-700 dark:accent-pine-600"
                                 />
                                 <span className="grid gap-0.5">
                                     <span className="font-medium">

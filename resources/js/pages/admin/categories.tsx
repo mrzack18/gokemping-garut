@@ -1,10 +1,11 @@
 import { Form, Head } from '@inertiajs/react';
-import { motion } from 'motion/react';
 import { FolderTree, Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import ActiveBadge from '@/components/admin/active-badge';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminPageHeader from '@/components/admin/page-header';
 import CategoryDeleteDialog from '@/components/admin/category-delete-dialog';
 import CategoryFormDialog from '@/components/admin/category-form-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -53,41 +54,30 @@ export default function AdminCategories({
     const closeDeleteDialog = (open: boolean) =>
         setDeleteDialog((state) => ({ ...state, open }));
 
+    const openCreateDialog = () =>
+        setFormDialog({ open: true, category: null });
+
     return (
         <>
             <Head title="Kategori" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-                >
-                    <div className="flex flex-col gap-1">
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Kategori
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Kategori mengelompokkan produk yang bisa disewa.
-                            Urutan di sini sama dengan urutan filter di katalog
-                            publik.
-                        </p>
-                    </div>
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Kategori"
+                    description="Kategori mengelompokkan produk yang bisa disewa. Urutan di sini sama dengan urutan filter di katalog publik."
+                    actions={
+                        <Button onClick={openCreateDialog}>
+                            <Plus aria-hidden="true" />
+                            Tambah Kategori
+                        </Button>
+                    }
+                />
 
-                    <Button
-                        onClick={() =>
-                            setFormDialog({ open: true, category: null })
-                        }
-                    >
-                        <Plus />
-                        Tambah Kategori
-                    </Button>
-                </motion.div>
-
-                <Card>
+                <Card className="rounded-lg shadow-none">
                     <CardHeader>
-                        <CardTitle>Daftar Kategori</CardTitle>
+                        <CardTitle className="font-display text-base">
+                            Daftar Kategori
+                        </CardTitle>
                         <CardDescription>
                             {categories.length === 0
                                 ? 'Belum ada kategori.'
@@ -97,12 +87,18 @@ export default function AdminCategories({
 
                     <CardContent>
                         {categories.length === 0 ? (
-                            <EmptyState
-                                onCreate={() =>
-                                    setFormDialog({
-                                        open: true,
-                                        category: null,
-                                    })
+                            <AdminEmptyState
+                                icon={FolderTree}
+                                title="Belum ada kategori"
+                                description="Buat kategori dulu supaya produk bisa dikelompokkan dan penyewa bisa memfilter barang yang mereka cari."
+                                action={
+                                    <Button
+                                        variant="outline"
+                                        onClick={openCreateDialog}
+                                    >
+                                        <Plus aria-hidden="true" />
+                                        Tambah Kategori
+                                    </Button>
                                 }
                             />
                         ) : (
@@ -116,7 +112,7 @@ export default function AdminCategories({
                                         <TableHead className="w-28 text-right">
                                             Produk
                                         </TableHead>
-                                        <TableHead className="w-32">
+                                        <TableHead className="w-36">
                                             Status
                                         </TableHead>
                                         <TableHead className="w-44 text-right">
@@ -199,7 +195,7 @@ function CategoryRow({
             <TableCell>
                 <div className="flex flex-col gap-0.5">
                     <span className="font-medium">{category.name}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="font-mono text-xs text-muted-foreground">
                         /{category.slug}
                     </span>
                     {category.description !== null && (
@@ -214,16 +210,15 @@ function CategoryRow({
             </TableCell>
             <TableCell>
                 <div className="flex flex-col items-start gap-2">
-                    <Badge
-                        variant={category.is_active ? 'default' : 'secondary'}
-                    >
-                        {category.is_active ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
+                    <ActiveBadge isActive={category.is_active} />
                     <Form
                         {...categoryRoutes.status.form({
                             category: category.slug,
                         })}
-                        options={{ preserveScroll: true }}
+                        options={{
+                            preserveScroll: true,
+                            preserveState: true,
+                        }}
                     >
                         {({ processing }) => (
                             <>
@@ -235,9 +230,12 @@ function CategoryRow({
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-50"
+                                    className="flex items-center gap-1 text-xs font-medium text-pine-700 underline-offset-4 hover:underline disabled:opacity-50 dark:text-pine-600"
                                 >
-                                    <Power className="size-3" />
+                                    <Power
+                                        aria-hidden="true"
+                                        className="size-3"
+                                    />
                                     {category.is_active
                                         ? 'Nonaktifkan'
                                         : 'Aktifkan'}
@@ -250,40 +248,20 @@ function CategoryRow({
             <TableCell>
                 <div className="flex items-center justify-end gap-2">
                     <Button variant="outline" size="sm" onClick={onEdit}>
-                        <Pencil />
+                        <Pencil aria-hidden="true" />
                         Edit
                     </Button>
-                    <Button variant="outline" size="sm" onClick={onDelete}>
-                        <Trash2 />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onDelete}
+                        className="text-destructive hover:text-destructive"
+                    >
+                        <Trash2 aria-hidden="true" />
                         Hapus
                     </Button>
                 </div>
             </TableCell>
         </TableRow>
-    );
-}
-
-/**
- * Empty state untuk unit yang belum punya kategori.
- *
- * Produk baru bisa dikelompokkan setelah ada kategori, jadi satu-satunya
- * tindakan yang berguna di halaman kosong ini adalah membuat kategori pertama.
- */
-function EmptyState({ onCreate }: { onCreate: () => void }) {
-    return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
-            <FolderTree className="size-8 text-muted-foreground" />
-            <div className="flex flex-col gap-1">
-                <p className="font-medium">Belum ada kategori</p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                    Buat kategori dulu supaya produk bisa dikelompokkan dan
-                    penyewa bisa memfilter barang yang mereka cari.
-                </p>
-            </div>
-            <Button variant="outline" onClick={onCreate}>
-                <Plus />
-                Tambah Kategori
-            </Button>
-        </div>
     );
 }

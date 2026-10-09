@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -41,8 +47,7 @@ export type SpecificationRow = {
  * Kolom isian produk, dipakai bersama oleh halaman tambah dan edit.
  *
  * Komponen ini sengaja tidak punya tombol simpan. Tombolnya ada di halaman
- * induk supaya kedua halaman bisa punya aksi utama yang berbeda di tempat yang
- * berbeda: tambah menyimpan dari bawah form, edit dari header.
+ * induk supaya kedua halaman bisa punya aksi utama di bawah form.
  *
  * Dua field dikirim lewat input tersembunyi, bukan lewat komponen `Select`:
  * `Select` dibangun di atas Radix yang tidak punya elemen select asli, jadi
@@ -134,8 +139,17 @@ export default function ProductFormFields({
 
     return (
         <div className="flex flex-col gap-4">
-            <Card>
-                <CardContent className="grid gap-4 pt-6 sm:grid-cols-2">
+            <Card className="rounded-lg shadow-none">
+                <CardHeader>
+                    <CardTitle className="font-display text-base">
+                        Informasi Produk
+                    </CardTitle>
+                    <CardDescription>
+                        Detail yang dilihat penyewa di katalog: nama, kategori,
+                        harga, stok, dan ketentuan sewa.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
                     <div className="grid gap-2 sm:col-span-2">
                         <Label htmlFor="name">Nama produk</Label>
                         <Input
@@ -281,29 +295,30 @@ export default function ProductFormFields({
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardContent className="grid gap-4 pt-6">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="grid gap-1">
-                            <Label>Spesifikasi</Label>
-                            <p className="text-sm text-muted-foreground">
-                                Pasangan label dan isi yang tampil sebagai tabel
-                                di halaman detail produk, contoh: kapasitas 4
-                                orang atau berat 12 kg. Baris yang kosong tidak
-                                ikut disimpan.
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={addRow}
-                        >
-                            <Plus />
-                            Tambah Baris
-                        </Button>
+            <Card className="rounded-lg shadow-none">
+                <CardHeader className="flex flex-row items-start justify-between gap-2">
+                    <div className="grid gap-1">
+                        <CardTitle className="font-display text-base">
+                            Spesifikasi
+                        </CardTitle>
+                        <CardDescription>
+                            Pasangan label dan isi yang tampil sebagai tabel di
+                            halaman detail produk, contoh: kapasitas 4 orang
+                            atau berat 12 kg. Baris yang kosong tidak ikut
+                            disimpan.
+                        </CardDescription>
                     </div>
-
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addRow}
+                    >
+                        <Plus aria-hidden="true" />
+                        Tambah Baris
+                    </Button>
+                </CardHeader>
+                <CardContent className="grid gap-4">
                     {rows.length === 0 ? (
                         <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
                             Belum ada spesifikasi. Produk tanpa spesifikasi
@@ -373,7 +388,7 @@ export default function ProductFormFields({
                                         onClick={() => removeRow(index)}
                                         aria-label={`Hapus baris spesifikasi ${index + 1}`}
                                     >
-                                        <X />
+                                        <X aria-hidden="true" />
                                     </Button>
                                 </div>
                             ))}
@@ -394,7 +409,7 @@ export default function ProductFormFields({
                 </CardContent>
             </Card>
 
-            <label className="flex items-start gap-3 rounded-lg border p-4 text-sm">
+            <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
                 {/*
                  * Checkbox yang tidak dicentang tidak mengirim apa pun, jadi
                  * backend akan menganggap statusnya tidak berubah dan admin
@@ -408,7 +423,7 @@ export default function ProductFormFields({
                     name="is_active"
                     value="1"
                     defaultChecked={defaults.isActive}
-                    className="mt-0.5 size-4"
+                    className="mt-0.5 size-4 accent-pine-700 dark:accent-pine-600"
                 />
                 <span className="grid gap-0.5">
                     <span className="font-medium">

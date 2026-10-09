@@ -22,6 +22,7 @@ export type LandingProduct = {
     price: number;
     price_unit: string;
     stock: number;
+    photo: string | null;
     business: Pick<LandingBusiness, 'id' | 'name' | 'slug'>;
     category: { id: number; name: string } | null;
 };

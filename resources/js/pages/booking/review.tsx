@@ -1,6 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
+import BookingMobileBar from '@/components/booking/booking-mobile-bar';
+import BookingSteps from '@/components/booking/booking-steps';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -125,8 +128,8 @@ export default function BookingReview({
         <PublicLayout businesses={businesses} anchorBase="/">
             <Head title="Review Booking" />
 
-            <section className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="border-b border-border bg-sand-50">
+                <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -144,7 +147,7 @@ export default function BookingReview({
                             </Link>
                         </Button>
 
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
                             Review Booking
                         </h1>
                         <p className="mt-3 max-w-2xl text-muted-foreground">
@@ -152,10 +155,13 @@ export default function BookingReview({
                             sebelum melanjutkan ke pembayaran.
                         </p>
                     </motion.div>
+                    <div className="mt-7 max-w-2xl">
+                        <BookingSteps current={3} />
+                    </div>
                 </div>
             </section>
 
-            <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="mx-auto w-full max-w-6xl px-4 py-8 pb-28 sm:px-6 sm:py-10 sm:pb-28 lg:pb-14">
                 <div className="grid gap-8 lg:grid-cols-3">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -166,14 +172,14 @@ export default function BookingReview({
                         {!isAvailable ? (
                             <div
                                 role="alert"
-                                className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100"
+                                className="flex items-start gap-3 rounded-md border border-warning-border bg-warning-bg p-4 text-sm text-warning-text"
                             >
                                 <AlertTriangle className="mt-0.5 size-5 shrink-0" />
                                 <div>
                                     <p className="font-medium">
                                         Ketersediaan berubah
                                     </p>
-                                    <p className="mt-1 text-amber-800 dark:text-amber-200">
+                                    <p className="mt-1 text-warning-text/90">
                                         Unit yang tersisa untuk periode ini
                                         hanya {availability.available},
                                         sedangkan Anda memilih{' '}
@@ -199,9 +205,9 @@ export default function BookingReview({
                             </div>
                         ) : null}
 
-                        <Card>
+                        <Card className="rounded-lg shadow-none">
                             <CardHeader>
-                                <CardTitle className="text-base">
+                                <CardTitle className="font-display text-base">
                                     Detail Booking
                                 </CardTitle>
                             </CardHeader>
@@ -249,9 +255,9 @@ export default function BookingReview({
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="rounded-lg shadow-none">
                             <CardHeader>
-                                <CardTitle className="text-base">
+                                <CardTitle className="font-display text-base">
                                     Data Penyewa
                                 </CardTitle>
                             </CardHeader>
@@ -314,9 +320,9 @@ export default function BookingReview({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Card className="lg:sticky lg:top-24">
+                        <Card className="rounded-lg shadow-none lg:sticky lg:top-24">
                             <CardHeader>
-                                <CardTitle className="text-base">
+                                <CardTitle className="font-display text-base">
                                     Total
                                 </CardTitle>
                             </CardHeader>
@@ -332,16 +338,22 @@ export default function BookingReview({
 
                                 <Separator />
 
-                                <div className="space-y-3">
-                                    <p className="text-sm font-medium">
+                                <fieldset className="space-y-3">
+                                    <legend className="text-sm font-medium">
                                         Metode pembayaran
-                                    </p>
+                                    </legend>
 
                                     {paymentMethods.length > 0 ? (
                                         <RadioGroup
                                             value={method}
                                             onValueChange={chooseMethod}
                                             className="gap-3"
+                                            aria-label="Metode pembayaran"
+                                            aria-describedby={
+                                                paymentForm.errors.method
+                                                    ? 'payment-method-error'
+                                                    : undefined
+                                            }
                                         >
                                             {paymentMethods.map((item) => (
                                                 <div
@@ -367,7 +379,7 @@ export default function BookingReview({
                                                             {item.description}
                                                         </span>
                                                         {!item.is_ready ? (
-                                                            <span className="mt-0.5 block text-amber-700 dark:text-amber-400">
+                                                            <span className="mt-0.5 block text-warning-text">
                                                                 Belum bisa
                                                                 dipilih karena
                                                                 data pembayaran
@@ -386,11 +398,13 @@ export default function BookingReview({
                                     )}
 
                                     {paymentForm.errors.method ? (
-                                        <p className="text-sm text-red-600 dark:text-red-400">
-                                            {paymentForm.errors.method}
-                                        </p>
+                                        <InputError
+                                            id="payment-method-error"
+                                            role="alert"
+                                            message={paymentForm.errors.method}
+                                        />
                                     ) : null}
-                                </div>
+                                </fieldset>
 
                                 <Separator />
 
@@ -416,7 +430,7 @@ export default function BookingReview({
                                     {!isConfirmed ? (
                                         <p className="text-xs text-muted-foreground">
                                             {isAvailable
-                                                ? 'Centang konfirmasi dulu sebelum memilih metode pembayaran.'
+                                                ? 'Centang konfirmasi sebelum melanjutkan ke pembayaran.'
                                                 : 'Konfirmasi tidak bisa diberikan karena ketersediaan berubah.'}
                                         </p>
                                     ) : null}
@@ -438,6 +452,12 @@ export default function BookingReview({
                     </motion.div>
                 </div>
             </section>
+            <BookingMobileBar
+                amount={formatRupiah(pricing.total)}
+                label={paymentForm.processing ? 'Menyimpan…' : 'Lanjut bayar'}
+                disabled={!canPay}
+                onClick={submitPaymentMethod}
+            />
         </PublicLayout>
     );
 }

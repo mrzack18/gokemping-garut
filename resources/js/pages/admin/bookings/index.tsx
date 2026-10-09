@@ -1,9 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { motion } from 'motion/react';
 import {
     ArrowRight,
     CalendarRange,
     Download,
+    Plus,
     RotateCcw,
     Search,
     Ticket,
@@ -13,6 +13,10 @@ import {
     BookingStatusBadge,
     PaymentStatusBadge,
 } from '@/components/admin/booking-status-badge';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminFilterCard from '@/components/admin/filter-card';
+import AdminPageHeader from '@/components/admin/page-header';
+import AdminPagination from '@/components/admin/pagination';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -115,176 +119,139 @@ export default function AdminBookings({
         <>
             <Head title="Booking" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Booking"
+                    description="Semua booking yang masuk di unit ini, dari yang masih menunggu konfirmasi sampai yang sudah selesai atau dibatalkan."
+                    actions={
+                        <>
+                            <Button asChild>
+                                <Link href={bookingRoutes.manual.create()}>
+                                    <Plus aria-hidden="true" />
+                                    Booking Manual
+                                </Link>
+                            </Button>
+                            {/* Unduhan tetap anchor biasa karena responsnya berkas biner. */}
+                            <Button asChild variant="outline">
+                                <a
+                                    href={exportRoutes.bookings.url({
+                                        query: buildQuery(filters),
+                                    })}
+                                >
+                                    <Download aria-hidden="true" />
+                                    Unduh Excel
+                                </a>
+                            </Button>
+                        </>
+                    }
+                />
+
+                <AdminFilterCard
+                    description="Filter tanggal memakai tanggal mulai sewa, bukan tanggal booking dibuat, karena booking untuk bulan depan bisa dibuat lebih awal."
+                    onSubmit={handleSubmit}
+                    pending={pending}
+                    hasFilters={hasFilters}
+                    onReset={resetFilters}
                 >
-                    <div className="flex flex-col gap-1">
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Booking
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Semua booking yang masuk di unit ini, dari yang
-                            masih menunggu konfirmasi sampai yang sudah selesai
-                            atau dibatalkan.
-                        </p>
+                    <div className="space-y-2 sm:col-span-2 lg:col-span-4">
+                        <Label htmlFor="q">Cari booking</Label>
+                        <div className="relative">
+                            <Search
+                                aria-hidden
+                                className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <Input
+                                id="q"
+                                name="q"
+                                value={draft.q}
+                                onChange={(event) =>
+                                    setDraft({
+                                        ...draft,
+                                        q: event.target.value,
+                                    })
+                                }
+                                placeholder="Kode booking, penyewa, atau produk"
+                                className="pl-9"
+                                maxLength={100}
+                            />
+                        </div>
                     </div>
 
-                    {/*
-                     * Unduhan memakai anchor biasa, bukan Link Inertia:
-                     * responsnya berkas biner, bukan halaman Inertia. Filter
-                     * yang sedang aktif ikut dikirim supaya berkasnya berisi
-                     * baris yang sama dengan yang dilihat admin.
-                     */}
-                    <Button asChild variant="outline">
-                        <a
-                            href={exportRoutes.bookings.url({
-                                query: buildQuery(filters),
-                            })}
+                    <div className="space-y-2 lg:col-span-3">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                            value={
+                                draft.status === null
+                                    ? ALL_STATUSES
+                                    : draft.status
+                            }
+                            onValueChange={(value) =>
+                                setDraft({
+                                    ...draft,
+                                    status:
+                                        value === ALL_STATUSES
+                                            ? null
+                                            : (value as AdminBookingFilters['status']),
+                                })
+                            }
                         >
-                            <Download />
-                            Unduh Excel
-                        </a>
-                    </Button>
-                </motion.div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Cari dan filter</CardTitle>
-                        <CardDescription>
-                            Filter tanggal memakai tanggal mulai sewa, bukan
-                            tanggal booking dibuat, karena booking untuk bulan
-                            depan bisa dibuat lebih awal.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={handleSubmit}
-                            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12"
-                        >
-                            <div className="space-y-2 sm:col-span-2 lg:col-span-4">
-                                <Label htmlFor="q">Cari booking</Label>
-                                <div className="relative">
-                                    <Search
-                                        aria-hidden
-                                        className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                                    />
-                                    <Input
-                                        id="q"
-                                        name="q"
-                                        value={draft.q}
-                                        onChange={(event) =>
-                                            setDraft({
-                                                ...draft,
-                                                q: event.target.value,
-                                            })
-                                        }
-                                        placeholder="Kode booking, penyewa, atau produk"
-                                        className="pl-9"
-                                        maxLength={100}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 lg:col-span-3">
-                                <Label htmlFor="status">Status</Label>
-                                <Select
-                                    value={
-                                        draft.status === null
-                                            ? ALL_STATUSES
-                                            : draft.status
-                                    }
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            status:
-                                                value === ALL_STATUSES
-                                                    ? null
-                                                    : (value as AdminBookingFilters['status']),
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="status"
-                                        className="w-full"
+                            <SelectTrigger id="status" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_STATUSES}>
+                                    Semua status
+                                </SelectItem>
+                                {statusOptions.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
                                     >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_STATUSES}>
-                                            Semua status
-                                        </SelectItem>
-                                        {statusOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                            <div className="space-y-2 lg:col-span-2">
-                                <Label htmlFor="from">Mulai dari</Label>
-                                <Input
-                                    id="from"
-                                    name="from"
-                                    type="date"
-                                    value={draft.from ?? ''}
-                                    onChange={(event) =>
-                                        setDraft({
-                                            ...draft,
-                                            from: event.target.value || null,
-                                        })
-                                    }
-                                />
-                            </div>
+                    <div className="space-y-2 lg:col-span-2">
+                        <Label htmlFor="from">Mulai dari</Label>
+                        <Input
+                            id="from"
+                            name="from"
+                            type="date"
+                            value={draft.from ?? ''}
+                            onChange={(event) =>
+                                setDraft({
+                                    ...draft,
+                                    from: event.target.value || null,
+                                })
+                            }
+                        />
+                    </div>
 
-                            <div className="space-y-2 lg:col-span-3">
-                                <Label htmlFor="to">Sampai</Label>
-                                <Input
-                                    id="to"
-                                    name="to"
-                                    type="date"
-                                    value={draft.to ?? ''}
-                                    onChange={(event) =>
-                                        setDraft({
-                                            ...draft,
-                                            to: event.target.value || null,
-                                        })
-                                    }
-                                />
-                            </div>
+                    <div className="space-y-2 lg:col-span-3">
+                        <Label htmlFor="to">Sampai</Label>
+                        <Input
+                            id="to"
+                            name="to"
+                            type="date"
+                            value={draft.to ?? ''}
+                            onChange={(event) =>
+                                setDraft({
+                                    ...draft,
+                                    to: event.target.value || null,
+                                })
+                            }
+                        />
+                    </div>
+                </AdminFilterCard>
 
-                            <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-12">
-                                <Button type="submit" disabled={pending}>
-                                    <Search className="size-4" />
-                                    Terapkan
-                                </Button>
-                                {hasFilters ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={resetFilters}
-                                        disabled={pending}
-                                    >
-                                        <RotateCcw className="size-4" />
-                                        Reset filter
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                <Card>
+                <Card className="rounded-lg shadow-none">
                     <CardHeader>
-                        <CardTitle>Daftar Booking</CardTitle>
+                        <CardTitle className="font-display text-base">
+                            Daftar Booking
+                        </CardTitle>
                         <CardDescription>
                             {total === 0
                                 ? 'Tidak ada booking yang cocok dengan filter.'
@@ -293,10 +260,30 @@ export default function AdminBookings({
                     </CardHeader>
                     <CardContent>
                         {bookings.data.length === 0 ? (
-                            <BookingEmptyState
-                                hasFilters={hasFilters}
-                                onReset={resetFilters}
-                                pending={pending}
+                            <AdminEmptyState
+                                icon={Ticket}
+                                title={
+                                    hasFilters
+                                        ? 'Tidak ada booking yang cocok'
+                                        : 'Belum ada booking masuk'
+                                }
+                                description={
+                                    hasFilters
+                                        ? 'Coba longgarkan pencarian atau reset filter untuk melihat semua booking.'
+                                        : 'Booking dari halaman pemesanan publik akan muncul di sini setelah penyewa mengirimnya.'
+                                }
+                                action={
+                                    hasFilters ? (
+                                        <Button
+                                            variant="outline"
+                                            onClick={resetFilters}
+                                            disabled={pending}
+                                        >
+                                            <RotateCcw aria-hidden="true" />
+                                            Reset filter
+                                        </Button>
+                                    ) : null
+                                }
                             />
                         ) : (
                             <Table>
@@ -335,68 +322,12 @@ export default function AdminBookings({
                     </CardContent>
                 </Card>
 
-                {lastPage > 1 ? (
-                    <nav
-                        aria-label="Navigasi halaman booking"
-                        className="flex flex-wrap items-center justify-center gap-1"
-                    >
-                        {currentPage > 1 ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage - 1)}
-                                    preserveScroll
-                                >
-                                    Sebelumnya
-                                </Link>
-                            </Button>
-                        ) : null}
-
-                        {visiblePages(currentPage, lastPage).map((page) =>
-                            page === 'gap' ? (
-                                <span
-                                    key={`gap-${page}`}
-                                    className="px-2 text-sm text-muted-foreground"
-                                >
-                                    ...
-                                </span>
-                            ) : (
-                                <Button
-                                    key={page}
-                                    asChild
-                                    size="sm"
-                                    variant={
-                                        page === currentPage
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                >
-                                    <Link
-                                        href={pageUrl(filters, page)}
-                                        preserveScroll
-                                        aria-current={
-                                            page === currentPage
-                                                ? 'page'
-                                                : undefined
-                                        }
-                                    >
-                                        {page}
-                                    </Link>
-                                </Button>
-                            ),
-                        )}
-
-                        {currentPage < lastPage ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage + 1)}
-                                    preserveScroll
-                                >
-                                    Berikutnya
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </nav>
-                ) : null}
+                <AdminPagination
+                    currentPage={currentPage}
+                    lastPage={lastPage}
+                    pageUrl={(page) => pageUrl(filters, page)}
+                    ariaLabel="Navigasi halaman booking"
+                />
             </div>
         </>
     );
@@ -488,47 +419,6 @@ function BookingRow({ booking }: { booking: AdminBookingRow }) {
 }
 
 /**
- * Empty state daftar booking.
- *
- * Dua kondisi dibedakan karena tindakan yang berguna berbeda: tanpa filter yang
- * aktif, memang belum ada booking masuk; dengan filter aktif, bookingnya ada
- * tapi tidak cocok, jadi yang perlu diubah adalah filternya.
- */
-function BookingEmptyState({
-    hasFilters,
-    onReset,
-    pending,
-}: {
-    hasFilters: boolean;
-    onReset: () => void;
-    pending: boolean;
-}) {
-    return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
-            <Ticket className="size-8 text-muted-foreground" />
-            <div className="flex flex-col gap-1">
-                <p className="font-medium">
-                    {hasFilters
-                        ? 'Tidak ada booking yang cocok'
-                        : 'Belum ada booking masuk'}
-                </p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                    {hasFilters
-                        ? 'Coba longgarkan pencarian atau reset filter untuk melihat semua booking.'
-                        : 'Booking dari halaman pemesanan publik akan muncul di sini setelah penyewa mengirimnya.'}
-                </p>
-            </div>
-            {hasFilters ? (
-                <Button variant="outline" onClick={onReset} disabled={pending}>
-                    <RotateCcw />
-                    Reset filter
-                </Button>
-            ) : null}
-        </div>
-    );
-}
-
-/**
  * Query string filter.
  *
  * Filter default tidak ikut ditulis supaya URL tetap pendek dan mudah dibaca.
@@ -571,37 +461,4 @@ function pageUrl(filters: AdminBookingFilters, page: number): string {
             page: String(page),
         },
     });
-}
-
-/**
- * Nomor halaman yang ditampilkan, dengan celah `...` di antara halaman yang
- * dilewati. Halaman pertama, terakhir, dan halaman di sekitar posisi sekarang
- * selalu ikut ditampilkan supaya admin tidak kehilangan akses ke bagian awal
- * dan akhir daftar.
- */
-function visiblePages(current: number, last: number): (number | 'gap')[] {
-    const wanted = new Set<number>([
-        1,
-        last,
-        current - 1,
-        current,
-        current + 1,
-    ]);
-    const pages: (number | 'gap')[] = [];
-    let previous = 0;
-
-    for (let page = 1; page <= last; page += 1) {
-        if (!wanted.has(page)) {
-            continue;
-        }
-
-        if (previous > 0 && page - previous > 1) {
-            pages.push('gap');
-        }
-
-        pages.push(page);
-        previous = page;
-    }
-
-    return pages;
 }

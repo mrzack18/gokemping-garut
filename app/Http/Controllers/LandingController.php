@@ -217,10 +217,22 @@ class LandingController extends Controller
                     ->where('business_id', $business->getKey())
                     ->where('is_active', true)
                     ->where('stock', '>', 0)
-                    ->with(['business:id,name,slug', 'category:id,name'])
+                    ->with([
+                        'business:id,name,slug',
+                        'category:id,name',
+                        'images:id,product_id,image,is_primary,sort_order',
+                    ])
                     ->latest('id')
                     ->limit(self::FEATURED_PER_BUSINESS)
-            )->get(self::PRODUCT_COLUMNS))
+            )->get(self::PRODUCT_COLUMNS)->map(function (Product $product): Product {
+                $primaryImage = $product->images->firstWhere('is_primary', true)
+                    ?? $product->images->first();
+
+                $product->setAttribute('photo', $primaryImage?->url);
+                $product->unsetRelation('images');
+
+                return $product;
+            }))
             ->values();
     }
 }

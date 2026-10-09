@@ -1,4 +1,5 @@
 import { Form } from '@inertiajs/react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -18,6 +19,10 @@ import type { AdminPaymentRow } from '@/types';
  * dari tombol di tabel: admin melihat ulang nominal, metode, dan penyewanya
  * dulu. Untuk QRIS dan transfer, pengingat untuk memeriksa bukti ditulis di
  * dialog karena itu langkah yang mudah terlewat.
+ *
+ * Error dari server ikut ditampilkan: status pembayaran bisa berubah sejak
+ * tombol di tabel dirender, dan tanpa pesan error dialog yang gagal hanya
+ * terlihat seperti tidak merespons.
  */
 type PaymentVerifyDialogProps = {
     payment: AdminPaymentRow | null;
@@ -49,7 +54,9 @@ export default function PaymentVerifyDialog({
                         akan dicatat lunas.{' '}
                         {isCash
                             ? 'Pastikan uangnya sudah diterima di lokasi.'
-                            : 'Pastikan bukti transfernya sudah diperiksa.'}
+                            : payment.proof_url === null
+                              ? 'Tidak ada bukti terunggah. Pastikan pembayaran sudah diterima langsung sebelum menandai lunas.'
+                              : 'Pastikan bukti transfernya sudah diperiksa.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -58,19 +65,23 @@ export default function PaymentVerifyDialog({
                     options={{ preserveScroll: true }}
                     onSuccess={() => onOpenChange(false)}
                 >
-                    {({ processing }) => (
-                        <DialogFooter className="gap-2">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={() => onOpenChange(false)}
-                            >
-                                Batal
-                            </Button>
-                            <Button type="submit" disabled={processing} asChild>
-                                <button type="submit">Tandai Lunas</button>
-                            </Button>
-                        </DialogFooter>
+                    {({ processing, errors }) => (
+                        <div className="space-y-4">
+                            <InputError role="alert" message={errors.status} />
+
+                            <DialogFooter className="gap-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => onOpenChange(false)}
+                                >
+                                    Batal
+                                </Button>
+                                <Button type="submit" disabled={processing}>
+                                    Tandai Lunas
+                                </Button>
+                            </DialogFooter>
+                        </div>
                     )}
                 </Form>
             </DialogContent>

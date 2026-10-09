@@ -6,10 +6,12 @@ use App\Models\Business;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Scopes\BusinessScope;
+use App\Services\AvailabilityService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,7 +70,7 @@ class CatalogController extends Controller
         'booking_code_prefix',
     ];
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, AvailabilityService $availability): Response
     {
         $business = $this->resolveBusiness($request);
         $filters = $this->filters($request);
@@ -77,7 +79,7 @@ class CatalogController extends Controller
             'business' => $business,
             'businesses' => $this->activeBusinesses(),
             'categories' => $this->categories($business),
-            'products' => $this->products($business, $filters),
+            'products' => $this->products($business, $filters, $availability),
             'filters' => $filters,
             'priceBounds' => $this->priceBounds($business),
         ]);
@@ -189,12 +191,18 @@ class CatalogController extends Controller
      *     price_unit: string,
      *     stock: int,
      *     is_available: bool,
+     *     available_now: int,
+     *     booked_periods: list<array{period_label: string, quantity: int, status_label: string, is_overdue: bool}>,
+     *     booked_periods_count: int,
      *     category: array{id: int, name: string}|null,
      *     photo: string|null
      * }>
      */
-    private function products(Business $business, array $filters): LengthAwarePaginator
-    {
+    private function products(
+        Business $business,
+        array $filters,
+        AvailabilityService $availability,
+    ): LengthAwarePaginator {
         $categoryId = $this->categoryId($business, $filters['category']);
 
         $query = BusinessScope::withoutBusinessScope(
@@ -222,11 +230,31 @@ class CatalogController extends Controller
 
         $this->applySort($query, $filters['sort']);
 
-        return $query
+        $paginator = $query
             ->paginate(self::PER_PAGE)
-            ->withQueryString()
-            ->through(fn (Product $product): array => [
-                'id' => (int) $product->getKey(),
+            ->withQueryString();
+        $productIds = array_values(
+            $paginator->getCollection()
+                ->map(fn (Product $product): int => (int) $product->getKey())
+                ->all(),
+        );
+        $usedNow = $availability->usedUnitsForProducts(
+            (int) $business->getKey(),
+            $productIds,
+            Carbon::today(),
+            Carbon::tomorrow(),
+        );
+        $bookedPeriods = $availability->bookedPeriodsForProducts(
+            (int) $business->getKey(),
+            $productIds,
+        );
+
+        return $paginator->through(function (Product $product) use ($usedNow, $bookedPeriods): array {
+            $id = (int) $product->getKey();
+            $periods = $bookedPeriods[$id] ?? [];
+
+            return [
+                'id' => $id,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'description' => $product->description === null
@@ -236,6 +264,9 @@ class CatalogController extends Controller
                 'price_unit' => $product->price_unit,
                 'stock' => $product->stock,
                 'is_available' => $product->stock > 0,
+                'available_now' => max(0, (int) $product->stock - ($usedNow[$id] ?? 0)),
+                'booked_periods' => $periods,
+                'booked_periods_count' => count($periods),
                 'category' => $product->category === null
                     ? null
                     : [
@@ -243,7 +274,8 @@ class CatalogController extends Controller
                         'name' => $product->category->name,
                     ],
                 'photo' => $this->photo($product),
-            ]);
+            ];
+        });
     }
 
     /**

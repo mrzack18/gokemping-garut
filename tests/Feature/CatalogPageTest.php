@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BookingStatus;
+use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Models\Business;
 use App\Models\Category;
 use App\Models\Product;
@@ -109,7 +112,42 @@ class CatalogPageTest extends TestCase
                 ->where('products.data.0.price_unit', 'hari')
                 ->where('products.data.0.stock', 3)
                 ->where('products.data.0.is_available', true)
+                ->where('products.data.0.available_now', 3)
+                ->where('products.data.0.booked_periods_count', 0)
                 ->where('products.data.0.description', 'Tenda dome untuk empat orang.')
+            );
+    }
+
+    public function test_katalog_mengurangi_unit_yang_sedang_disewa_dan_menampilkan_periode_booking(): void
+    {
+        $business = $this->business('gokemping');
+        $product = Product::factory()->forBusiness($business)->create([
+            'name' => 'Tenda Dome',
+            'stock' => 4,
+        ]);
+        $start = today()->toDateString();
+        $end = today()->addDays(2)->toDateString();
+        $booking = Booking::factory()->forPeriod(
+            $business,
+            $start,
+            $end,
+            BookingStatus::SedangDisewa,
+        )->create();
+
+        BookingItem::factory()->for($booking)->for($product)->create([
+            'quantity' => 2,
+        ]);
+
+        $this->get(route('catalog.gokemping'))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('catalog/index')
+                ->where('products.data.0.stock', 4)
+                ->where('products.data.0.available_now', 2)
+                ->where('products.data.0.is_available', true)
+                ->where('products.data.0.booked_periods_count', 1)
+                ->where('products.data.0.booked_periods.0.quantity', 2)
+                ->where('products.data.0.booked_periods.0.status_label', 'Sedang Disewa')
+                ->where('products.data.0.booked_periods.0.period_label', fn (string $label): bool => str_contains($label, '–'))
             );
     }
 

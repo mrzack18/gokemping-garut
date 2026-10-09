@@ -1,6 +1,5 @@
+import Reveal from '@/components/landing/reveal';
 import Section from '@/components/landing/section';
-import { Card, CardContent } from '@/components/ui/card';
-import { motion } from 'motion/react';
 import {
     BadgeCheck,
     CalendarClock,
@@ -13,39 +12,39 @@ import {
 const advantages = [
     {
         icon: CalendarClock,
-        title: 'Stok real-time',
+        title: 'Stok terpantau',
         description:
-            'Sisa stok dihitung dari booking aktif pada tanggal yang dipilih sehingga tidak ada overbooking.',
+            'Ketersediaan dihitung dari booking aktif pada tanggal yang kamu pilih.',
     },
     {
         icon: Wallet,
-        title: 'Pembayaran fleksibel',
+        title: 'Pilihan pembayaran jelas',
         description:
-            'Cash, QRIS toko, atau transfer bank. Semua dikonfirmasi manual oleh admin.',
+            'Pilih cash, QRIS, atau transfer bank dengan verifikasi admin.',
     },
     {
         icon: PackageSearch,
-        title: 'Kondisi dijamin',
+        title: 'Perlengkapan diperiksa',
         description:
-            'Setiap barang melewati pemeriksaan sebelum disewakan dan sebelum dikembalikan.',
+            'Barang melewati pemeriksaan sebelum disewakan dan saat dikembalikan.',
     },
     {
         icon: BadgeCheck,
         title: 'Harga transparan',
         description:
-            'Harga dan satuan tampil di katalog, termasuk ketentuan penyewaan per barang.',
+            'Harga dan satuan sewa ditampilkan sebelum kamu mengirim booking.',
     },
     {
         icon: Headset,
-        title: 'Admin responsif',
+        title: 'Admin siap membantu',
         description:
-            'Pertanyaan dan konfirmasi pesenan ditangani langsung oleh WhatsApp admin unit.',
+            'Pertanyaan dan konfirmasi pesanan ditangani langsung oleh admin unit.',
     },
     {
         icon: ShieldCheck,
-        title: 'Data aman',
+        title: 'Data dikelola terpisah',
         description:
-            'Katalog tiap unit terpisah sehingga data dan stok tidak bercampur antar usaha.',
+            'Katalog dan stok setiap unit tidak bercampur satu sama lain.',
     },
 ];
 
@@ -53,34 +52,33 @@ export default function Advantages() {
     return (
         <Section
             id="keunggulan"
-            eyebrow="Keunggulan"
-            title="Kenapa menyewa lewat GoKemping"
-            description="Fokusnya satu: proses pemesanan yang mudah dan tidak rebutan stok."
+            eyebrow="Kenapa GoKemping"
+            title="Lebih siap sebelum berangkat"
+            description="Informasi yang kamu butuhkan tersedia sejak memilih barang sampai konfirmasi booking."
+            tone="sand"
         >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
                 {advantages.map((advantage, index) => (
-                    <motion.div
+                    <Reveal
                         key={advantage.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, amount: 0.2 }}
-                        transition={{
-                            duration: 0.4,
-                            delay: (index % 3) * 0.08,
-                        }}
+                        delay={(index % 3) * 0.06}
+                        className="border-t border-border py-5 sm:py-6"
                     >
-                        <Card className="h-full transition-shadow duration-300 hover:shadow-md">
-                            <CardContent className="space-y-3 p-6">
-                                <advantage.icon className="size-6 text-primary" />
-                                <h3 className="font-medium">
+                        <div className="flex items-start gap-4">
+                            <advantage.icon
+                                aria-hidden="true"
+                                className="mt-0.5 size-5 shrink-0 text-pine-700 dark:text-pine-600"
+                            />
+                            <div>
+                                <h3 className="font-semibold">
                                     {advantage.title}
                                 </h3>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                                     {advantage.description}
                                 </p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                            </div>
+                        </div>
+                    </Reveal>
                 ))}
             </div>
         </Section>

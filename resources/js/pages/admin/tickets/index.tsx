@@ -1,6 +1,8 @@
 import { Form, Head, router } from '@inertiajs/react';
 import { Search, Ticket } from 'lucide-react';
 import { useState } from 'react';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminPageHeader from '@/components/admin/page-header';
 import InputError from '@/components/input-error';
 import TicketResult from '@/components/ticket/ticket-result';
 import TicketScanner from '@/components/ticket/ticket-scanner';
@@ -15,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { parseTicketScan } from '@/lib/ticket';
+import bookingRoutes from '@/routes/admin/bookings';
 import adminTicketRoutes from '@/routes/admin/tickets';
 import type { AdminTicketPageProps } from '@/types';
 
@@ -60,21 +63,17 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
         <>
             <Head title="Cek Tiket" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Cek Tiket
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Verifikasi tiket saat pengambilan barang. Masukkan kode
-                        booking dan nomor WhatsApp penyewa; hanya tiket unit ini
-                        yang bisa diperiksa dari halaman ini.
-                    </p>
-                </div>
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Cek Tiket"
+                    description="Verifikasi tiket saat pengambilan barang. Masukkan kode booking dan nomor WhatsApp penyewa; hanya tiket unit ini yang bisa diperiksa dari halaman ini."
+                />
 
-                <Card>
+                <Card className="rounded-lg shadow-none">
                     <CardHeader>
-                        <CardTitle>Verifikasi tiket</CardTitle>
+                        <CardTitle className="font-display text-base">
+                            Verifikasi tiket
+                        </CardTitle>
                         <CardDescription>
                             Kode booking ada di pesan konfirmasi penyewa, contoh
                             GK-20261015-001.
@@ -87,7 +86,7 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
                                 preserveScroll: true,
                                 preserveState: true,
                             }}
-                            className="grid gap-4 sm:grid-cols-2"
+                            className="grid gap-5 sm:grid-cols-2"
                         >
                             {({ processing, errors }) => (
                                 <>
@@ -122,12 +121,16 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
                                         <InputError message={errors.whatsapp} />
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+                                    <div className="flex flex-col gap-2 border-t border-border pt-4 sm:col-span-2 sm:flex-row sm:items-center">
                                         <Button
                                             type="submit"
                                             disabled={processing}
+                                            className="sm:min-w-36"
                                         >
-                                            <Search className="size-4" />
+                                            <Search
+                                                aria-hidden="true"
+                                                className="size-4"
+                                            />
                                             {processing
                                                 ? 'Mencari...'
                                                 : 'Cek Tiket'}
@@ -137,9 +140,12 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
                                     </div>
 
                                     {scanError !== null ? (
-                                        <p className="text-sm text-destructive sm:col-span-2">
-                                            {scanError}
-                                        </p>
+                                        <div className="sm:col-span-2">
+                                            <InputError
+                                                role="alert"
+                                                message={scanError}
+                                            />
+                                        </div>
                                     ) : null}
                                 </>
                             )}
@@ -151,15 +157,14 @@ export default function AdminTicketCheck({ ticket }: AdminTicketPageProps) {
                     <TicketResult
                         ticket={ticket}
                         resetUrl={adminTicketRoutes.index.url()}
+                        detailUrl={bookingRoutes.show.url(ticket.booking_code)}
                     />
                 ) : (
-                    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center">
-                        <Ticket className="size-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                            Hasil verifikasi tiket muncul di sini setelah kode
-                            booking dan nomor WhatsApp dicocokkan.
-                        </p>
-                    </div>
+                    <AdminEmptyState
+                        icon={Ticket}
+                        title="Belum ada tiket diperiksa"
+                        description="Hasil verifikasi tiket muncul di sini setelah kode booking dan nomor WhatsApp dicocokkan."
+                    />
                 )}
             </div>
         </>

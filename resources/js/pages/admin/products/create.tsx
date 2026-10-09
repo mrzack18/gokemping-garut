@@ -1,6 +1,6 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { motion } from 'motion/react';
-import { ArrowLeft } from 'lucide-react';
+import AdminPageHeader from '@/components/admin/page-header';
+import FileInput from '@/components/admin/file-input';
 import ProductFormFields from '@/components/admin/product-form-fields';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -25,32 +25,13 @@ export default function AdminProductsCreate({
         <>
             <Head title="Tambah Produk" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-                >
-                    <div className="flex flex-col gap-1">
-                        <Button asChild variant="ghost" size="sm">
-                            <Link
-                                href={productRoutes.index()}
-                                className="-ml-3 w-fit"
-                            >
-                                <ArrowLeft />
-                                Kembali ke daftar
-                            </Link>
-                        </Button>
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Tambah Produk
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Produk baru langsung tampil di katalog kalau
-                            statusnya aktif.
-                        </p>
-                    </div>
-                </motion.div>
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Tambah Produk"
+                    description="Produk baru langsung tampil di katalog kalau statusnya aktif."
+                    backHref={productRoutes.index.url()}
+                    backLabel="Kembali ke daftar"
+                />
 
                 <Form
                     {...productRoutes.store.form()}
@@ -80,20 +61,18 @@ export default function AdminProductsCreate({
                                 }}
                             />
 
-                            <div className="grid gap-2 rounded-lg border p-4">
+                            <div className="grid gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-4">
                                 <Label htmlFor="images">
                                     Foto produk (opsional)
                                 </Label>
-                                <input
+                                <FileInput
                                     id="images"
                                     name="images[]"
-                                    type="file"
                                     accept="image/jpeg,image/png,image/webp"
                                     multiple
                                     aria-invalid={errors.images !== undefined}
-                                    className="text-sm"
                                 />
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm leading-relaxed text-muted-foreground">
                                     Maksimal {maxImages} foto, tiap foto
                                     maksimal 5 MB. Foto dikompresi ulang jadi
                                     WebP dengan sisi terpanjang 1200 piksel,

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\BookingStatus;
+use App\Enums\PaymentMethodType;
 use App\Enums\PaymentStatus;
+use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CancelBookingRequest;
+use App\Http\Requests\StoreManualBookingRequest;
 use App\Http\Requests\UpdateBookingStatusRequest;
 use App\Models\Booking;
 use App\Models\BookingItem;
@@ -13,12 +16,17 @@ use App\Models\BookingStatusHistory;
 use App\Models\Business;
 use App\Models\Customer;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\User;
+use App\Services\AvailabilityService;
+use App\Services\BookingService;
 use App\Services\BookingStatusService;
 use App\Support\BookingFilters;
 use App\Support\BookingPeriod;
+use App\Support\BookingRoutes;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -67,6 +75,127 @@ class BookingController extends Controller
                 BookingStatus::cases(),
             ),
         ]);
+    }
+
+    /**
+     * Form booking yang dicatat staf saat transaksi datang langsung di lokasi.
+     * Produk, metode pembayaran, dan pelanggan tetap memakai tabel yang sama
+     * dengan booking publik supaya stok, riwayat, dan laporan tidak terpisah.
+     */
+    public function createManual(Request $request): Response
+    {
+        $business = $request->user()->business;
+
+        $products = Product::query()
+            ->active()
+            ->where('business_id', $business->getKey())
+            ->where('stock', '>', 0)
+            ->with([
+                'category:id,name',
+                'images:id,product_id,image,is_primary,sort_order',
+            ])
+            ->orderBy('name')
+            ->get(['id', 'business_id', 'category_id', 'name', 'price', 'price_unit', 'stock'])
+            ->map(function (Product $product): array {
+                $primaryImage = $product->images->firstWhere('is_primary', true)
+                    ?? $product->images->first();
+
+                return [
+                    'id' => (int) $product->getKey(),
+                    'name' => $product->name,
+                    'price' => (int) $product->price,
+                    'price_label' => number_format((int) $product->price, 0, ',', '.'),
+                    'price_unit' => $product->price_unit,
+                    'stock' => (int) $product->stock,
+                    'photo' => $primaryImage?->url,
+                    'category' => $product->category?->name,
+                ];
+            })
+            ->values();
+
+        return Inertia::render('admin/bookings/manual', [
+            'products' => $products,
+            'minDate' => now()->toDateString(),
+            'isBikeRental' => BookingRoutes::isBikeRental($business->slug),
+            'paymentMethods' => array_map(
+                fn (PaymentMethodType $method): array => [
+                    'value' => $method->value,
+                    'label' => $method->label(),
+                ],
+                PaymentMethodType::cases(),
+            ),
+        ]);
+    }
+
+    /**
+     * Ketersediaan yang ditampilkan di form manual hanya informatif; keputusan
+     * final tetap dicek ulang di dalam transaksi `BookingService::storeManual`.
+     */
+    public function manualAvailability(Request $request, AvailabilityService $availability): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_id' => ['required', 'integer', 'min:1'],
+            'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+        ]);
+
+        $product = Product::query()
+            ->active()
+            ->where('business_id', $request->user()->business_id)
+            ->findOrFail((int) $validated['product_id']);
+
+        return response()->json(
+            $availability->summarise(
+                $product,
+                (string) $validated['start_date'],
+                (string) $validated['end_date'],
+                ['requested' => (int) $validated['quantity']],
+            ),
+        );
+    }
+
+    /**
+     * Simpan booking manual, item, pembayaran, dan kronologi status.
+     */
+    public function storeManual(
+        StoreManualBookingRequest $request,
+        BookingService $bookings,
+    ): RedirectResponse {
+        $admin = $request->user();
+        $business = $admin->business;
+        $validated = $request->validated();
+        $product = Product::query()
+            ->active()
+            ->where('business_id', $business->getKey())
+            ->findOrFail((int) $validated['product_id']);
+
+        $draft = [
+            'start_date' => (string) $validated['start_date'],
+            'end_date' => (string) $validated['end_date'],
+            'quantity' => (int) $validated['quantity'],
+            'payment_method' => (string) $validated['payment_method'],
+            'is_paid' => $request->boolean('is_paid'),
+            'start_rental_now' => $request->boolean('start_rental_now'),
+            'customer' => $request->customerPayload(
+                BookingRoutes::isBikeRental($business->slug),
+            ),
+        ];
+
+        try {
+            $booking = $bookings->storeManual($business, $product, $draft, $admin);
+        } catch (InsufficientStockException $exception) {
+            return back()->withInput()->withErrors([
+                'quantity' => "Stok periode ini tersisa {$exception->available} unit; jumlah yang diminta {$exception->requested} unit.",
+            ]);
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Booking manual '.$booking->booking_code.' berhasil disimpan.',
+        ]);
+
+        return to_route('admin.bookings.show', $booking);
     }
 
     /**

@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import FileInput from '@/components/admin/file-input';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -55,9 +56,11 @@ export default function ProductPhotoGallery({
     const isFull = remainingImages <= 0;
 
     return (
-        <Card>
+        <Card className="rounded-lg shadow-none">
             <CardHeader>
-                <CardTitle>Foto Produk</CardTitle>
+                <CardTitle className="font-display text-base">
+                    Foto Produk
+                </CardTitle>
                 <CardDescription>
                     {product.photos.length === 0
                         ? 'Belum ada foto. Produk tanpa foto tetap tampil di katalog dengan gambar cadangan.'
@@ -69,7 +72,10 @@ export default function ProductPhotoGallery({
             <CardContent className="flex flex-col gap-6">
                 {product.photos.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center">
-                        <ImageOff className="size-8 text-muted-foreground" />
+                        <ImageOff
+                            aria-hidden="true"
+                            className="size-8 text-muted-foreground"
+                        />
                         <p className="font-medium">Belum ada foto</p>
                         <p className="max-w-sm text-sm text-muted-foreground">
                             Foto pertama yang diunggah otomatis menjadi foto
@@ -94,8 +100,11 @@ export default function ProductPhotoGallery({
 
                                 <div className="flex items-center justify-between gap-1">
                                     {photo.is_primary ? (
-                                        <span className="flex items-center gap-1 text-xs font-medium">
-                                            <Star className="size-3" />
+                                        <span className="flex items-center gap-1 rounded-full border border-success/25 bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                                            <Star
+                                                aria-hidden="true"
+                                                className="size-3"
+                                            />
                                             Utama
                                         </span>
                                     ) : (
@@ -112,9 +121,12 @@ export default function ProductPhotoGallery({
                                                 <button
                                                     type="submit"
                                                     disabled={processing}
-                                                    className="flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-xs font-medium text-pine-700 underline-offset-4 hover:underline disabled:opacity-50 dark:text-pine-600"
                                                 >
-                                                    <Star className="size-3" />
+                                                    <Star
+                                                        aria-hidden="true"
+                                                        className="size-3"
+                                                    />
                                                     Jadikan utama
                                                 </button>
                                             )}
@@ -127,8 +139,9 @@ export default function ProductPhotoGallery({
                                         size="icon"
                                         onClick={() => setPhotoToDelete(photo)}
                                         aria-label={`Hapus foto ${photo.id}`}
+                                        className="text-destructive hover:text-destructive"
                                     >
-                                        <Trash2 />
+                                        <Trash2 aria-hidden="true" />
                                     </Button>
                                 </div>
                             </div>
@@ -156,15 +169,13 @@ export default function ProductPhotoGallery({
                             <div className="flex flex-wrap items-end justify-between gap-3">
                                 <div className="grid gap-2">
                                     <Label htmlFor="images">Unggah foto</Label>
-                                    <input
+                                    <FileInput
                                         ref={inputRef}
                                         id="images"
                                         name="images[]"
-                                        type="file"
                                         accept="image/jpeg,image/png,image/webp"
                                         multiple={remainingImages > 1}
                                         disabled={isFull}
-                                        className="text-sm disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                     <p className="text-sm text-muted-foreground">
                                         JPG, PNG, atau WebP, maksimal 5 MB per
@@ -177,7 +188,7 @@ export default function ProductPhotoGallery({
                                     type="submit"
                                     disabled={processing || isFull}
                                 >
-                                    <Upload />
+                                    <Upload aria-hidden="true" />
                                     {processing ? 'Mengunggah...' : 'Unggah'}
                                 </Button>
                             </div>

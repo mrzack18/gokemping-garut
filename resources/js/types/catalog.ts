@@ -13,6 +13,13 @@ export type CatalogCategory = {
     products_count: number;
 };
 
+export type CatalogBookedPeriod = {
+    period_label: string;
+    quantity: number;
+    status_label: string;
+    is_overdue: boolean;
+};
+
 export type CatalogProduct = {
     id: number;
     name: string;
@@ -22,6 +29,11 @@ export type CatalogProduct = {
     price_unit: string;
     stock: number;
     is_available: boolean;
+    /** Stok tersisa untuk periode hari ini, setelah booking aktif dihitung. */
+    available_now: number;
+    /** Periode aktif/akan datang yang sedang menahan stok, tanpa data penyewa. */
+    booked_periods: CatalogBookedPeriod[];
+    booked_periods_count: number;
     category: { id: number; name: string } | null;
     photo: string | null;
 };
@@ -75,6 +87,9 @@ export type ProductDetail = {
     price_unit: string;
     stock: number;
     is_available: boolean;
+    available_now: number;
+    booked_periods: CatalogBookedPeriod[];
+    booked_periods_count: number;
     category: { id: number; name: string; slug: string } | null;
     images: CatalogProductImage[];
 };

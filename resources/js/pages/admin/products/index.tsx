@@ -1,5 +1,4 @@
 import { Form, Head, Link, router } from '@inertiajs/react';
-import { motion } from 'motion/react';
 import {
     ImageOff,
     Package,
@@ -11,6 +10,11 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import ActiveBadge from '@/components/admin/active-badge';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminFilterCard from '@/components/admin/filter-card';
+import AdminPageHeader from '@/components/admin/page-header';
+import AdminPagination from '@/components/admin/pagination';
 import ProductDeleteDialog from '@/components/admin/product-delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -112,165 +116,121 @@ export default function AdminProducts({
         <>
             <Head title="Produk" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Produk"
+                    description="Produk aktif saja yang tampil di katalog publik. Produk nonaktif tetap ada di sini supaya bisa dinyalakan lagi tanpa mengisi ulang datanya."
+                    actions={
+                        <Button asChild>
+                            <Link href={productRoutes.create()}>
+                                <Plus aria-hidden="true" />
+                                Tambah Produk
+                            </Link>
+                        </Button>
+                    }
+                />
+
+                <AdminFilterCard
+                    description="Filter tersimpan di alamat halaman, jadi tautan yang disalin membuka tampilan yang sama."
+                    onSubmit={handleSubmit}
+                    pending={pending}
+                    hasFilters={hasFilters}
+                    onReset={resetFilters}
                 >
-                    <div className="flex flex-col gap-1">
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Produk
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Produk aktif saja yang tampil di katalog publik.
-                            Produk nonaktif tetap ada di sini supaya bisa
-                            dinyalakan lagi tanpa mengisi ulang datanya.
-                        </p>
+                    <div className="space-y-2 sm:col-span-2 lg:col-span-6">
+                        <Label htmlFor="q">Cari produk</Label>
+                        <div className="relative">
+                            <Search
+                                aria-hidden="true"
+                                className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <Input
+                                id="q"
+                                name="q"
+                                value={draft.q}
+                                onChange={(event) =>
+                                    setDraft({
+                                        ...draft,
+                                        q: event.target.value,
+                                    })
+                                }
+                                placeholder="Nama atau deskripsi produk"
+                                className="pl-9"
+                                maxLength={100}
+                            />
+                        </div>
                     </div>
 
-                    <Button asChild>
-                        <Link href={productRoutes.create()}>
-                            <Plus />
-                            Tambah Produk
-                        </Link>
-                    </Button>
-                </motion.div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Cari dan filter</CardTitle>
-                        <CardDescription>
-                            Filter tersimpan di alamat halaman, jadi tautan yang
-                            disalin membuka tampilan yang sama.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={handleSubmit}
-                            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12"
+                    <div className="space-y-2 lg:col-span-3">
+                        <Label htmlFor="category">Kategori</Label>
+                        <Select
+                            value={
+                                draft.category === null
+                                    ? ALL_CATEGORIES
+                                    : String(draft.category)
+                            }
+                            onValueChange={(value) =>
+                                setDraft({
+                                    ...draft,
+                                    category:
+                                        value === ALL_CATEGORIES
+                                            ? null
+                                            : Number(value),
+                                })
+                            }
                         >
-                            <div className="space-y-2 sm:col-span-2 lg:col-span-6">
-                                <Label htmlFor="q">Cari produk</Label>
-                                <div className="relative">
-                                    <Search
-                                        aria-hidden
-                                        className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                                    />
-                                    <Input
-                                        id="q"
-                                        name="q"
-                                        value={draft.q}
-                                        onChange={(event) =>
-                                            setDraft({
-                                                ...draft,
-                                                q: event.target.value,
-                                            })
-                                        }
-                                        placeholder="Nama atau deskripsi produk"
-                                        className="pl-9"
-                                        maxLength={100}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 lg:col-span-3">
-                                <Label htmlFor="category">Kategori</Label>
-                                <Select
-                                    value={
-                                        draft.category === null
-                                            ? ALL_CATEGORIES
-                                            : String(draft.category)
-                                    }
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            category:
-                                                value === ALL_CATEGORIES
-                                                    ? null
-                                                    : Number(value),
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="category"
-                                        className="w-full"
+                            <SelectTrigger id="category" className="w-full">
+                                <SelectValue placeholder="Semua kategori" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_CATEGORIES}>
+                                    Semua kategori
+                                </SelectItem>
+                                {categories.map((category) => (
+                                    <SelectItem
+                                        key={category.id}
+                                        value={String(category.id)}
                                     >
-                                        <SelectValue placeholder="Semua kategori" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_CATEGORIES}>
-                                            Semua kategori
-                                        </SelectItem>
-                                        {categories.map((category) => (
-                                            <SelectItem
-                                                key={category.id}
-                                                value={String(category.id)}
-                                            >
-                                                {category.name} (
-                                                {category.products_count})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                        {category.name} (
+                                        {category.products_count})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                            <div className="space-y-2 lg:col-span-3">
-                                <Label htmlFor="status">Status</Label>
-                                <Select
-                                    value={draft.status}
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            status: value as AdminProductFilters['status'],
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="status"
-                                        className="w-full"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_STATUS}>
-                                            Semua status
-                                        </SelectItem>
-                                        <SelectItem value="aktif">
-                                            Aktif
-                                        </SelectItem>
-                                        <SelectItem value="nonaktif">
-                                            Nonaktif
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    <div className="space-y-2 lg:col-span-3">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                            value={draft.status}
+                            onValueChange={(value) =>
+                                setDraft({
+                                    ...draft,
+                                    status: value as AdminProductFilters['status'],
+                                })
+                            }
+                        >
+                            <SelectTrigger id="status" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_STATUS}>
+                                    Semua status
+                                </SelectItem>
+                                <SelectItem value="aktif">Aktif</SelectItem>
+                                <SelectItem value="nonaktif">
+                                    Nonaktif
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </AdminFilterCard>
 
-                            <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-12">
-                                <Button type="submit" disabled={pending}>
-                                    <Search className="size-4" />
-                                    Terapkan
-                                </Button>
-                                {hasFilters ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={resetFilters}
-                                        disabled={pending}
-                                    >
-                                        <RotateCcw className="size-4" />
-                                        Reset filter
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                <Card>
+                <Card className="rounded-lg shadow-none">
                     <CardHeader>
-                        <CardTitle>Daftar Produk</CardTitle>
+                        <CardTitle className="font-display text-base">
+                            Daftar Produk
+                        </CardTitle>
                         <CardDescription>
                             {total === 0
                                 ? 'Tidak ada produk yang cocok dengan filter.'
@@ -279,10 +239,37 @@ export default function AdminProducts({
                     </CardHeader>
                     <CardContent>
                         {products.data.length === 0 ? (
-                            <ProductEmptyState
-                                hasFilters={hasFilters}
-                                onReset={resetFilters}
-                                pending={pending}
+                            <AdminEmptyState
+                                icon={Package}
+                                title={
+                                    hasFilters
+                                        ? 'Tidak ada produk yang cocok'
+                                        : 'Belum ada produk'
+                                }
+                                description={
+                                    hasFilters
+                                        ? 'Coba longgarkan pencarian atau reset filter untuk melihat semua produk.'
+                                        : 'Tambahkan produk pertama supaya penyewa bisa mulai melihat barang yang bisa disewa.'
+                                }
+                                action={
+                                    hasFilters ? (
+                                        <Button
+                                            variant="outline"
+                                            onClick={resetFilters}
+                                            disabled={pending}
+                                        >
+                                            <RotateCcw aria-hidden="true" />
+                                            Reset filter
+                                        </Button>
+                                    ) : (
+                                        <Button asChild>
+                                            <Link href={productRoutes.create()}>
+                                                <Plus aria-hidden="true" />
+                                                Tambah Produk
+                                            </Link>
+                                        </Button>
+                                    )
+                                }
                             />
                         ) : (
                             <Table>
@@ -298,7 +285,7 @@ export default function AdminProducts({
                                         <TableHead className="w-24 text-right">
                                             Stok
                                         </TableHead>
-                                        <TableHead className="w-36">
+                                        <TableHead className="w-40">
                                             Status
                                         </TableHead>
                                         <TableHead className="w-44 text-right">
@@ -322,68 +309,12 @@ export default function AdminProducts({
                     </CardContent>
                 </Card>
 
-                {lastPage > 1 ? (
-                    <nav
-                        aria-label="Navigasi halaman produk"
-                        className="flex flex-wrap items-center justify-center gap-1"
-                    >
-                        {currentPage > 1 ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage - 1)}
-                                    preserveScroll
-                                >
-                                    Sebelumnya
-                                </Link>
-                            </Button>
-                        ) : null}
-
-                        {visiblePages(currentPage, lastPage).map((page) =>
-                            page === 'gap' ? (
-                                <span
-                                    key={`gap-${page}`}
-                                    className="px-2 text-sm text-muted-foreground"
-                                >
-                                    ...
-                                </span>
-                            ) : (
-                                <Button
-                                    key={page}
-                                    asChild
-                                    size="sm"
-                                    variant={
-                                        page === currentPage
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                >
-                                    <Link
-                                        href={pageUrl(filters, page)}
-                                        preserveScroll
-                                        aria-current={
-                                            page === currentPage
-                                                ? 'page'
-                                                : undefined
-                                        }
-                                    >
-                                        {page}
-                                    </Link>
-                                </Button>
-                            ),
-                        )}
-
-                        {currentPage < lastPage ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage + 1)}
-                                    preserveScroll
-                                >
-                                    Berikutnya
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </nav>
-                ) : null}
+                <AdminPagination
+                    currentPage={currentPage}
+                    lastPage={lastPage}
+                    pageUrl={(page) => pageUrl(filters, page)}
+                    ariaLabel="Navigasi halaman produk"
+                />
             </div>
 
             <ProductDeleteDialog
@@ -436,13 +367,16 @@ function ProductRow({
                             />
                         ) : (
                             <div className="flex size-full items-center justify-center text-muted-foreground">
-                                <ImageOff className="size-4" />
+                                <ImageOff
+                                    aria-hidden="true"
+                                    className="size-4"
+                                />
                             </div>
                         )}
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <span className="font-medium">{product.name}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="font-mono text-xs text-muted-foreground">
                             /{product.slug}
                         </span>
                         <span className="text-xs text-muted-foreground">
@@ -485,13 +419,7 @@ function ProductRow({
             <TableCell>
                 <div className="flex flex-col items-start gap-2">
                     <div className="flex flex-wrap gap-1">
-                        <Badge
-                            variant={
-                                product.is_active ? 'default' : 'secondary'
-                            }
-                        >
-                            {product.is_active ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
+                        <ActiveBadge isActive={product.is_active} />
                         {!product.is_available ? (
                             <Badge variant="destructive">Stok Habis</Badge>
                         ) : null}
@@ -515,9 +443,12 @@ function ProductRow({
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:opacity-50"
+                                    className="flex items-center gap-1 text-xs font-medium text-pine-700 underline-offset-4 hover:underline disabled:opacity-50 dark:text-pine-600"
                                 >
-                                    <Power className="size-3" />
+                                    <Power
+                                        aria-hidden="true"
+                                        className="size-3"
+                                    />
                                     {product.is_active
                                         ? 'Nonaktifkan'
                                         : 'Aktifkan'}
@@ -531,65 +462,22 @@ function ProductRow({
                 <div className="flex items-center justify-end gap-2">
                     <Button asChild variant="outline" size="sm">
                         <Link href={productRoutes.edit(product.slug)}>
-                            <Pencil />
+                            <Pencil aria-hidden="true" />
                             Edit
                         </Link>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={onDelete}>
-                        <Trash2 />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onDelete}
+                        className="text-destructive hover:text-destructive"
+                    >
+                        <Trash2 aria-hidden="true" />
                         Hapus
                     </Button>
                 </div>
             </TableCell>
         </TableRow>
-    );
-}
-
-/**
- * Empty state daftar produk.
- *
- * Dua kondisi dibedakan karena tindakan yang berguna berbeda: tanpa filter yang
- * aktif, produk pertama memang belum ada; dengan filter aktif, produknya ada
- * tapi tidak cocok, jadi yang perlu diubah adalah filternya.
- */
-function ProductEmptyState({
-    hasFilters,
-    onReset,
-    pending,
-}: {
-    hasFilters: boolean;
-    onReset: () => void;
-    pending: boolean;
-}) {
-    return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
-            <Package className="size-8 text-muted-foreground" />
-            <div className="flex flex-col gap-1">
-                <p className="font-medium">
-                    {hasFilters
-                        ? 'Tidak ada produk yang cocok'
-                        : 'Belum ada produk'}
-                </p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                    {hasFilters
-                        ? 'Coba longgarkan pencarian atau reset filter untuk melihat semua produk.'
-                        : 'Tambahkan produk pertama supaya penyewa bisa mulai melihat barang yang bisa disewa.'}
-                </p>
-            </div>
-            {hasFilters ? (
-                <Button variant="outline" onClick={onReset} disabled={pending}>
-                    <RotateCcw />
-                    Reset filter
-                </Button>
-            ) : (
-                <Button asChild>
-                    <Link href={productRoutes.create()}>
-                        <Plus />
-                        Tambah Produk
-                    </Link>
-                </Button>
-            )}
-        </div>
     );
 }
 
@@ -622,9 +510,7 @@ function buildQuery(filters: AdminProductFilters): Record<string, string> {
  * Query string untuk pindah halaman.
  *
  * Filter ikut dibawa supaya admin tidak kehilangan filter yang sedang aktif
- * hanya karena menekan tombol halaman berikutnya. `links` bawaan Laravel
- * tidak dipakai di sini karena labelnya berisi markup navigasi, sedangkan
- * katalog publik sudah memakai daftar nomor halaman sendiri.
+ * hanya karena menekan tombol halaman berikutnya.
  */
 function pageUrl(filters: AdminProductFilters, page: number): string {
     return productRoutes.index.url({
@@ -633,37 +519,4 @@ function pageUrl(filters: AdminProductFilters, page: number): string {
             page: String(page),
         },
     });
-}
-
-/**
- * Nomor halaman yang ditampilkan, dengan celah `...` di antara halaman yang
- * dilewati. Halaman pertama, terakhir, dan halaman di sekitar posisi sekarang
- * selalu ikut ditampilkan supaya admin tidak kehilangan akses ke bagian awal
- * dan akhir daftar.
- */
-function visiblePages(current: number, last: number): (number | 'gap')[] {
-    const wanted = new Set<number>([
-        1,
-        last,
-        current - 1,
-        current,
-        current + 1,
-    ]);
-    const pages: (number | 'gap')[] = [];
-    let previous = 0;
-
-    for (let page = 1; page <= last; page += 1) {
-        if (!wanted.has(page)) {
-            continue;
-        }
-
-        if (previous > 0 && page - previous > 1) {
-            pages.push('gap');
-        }
-
-        pages.push(page);
-        previous = page;
-    }
-
-    return pages;
 }

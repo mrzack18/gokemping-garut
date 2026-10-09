@@ -1,15 +1,17 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { motion } from 'motion/react';
 import {
     BadgeCheck,
     Ban,
     FileText,
     RotateCcw,
-    Search,
     Settings2,
     Wallet,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminFilterCard from '@/components/admin/filter-card';
+import AdminPageHeader from '@/components/admin/page-header';
+import AdminPagination from '@/components/admin/pagination';
 import PaymentProofDialog from '@/components/admin/payment-proof-dialog';
 import PaymentRejectDialog from '@/components/admin/payment-reject-dialog';
 import PaymentVerifyDialog from '@/components/admin/payment-verify-dialog';
@@ -113,140 +115,97 @@ export default function AdminPayments({
         <>
             <Head title="Pembayaran" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Pembayaran"
+                    description="Antrean verifikasi pembayaran. Periksa bukti transfer sebelum menandai lunas, dan tulis alasan yang jelas saat menolak supaya penyewa tahu apa yang harus diperbaiki."
+                    actions={
+                        <Button asChild variant="outline">
+                            <Link href={paymentSettingRoutes.index()}>
+                                <Settings2 aria-hidden="true" />
+                                Atur Metode
+                            </Link>
+                        </Button>
+                    }
+                />
+
+                <AdminFilterCard
+                    title="Filter"
+                    description="Filter tersimpan di alamat halaman, jadi tautan yang disalin membuka tampilan yang sama."
+                    onSubmit={handleSubmit}
+                    pending={pending}
+                    hasFilters={hasFilters}
+                    onReset={resetFilters}
                 >
-                    <div className="flex flex-col gap-1">
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Pembayaran
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Antrean verifikasi pembayaran. Periksa bukti
-                            transfer sebelum menandai lunas, dan tulis alasan
-                            yang jelas saat menolak supaya penyewa tahu apa yang
-                            harus diperbaiki.
-                        </p>
+                    <div className="space-y-2 lg:col-span-4">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                            value={draft.status ?? ALL}
+                            onValueChange={(value) =>
+                                setDraft({
+                                    ...draft,
+                                    status:
+                                        value === ALL
+                                            ? null
+                                            : (value as AdminPaymentFilters['status']),
+                                })
+                            }
+                        >
+                            <SelectTrigger id="status" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL}>
+                                    Semua status
+                                </SelectItem>
+                                {statusOptions.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    <Button asChild variant="outline">
-                        <Link href={paymentSettingRoutes.index()}>
-                            <Settings2 />
-                            Atur Metode
-                        </Link>
-                    </Button>
-                </motion.div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Filter</CardTitle>
-                        <CardDescription>
-                            Filter tersimpan di alamat halaman, jadi tautan yang
-                            disalin membuka tampilan yang sama.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={handleSubmit}
-                            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12"
+                    <div className="space-y-2 lg:col-span-4">
+                        <Label htmlFor="method">Metode</Label>
+                        <Select
+                            value={draft.method ?? ALL}
+                            onValueChange={(value) =>
+                                setDraft({
+                                    ...draft,
+                                    method: value === ALL ? null : value,
+                                })
+                            }
                         >
-                            <div className="space-y-2 lg:col-span-4">
-                                <Label htmlFor="status">Status</Label>
-                                <Select
-                                    value={draft.status ?? ALL}
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            status:
-                                                value === ALL
-                                                    ? null
-                                                    : (value as AdminPaymentFilters['status']),
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="status"
-                                        className="w-full"
+                            <SelectTrigger id="method" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL}>
+                                    Semua metode
+                                </SelectItem>
+                                {methodOptions.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
                                     >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL}>
-                                            Semua status
-                                        </SelectItem>
-                                        {statusOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </AdminFilterCard>
 
-                            <div className="space-y-2 lg:col-span-4">
-                                <Label htmlFor="method">Metode</Label>
-                                <Select
-                                    value={draft.method ?? ALL}
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            method:
-                                                value === ALL ? null : value,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="method"
-                                        className="w-full"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL}>
-                                            Semua metode
-                                        </SelectItem>
-                                        {methodOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4">
-                                <Button type="submit" disabled={pending}>
-                                    <Search className="size-4" />
-                                    Terapkan
-                                </Button>
-                                {hasFilters ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={resetFilters}
-                                        disabled={pending}
-                                    >
-                                        <RotateCcw className="size-4" />
-                                        Reset filter
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                <Card>
+                <Card className="rounded-lg shadow-none">
                     <CardHeader>
-                        <CardTitle>Daftar Pembayaran</CardTitle>
+                        <CardTitle className="font-display text-base">
+                            Daftar Pembayaran
+                        </CardTitle>
                         <CardDescription>
                             {total === 0
                                 ? 'Tidak ada pembayaran yang cocok dengan filter.'
@@ -255,10 +214,30 @@ export default function AdminPayments({
                     </CardHeader>
                     <CardContent>
                         {payments.data.length === 0 ? (
-                            <PaymentEmptyState
-                                hasFilters={hasFilters}
-                                onReset={resetFilters}
-                                pending={pending}
+                            <AdminEmptyState
+                                icon={Wallet}
+                                title={
+                                    hasFilters
+                                        ? 'Tidak ada pembayaran yang cocok'
+                                        : 'Belum ada pembayaran'
+                                }
+                                description={
+                                    hasFilters
+                                        ? 'Coba longgarkan filter status atau metode untuk melihat pembayaran lain.'
+                                        : 'Pembayaran muncul di sini setelah booking pertama dibuat lewat halaman pemesanan publik.'
+                                }
+                                action={
+                                    hasFilters ? (
+                                        <Button
+                                            variant="outline"
+                                            onClick={resetFilters}
+                                            disabled={pending}
+                                        >
+                                            <RotateCcw aria-hidden="true" />
+                                            Reset filter
+                                        </Button>
+                                    ) : null
+                                }
                             />
                         ) : (
                             <Table>
@@ -304,68 +283,12 @@ export default function AdminPayments({
                     </CardContent>
                 </Card>
 
-                {lastPage > 1 ? (
-                    <nav
-                        aria-label="Navigasi halaman pembayaran"
-                        className="flex flex-wrap items-center justify-center gap-1"
-                    >
-                        {currentPage > 1 ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage - 1)}
-                                    preserveScroll
-                                >
-                                    Sebelumnya
-                                </Link>
-                            </Button>
-                        ) : null}
-
-                        {visiblePages(currentPage, lastPage).map((page) =>
-                            page === 'gap' ? (
-                                <span
-                                    key={`gap-${page}`}
-                                    className="px-2 text-sm text-muted-foreground"
-                                >
-                                    ...
-                                </span>
-                            ) : (
-                                <Button
-                                    key={page}
-                                    asChild
-                                    size="sm"
-                                    variant={
-                                        page === currentPage
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                >
-                                    <Link
-                                        href={pageUrl(filters, page)}
-                                        preserveScroll
-                                        aria-current={
-                                            page === currentPage
-                                                ? 'page'
-                                                : undefined
-                                        }
-                                    >
-                                        {page}
-                                    </Link>
-                                </Button>
-                            ),
-                        )}
-
-                        {currentPage < lastPage ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage + 1)}
-                                    preserveScroll
-                                >
-                                    Berikutnya
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </nav>
-                ) : null}
+                <AdminPagination
+                    currentPage={currentPage}
+                    lastPage={lastPage}
+                    pageUrl={(page) => pageUrl(filters, page)}
+                    ariaLabel="Navigasi halaman pembayaran"
+                />
             </div>
 
             <PaymentProofDialog
@@ -498,43 +421,6 @@ function PaymentRow({
 }
 
 /**
- * Empty state daftar pembayaran.
- */
-function PaymentEmptyState({
-    hasFilters,
-    onReset,
-    pending,
-}: {
-    hasFilters: boolean;
-    onReset: () => void;
-    pending: boolean;
-}) {
-    return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
-            <Wallet className="size-8 text-muted-foreground" />
-            <div className="flex flex-col gap-1">
-                <p className="font-medium">
-                    {hasFilters
-                        ? 'Tidak ada pembayaran yang cocok'
-                        : 'Belum ada pembayaran'}
-                </p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                    {hasFilters
-                        ? 'Coba longgarkan filter status atau metode untuk melihat pembayaran lain.'
-                        : 'Pembayaran muncul di sini setelah booking pertama dibuat lewat halaman pemesanan publik.'}
-                </p>
-            </div>
-            {hasFilters ? (
-                <Button variant="outline" onClick={onReset} disabled={pending}>
-                    <RotateCcw />
-                    Reset filter
-                </Button>
-            ) : null}
-        </div>
-    );
-}
-
-/**
  * Query string filter. Nilai default tidak ikut ditulis supaya URL tetap
  * pendek; semua nilai sudah dinormalisasi server.
  */
@@ -559,35 +445,4 @@ function pageUrl(filters: AdminPaymentFilters, page: number): string {
             page: String(page),
         },
     });
-}
-
-/**
- * Nomor halaman yang ditampilkan, dengan celah `...` di antara halaman yang
- * dilewati.
- */
-function visiblePages(current: number, last: number): (number | 'gap')[] {
-    const wanted = new Set<number>([
-        1,
-        last,
-        current - 1,
-        current,
-        current + 1,
-    ]);
-    const pages: (number | 'gap')[] = [];
-    let previous = 0;
-
-    for (let page = 1; page <= last; page += 1) {
-        if (!wanted.has(page)) {
-            continue;
-        }
-
-        if (previous > 0 && page - previous > 1) {
-            pages.push('gap');
-        }
-
-        pages.push(page);
-        previous = page;
-    }
-
-    return pages;
 }

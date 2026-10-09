@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import BookingMobileBar from '@/components/booking/booking-mobile-bar';
+import BookingSteps from '@/components/booking/booking-steps';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,9 +62,11 @@ export default function BookingPayment({
 }: BookingPaymentPageProps) {
     const [copiedText, copy] = useClipboard();
     const [localPreview, setLocalPreview] = useState<string | null>(null);
+    const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const proofForm = useForm<{ proof: File | null }>({ proof: null });
-    const removeForm = useForm({});
+    const removeForm = useForm<{ proof?: string }>({});
     /**
      * Form konfirmasi tidak mengirim data apa pun, tetapi tetap punya dua key
      * error dari server: `proof` kalau bukti belum diunggah, dan `period` kalau
@@ -90,6 +94,15 @@ export default function BookingPayment({
         return () => URL.revokeObjectURL(objectUrl);
     }, [selectedFile]);
 
+    useEffect(
+        () => () => {
+            if (copyTimeoutRef.current !== null) {
+                clearTimeout(copyTimeoutRef.current);
+            }
+        },
+        [],
+    );
+
     const routes = routesFor(business.slug);
 
     if (routes === null) {
@@ -98,7 +111,7 @@ export default function BookingPayment({
 
     const isBankTransfer = method.type === 'bank_transfer';
     const isQris = method.type === 'qris';
-    const isCopied = copiedText === method.account_number;
+    const isCopied = showCopyFeedback && copiedText === method.account_number;
 
     const proofStoreUrl = routes.payment.proof.store.url();
     const proofDestroyUrl = routes.payment.proof.destroy.url();
@@ -170,12 +183,31 @@ export default function BookingPayment({
         bookingForm.post(bookingStoreUrl);
     }
 
+    async function copyAccountNumber(): Promise<void> {
+        const accountNumber = method.account_number;
+
+        if (accountNumber === null || !(await copy(accountNumber))) {
+            return;
+        }
+
+        setShowCopyFeedback(true);
+
+        if (copyTimeoutRef.current !== null) {
+            clearTimeout(copyTimeoutRef.current);
+        }
+
+        copyTimeoutRef.current = setTimeout(
+            () => setShowCopyFeedback(false),
+            2000,
+        );
+    }
+
     return (
         <PublicLayout businesses={businesses} anchorBase="/">
             <Head title={`Pembayaran ${method.label}`} />
 
-            <section className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="border-b border-border bg-sand-50">
+                <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -193,7 +225,7 @@ export default function BookingPayment({
                             </Link>
                         </Button>
 
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
                             Pembayaran {method.label}
                         </h1>
                         <p className="mt-3 max-w-2xl text-muted-foreground">
@@ -201,10 +233,13 @@ export default function BookingPayment({
                             {period.duration_label}
                         </p>
                     </motion.div>
+                    <div className="mt-7 max-w-2xl">
+                        <BookingSteps current={4} />
+                    </div>
                 </div>
             </section>
 
-            <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="mx-auto w-full max-w-6xl px-4 py-8 pb-28 sm:px-6 sm:py-10 sm:pb-28 lg:pb-14">
                 <div className="grid gap-8 lg:grid-cols-3">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -215,14 +250,14 @@ export default function BookingPayment({
                         {!availability.is_available ? (
                             <div
                                 role="alert"
-                                className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100"
+                                className="flex items-start gap-3 rounded-md border border-warning-border bg-warning-bg p-4 text-sm text-warning-text"
                             >
                                 <AlertTriangle className="mt-0.5 size-5 shrink-0" />
                                 <div>
                                     <p className="font-medium">
                                         Ketersediaan berubah
                                     </p>
-                                    <p className="mt-1 text-amber-800 dark:text-amber-200">
+                                    <p className="mt-1 text-warning-text/90">
                                         Unit yang tersisa hanya{' '}
                                         {availability.available}, sedangkan Anda
                                         memilih {availability.requested}.
@@ -243,9 +278,9 @@ export default function BookingPayment({
                         ) : null}
 
                         {isQris ? (
-                            <Card>
+                            <Card className="rounded-lg shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">
+                                    <CardTitle className="font-display text-base">
                                         Scan QRIS
                                     </CardTitle>
                                 </CardHeader>
@@ -284,9 +319,9 @@ export default function BookingPayment({
                         ) : null}
 
                         {isBankTransfer ? (
-                            <Card>
+                            <Card className="rounded-lg shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">
+                                    <CardTitle className="font-display text-base">
                                         Transfer Bank
                                     </CardTitle>
                                 </CardHeader>
@@ -323,9 +358,7 @@ export default function BookingPayment({
                                             type="button"
                                             variant="outline"
                                             onClick={() =>
-                                                void copy(
-                                                    method.account_number ?? '',
-                                                )
+                                                void copyAccountNumber()
                                             }
                                         >
                                             {isCopied ? (
@@ -343,9 +376,9 @@ export default function BookingPayment({
                         ) : null}
 
                         {!isQris && !isBankTransfer ? (
-                            <Card>
+                            <Card className="rounded-lg shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">
+                                    <CardTitle className="font-display text-base">
                                         Pembayaran langsung
                                     </CardTitle>
                                 </CardHeader>
@@ -359,9 +392,9 @@ export default function BookingPayment({
                         ) : null}
 
                         {method.requires_proof ? (
-                            <Card>
+                            <Card className="rounded-lg shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">
+                                    <CardTitle className="font-display text-base">
                                         Bukti Pembayaran
                                     </CardTitle>
                                 </CardHeader>
@@ -377,7 +410,10 @@ export default function BookingPayment({
                                     previewName !== null ? (
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-3 rounded-lg border p-3">
-                                                <FileText className="size-5 shrink-0 text-muted-foreground" />
+                                                <FileText
+                                                    aria-hidden="true"
+                                                    className="size-5 shrink-0 text-muted-foreground"
+                                                />
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate text-sm font-medium">
                                                         {previewName}
@@ -410,7 +446,7 @@ export default function BookingPayment({
                                         </div>
                                     ) : null}
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 rounded-md border border-dashed border-border bg-sand-50 p-4">
                                         <Label htmlFor="proof">
                                             Pilih berkas bukti
                                         </Label>
@@ -434,6 +470,12 @@ export default function BookingPayment({
                                         />
                                     </div>
 
+                                    {removeForm.errors.proof ? (
+                                        <InputError
+                                            message={removeForm.errors.proof}
+                                        />
+                                    ) : null}
+
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -452,9 +494,9 @@ export default function BookingPayment({
                                 </CardContent>
                             </Card>
                         ) : (
-                            <Card>
+                            <Card className="rounded-lg shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">
+                                    <CardTitle className="font-display text-base">
                                         Bukti Pembayaran
                                     </CardTitle>
                                 </CardHeader>
@@ -473,9 +515,9 @@ export default function BookingPayment({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Card className="lg:sticky lg:top-24">
+                        <Card className="rounded-lg shadow-none lg:sticky lg:top-24">
                             <CardHeader>
-                                <CardTitle className="text-base">
+                                <CardTitle className="font-display text-base">
                                     Ringkasan
                                 </CardTitle>
                             </CardHeader>
@@ -540,7 +582,7 @@ export default function BookingPayment({
                                 </div>
 
                                 {method.requires_proof && !hasSavedProof ? (
-                                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                                    <p className="text-xs text-warning-text">
                                         Unggah bukti pembayaran dulu sebelum
                                         menyimpan booking.
                                     </p>
@@ -570,15 +612,20 @@ export default function BookingPayment({
                                         : 'Konfirmasi Booking'}
                                 </Button>
                                 <p className="text-xs text-muted-foreground">
-                                    Booking disimpan dengan status menunggu
-                                    konfirmasi admin. WhatsApp ke admin dibangun
-                                    pada ROADMAP 3.12.
+                                    Booking akan tersimpan dengan status
+                                    menunggu konfirmasi admin.
                                 </p>
                             </CardContent>
                         </Card>
                     </motion.div>
                 </div>
             </section>
+            <BookingMobileBar
+                amount={formatRupiah(pricing.total)}
+                label={bookingForm.processing ? 'Menyimpan…' : 'Konfirmasi'}
+                disabled={!canConfirm}
+                onClick={confirmBooking}
+            />
         </PublicLayout>
     );
 }

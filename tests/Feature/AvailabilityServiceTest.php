@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\AvailabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class AvailabilityServiceTest extends TestCase
@@ -120,6 +121,39 @@ class AvailabilityServiceTest extends TestCase
         $service = app(AvailabilityService::class);
 
         $this->assertSame(2, $service->usedUnits($product, '2026-10-10', '2026-10-12'));
+    }
+
+    public function test_booking_yang_masih_sedang_disewa_menahan_stok_setelah_tanggal_kembali(): void
+    {
+        $business = $this->business('gokemping');
+        $product = $this->product($business, ['stock' => 4]);
+        $today = Carbon::today();
+
+        $this->booking(
+            $business,
+            $product,
+            2,
+            $today->copy()->subDays(4)->toDateString(),
+            $today->copy()->subDay()->toDateString(),
+            BookingStatus::SedangDisewa,
+        );
+        $this->booking(
+            $business,
+            $product,
+            1,
+            $today->copy()->subDays(4)->toDateString(),
+            $today->copy()->subDay()->toDateString(),
+            BookingStatus::Dikonfirmasi,
+        );
+
+        $this->assertSame(
+            2,
+            app(AvailabilityService::class)->usedUnits(
+                $product,
+                $today->toDateString(),
+                $today->copy()->addDay()->toDateString(),
+            ),
+        );
     }
 
     public function test_booking_selesai_dan_dibatalkan_tidak_menahan_stok(): void

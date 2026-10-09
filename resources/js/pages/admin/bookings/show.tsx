@@ -1,10 +1,10 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { motion } from 'motion/react';
+import { Form, Head } from '@inertiajs/react';
 import {
-    ArrowLeft,
     Ban,
+    Check,
     CircleCheck,
     Clock,
+    Copy,
     FileText,
     MapPin,
     Phone,
@@ -18,7 +18,9 @@ import {
     BookingStatusBadge,
     PaymentStatusBadge,
 } from '@/components/admin/booking-status-badge';
+import AdminPageHeader from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
+import { useClipboard } from '@/hooks/use-clipboard';
 import {
     Card,
     CardContent,
@@ -57,104 +59,115 @@ export default function AdminBookingDetail({
     history,
 }: AdminBookingShowPageProps) {
     const [cancelOpen, setCancelOpen] = useState(false);
+    const [copiedText, copy] = useClipboard();
     const { period, customer, payment, timestamps } = booking;
 
     return (
         <>
             <Head title={`Booking ${booking.booking_code}`} />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-                >
-                    <div className="flex flex-col gap-2">
-                        <Button asChild variant="ghost" size="sm">
-                            <Link href={bookingRoutes.index()}>
-                                <ArrowLeft />
-                                Daftar booking
-                            </Link>
-                        </Button>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                            <h1 className="font-mono text-2xl font-semibold tracking-tight">
-                                {booking.booking_code}
-                            </h1>
-                            <BookingStatusBadge
-                                status={booking.status}
-                                label={booking.status_label}
-                            />
-                        </div>
-
-                        <p className="text-sm text-muted-foreground">
-                            Masuk {timestamps.created_at_label} ·{' '}
-                            {period.start_date_label} - {period.end_date_label}{' '}
-                            ({period.total_days_label})
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        {booking.next_status !== null &&
-                        booking.next_status_label !== null ? (
-                            <Form
-                                {...bookingRoutes.status.form({
-                                    booking: booking.booking_code,
-                                })}
-                                options={{
-                                    preserveScroll: true,
-                                }}
-                            >
-                                {({ processing, errors }) => (
-                                    <>
-                                        <input
-                                            type="hidden"
-                                            name="status"
-                                            value={booking.next_status ?? ''}
-                                        />
-                                        <Button
-                                            type="submit"
-                                            disabled={processing}
-                                            asChild
-                                        >
-                                            <button type="submit">
-                                                <CircleCheck />
-                                                Tandai{' '}
-                                                {booking.next_status_label}
-                                            </button>
-                                        </Button>
-                                        {errors.status ? (
-                                            <span className="text-sm text-destructive">
-                                                {errors.status}
-                                            </span>
-                                        ) : null}
-                                    </>
-                                )}
-                            </Form>
-                        ) : null}
-
-                        {booking.is_cancellable ? (
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title={booking.booking_code}
+                    titleClassName="font-mono"
+                    titleAdornment={
+                        <BookingStatusBadge
+                            status={booking.status}
+                            label={booking.status_label}
+                        />
+                    }
+                    description={`Masuk ${timestamps.created_at_label} · ${period.start_date_label} - ${period.end_date_label} (${period.total_days_label})`}
+                    backHref={bookingRoutes.index.url()}
+                    backLabel="Daftar booking"
+                    meta={
+                        <>
                             <Button
+                                type="button"
                                 variant="outline"
-                                onClick={() => setCancelOpen(true)}
+                                size="sm"
+                                onClick={() => void copy(booking.booking_code)}
                             >
-                                <Ban />
-                                Batalkan Booking
+                                {copiedText === booking.booking_code ? (
+                                    <Check aria-hidden="true" />
+                                ) : (
+                                    <Copy aria-hidden="true" />
+                                )}
+                                {copiedText === booking.booking_code
+                                    ? 'Tersalin'
+                                    : 'Salin kode'}
                             </Button>
-                        ) : null}
-                    </div>
-                </motion.div>
+                            <span aria-live="polite" className="sr-only">
+                                {copiedText === booking.booking_code
+                                    ? 'Kode booking tersalin.'
+                                    : ''}
+                            </span>
+                        </>
+                    }
+                    actions={
+                        <>
+                            {booking.next_status !== null &&
+                            booking.next_status_label !== null ? (
+                                <Form
+                                    {...bookingRoutes.status.form({
+                                        booking: booking.booking_code,
+                                    })}
+                                    options={{
+                                        preserveScroll: true,
+                                    }}
+                                >
+                                    {({ processing, errors }) => (
+                                        <>
+                                            <input
+                                                type="hidden"
+                                                name="status"
+                                                value={
+                                                    booking.next_status ?? ''
+                                                }
+                                            />
+                                            <Button
+                                                type="submit"
+                                                disabled={processing}
+                                                asChild
+                                            >
+                                                <button type="submit">
+                                                    <CircleCheck aria-hidden="true" />
+                                                    Tandai{' '}
+                                                    {booking.next_status_label}
+                                                </button>
+                                            </Button>
+                                            {errors.status ? (
+                                                <span
+                                                    role="alert"
+                                                    className="text-sm text-destructive"
+                                                >
+                                                    {errors.status}
+                                                </span>
+                                            ) : null}
+                                        </>
+                                    )}
+                                </Form>
+                            ) : null}
 
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.06 }}
-                    className="grid gap-6 lg:grid-cols-3"
-                >
-                    <Card>
+                            {booking.is_cancellable ? (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setCancelOpen(true)}
+                                    className="text-destructive hover:text-destructive"
+                                >
+                                    <Ban aria-hidden="true" />
+                                    Batalkan Booking
+                                </Button>
+                            ) : null}
+                        </>
+                    }
+                />
+
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <Card className="rounded-lg shadow-none">
                         <CardHeader>
-                            <CardTitle>Penyewa</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Penyewa
+                            </CardTitle>
                             <CardDescription>
                                 NIK disamarkan di halaman ini. NIK penuh hanya
                                 bisa dibaca di Manajemen Penyewa.
@@ -201,9 +214,11 @@ export default function AdminBookingDetail({
                         </CardContent>
                     </Card>
 
-                    <Card className="lg:col-span-2">
+                    <Card className="rounded-lg shadow-none lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>Periode dan status pembayaran</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Periode dan status pembayaran
+                            </CardTitle>
                             <CardDescription>
                                 Durasi sewa dihitung dari tanggal mulai dan
                                 tanggal selesai sewa.
@@ -291,17 +306,14 @@ export default function AdminBookingDetail({
                             )}
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.12 }}
-                    className="grid gap-6 lg:grid-cols-3"
-                >
-                    <Card className="lg:col-span-2">
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <Card className="rounded-lg shadow-none lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>Barang yang disewa</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Barang yang disewa
+                            </CardTitle>
                             <CardDescription>
                                 Nama dan harga disalin dari produk saat booking
                                 dibuat, jadi tetap terbaca walaupun produknya
@@ -371,9 +383,11 @@ export default function AdminBookingDetail({
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="rounded-lg shadow-none">
                         <CardHeader>
-                            <CardTitle>Ringkasan</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Ringkasan
+                            </CardTitle>
                             <CardDescription>
                                 Informasi tambahan dari formulir pemesanan.
                             </CardDescription>
@@ -404,17 +418,14 @@ export default function AdminBookingDetail({
                             </dl>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.18 }}
-                    className="grid gap-6 lg:grid-cols-3"
-                >
-                    <Card className="lg:col-span-2">
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <Card className="rounded-lg shadow-none lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>Riwayat status</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Riwayat status
+                            </CardTitle>
                             <CardDescription>
                                 Setiap perubahan status dicatat, termasuk siapa
                                 yang melakukannya.
@@ -433,9 +444,11 @@ export default function AdminBookingDetail({
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="rounded-lg shadow-none">
                         <CardHeader>
-                            <CardTitle>Tanggal penting</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Tanggal penting
+                            </CardTitle>
                             <CardDescription>
                                 Waktu tahap booking yang sudah terjadi.
                             </CardDescription>
@@ -465,7 +478,7 @@ export default function AdminBookingDetail({
                             </dl>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
             </div>
 
             <BookingCancelDialog
@@ -561,7 +574,7 @@ function HistoryEntry({
     return (
         <li className="flex gap-3">
             <div className="flex flex-col items-center">
-                <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-primary" />
+                <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-pine-700 dark:bg-pine-600" />
                 {isLast ? null : <span className="w-px flex-1 bg-border" />}
             </div>
 

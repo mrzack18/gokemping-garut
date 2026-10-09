@@ -47,9 +47,9 @@ export default function PaymentProofDialog({
                     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
                         <ImageOff className="size-8 text-muted-foreground" />
                         <p className="max-w-sm text-sm text-muted-foreground">
-                            Pembayaran ini tidak punya berkas bukti. Cash memang
-                            tidak memerlukan bukti unggahan karena uangnya
-                            diterima langsung di lokasi.
+                            {payment.method === 'cash'
+                                ? 'Pembayaran cash tidak memerlukan bukti unggahan karena uang diterima langsung di lokasi.'
+                                : 'Belum ada bukti unggahan. Untuk booking manual, konfirmasikan pembayaran langsung kepada penyewa sebelum menandainya lunas.'}
                         </p>
                     </div>
                 ) : (

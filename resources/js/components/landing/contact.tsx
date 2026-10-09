@@ -18,17 +18,18 @@ export default function Contact({ businesses }: ContactProps) {
             title="Temu langsung atau chat admin"
             description="Setiap unit punya admin sendiri. Pilih unit yang ingin Anda ajukan pertanyaannya."
         >
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2">
                 {businesses.map((business, index) => (
                     <Reveal key={business.id} delay={index * 0.1}>
-                        <Card className="h-full">
-                            <CardContent className="space-y-5 p-6">
+                        <Card className="h-full rounded-lg shadow-none">
+                            <CardContent className="space-y-5 p-5 sm:p-6">
                                 <div>
                                     <h3 className="text-lg font-semibold">
                                         {business.name}
                                     </h3>
                                     <p className="mt-1 text-sm text-muted-foreground">
-                                        {business.description}
+                                        {business.service_intro ??
+                                            business.description}
                                     </p>
                                 </div>
 
@@ -36,7 +37,10 @@ export default function Contact({ businesses }: ContactProps) {
                                     {business.address ? (
                                         <div className="flex gap-2">
                                             <dt className="sr-only">Alamat</dt>
-                                            <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                            <MapPin
+                                                aria-hidden="true"
+                                                className="mt-0.5 size-4 shrink-0 text-pine-700 dark:text-pine-600"
+                                            />
                                             <dd className="text-muted-foreground">
                                                 {business.address}
                                             </dd>
@@ -46,7 +50,10 @@ export default function Contact({ businesses }: ContactProps) {
                                     {business.email ? (
                                         <div className="flex gap-2">
                                             <dt className="sr-only">Email</dt>
-                                            <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                            <Mail
+                                                aria-hidden="true"
+                                                className="mt-0.5 size-4 shrink-0 text-pine-700 dark:text-pine-600"
+                                            />
                                             <dd>
                                                 <a
                                                     href={`mailto:${business.email}`}
@@ -61,7 +68,10 @@ export default function Contact({ businesses }: ContactProps) {
                                     {business.phone ? (
                                         <div className="flex gap-2">
                                             <dt className="sr-only">Telepon</dt>
-                                            <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                            <Phone
+                                                aria-hidden="true"
+                                                className="mt-0.5 size-4 shrink-0 text-pine-700 dark:text-pine-600"
+                                            />
                                             <dd>
                                                 <a
                                                     href={`tel:${business.phone}`}
@@ -75,7 +85,10 @@ export default function Contact({ businesses }: ContactProps) {
 
                                     <div className="flex gap-2">
                                         <dt className="sr-only">WhatsApp</dt>
-                                        <MessageCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                        <MessageCircle
+                                            aria-hidden="true"
+                                            className="mt-0.5 size-4 shrink-0 text-pine-700 dark:text-pine-600"
+                                        />
                                         <dd>
                                             <a
                                                 href={whatsappLink(
@@ -93,17 +106,25 @@ export default function Contact({ businesses }: ContactProps) {
                                 </dl>
 
                                 {business.maps_embed_url ? (
-                                    <iframe
-                                        src={business.maps_embed_url}
-                                        title={`Lokasi ${business.name}`}
-                                        loading="lazy"
-                                        referrerPolicy="no-referrer-when-downgrade"
-                                        className="aspect-video w-full rounded-lg border"
-                                    />
+                                    <div className="space-y-2 border-t border-border pt-4">
+                                        <p className="text-xs font-medium text-muted-foreground">
+                                            Lokasi
+                                        </p>
+                                        <iframe
+                                            src={business.maps_embed_url}
+                                            title={`Lokasi ${business.name}`}
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer-when-downgrade"
+                                            className="aspect-video w-full rounded-md border border-border bg-muted"
+                                        />
+                                    </div>
                                 ) : null}
 
                                 <div className="flex flex-col gap-2 sm:flex-row">
-                                    <Button asChild>
+                                    <Button
+                                        asChild
+                                        className="w-full sm:w-auto"
+                                    >
                                         <a
                                             href={whatsappLink(
                                                 business.whatsapp,

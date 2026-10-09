@@ -6,8 +6,10 @@ use App\Models\Business;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Scopes\BusinessScope;
+use App\Services\AvailabilityService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -36,10 +38,21 @@ class ProductDetailController extends Controller
         'booking_code_prefix',
     ];
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, AvailabilityService $availability): Response
     {
         $business = $this->resolveBusiness($request);
         $product = $this->resolveProduct($business, $request);
+        $productId = (int) $product->getKey();
+        $usedNow = $availability->usedUnitsForProducts(
+            (int) $business->getKey(),
+            [$productId],
+            Carbon::today(),
+            Carbon::tomorrow(),
+        );
+        $bookedPeriods = $availability->bookedPeriodsForProducts(
+            (int) $business->getKey(),
+            [$productId],
+        )[$productId] ?? [];
 
         return Inertia::render('catalog/show', [
             'business' => $business,
@@ -55,6 +68,9 @@ class ProductDetailController extends Controller
                 'price_unit' => $product->price_unit,
                 'stock' => $product->stock,
                 'is_available' => $product->stock > 0,
+                'available_now' => max(0, (int) $product->stock - ($usedNow[$productId] ?? 0)),
+                'booked_periods' => $bookedPeriods,
+                'booked_periods_count' => count($bookedPeriods),
                 'category' => $product->category === null
                     ? null
                     : [

@@ -1,7 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import services from '@/routes/services';
-import { ArrowRight } from 'lucide-react';
+import { Head } from '@inertiajs/react';
 import About from '@/components/landing/about';
 import Advantages from '@/components/landing/advantages';
 import BannerCarousel from '@/components/landing/banner-carousel';
@@ -26,36 +23,25 @@ export default function Welcome({
         <PublicLayout businesses={businesses}>
             <Head title="Sewa Camping dan Sepeda di Garut" />
 
-            <Hero businesses={businesses} />
+            <Hero
+                businesses={businesses}
+                banner={banners[0] ?? null}
+                featuredProducts={featuredProducts.slice(0, 2)}
+            />
 
-            <BannerCarousel banners={banners} />
-
-            <div className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-                    <Button
-                        asChild
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                    >
-                        <Link href={services.index()}>
-                            Lihat semua layanan
-                            <ArrowRight className="size-4" />
-                        </Link>
-                    </Button>
-                </div>
-            </div>
-
-            <About businesses={businesses} />
-
-            <Services businesses={businesses} />
+            <Services businesses={businesses} products={featuredProducts} />
 
             <FeaturedProducts products={featuredProducts} />
 
+            <BannerCarousel banners={banners.slice(1)} />
+
             <RentalSteps businesses={businesses} />
 
-            <TicketCheck ticket={ticket} />
+            <About />
 
             <Advantages />
+
+            <TicketCheck ticket={ticket} />
 
             <Faq faqs={faqs} />
 

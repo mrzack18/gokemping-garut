@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Scopes\BusinessScope;
+use App\Models\User;
 use App\Support\BookingCodeGenerator;
 use App\Support\BookingPeriod;
 use App\Support\BookingRoutes;
@@ -145,6 +146,146 @@ final class BookingService
                 'note' => null,
                 'changed_by' => null,
             ]);
+
+            return $booking;
+        }, 3);
+    }
+
+    /**
+     * Catat booking yang dibuat admin untuk penyewaan langsung di tempat.
+     *
+     * Logika harga, penyewa, kode booking, dan pengecekan stok mengikuti alur
+     * publik. Perbedaannya: booking manual langsung dikonfirmasi, status
+     * pembayaran dapat dicatat lunas saat uang diterima, dan riwayat mencatat
+     * admin yang memasukkan transaksi.
+     *
+     * Ketersediaan tetap diperiksa ulang di dalam transaksi dengan urutan lock
+     * yang sama seperti `store()`: business lalu product.
+     *
+     * @param  array<string, mixed>  $draft
+     *
+     * @throws InsufficientStockException kalau stok sudah tidak cukup
+     */
+    public function storeManual(
+        Business $business,
+        Product $product,
+        array $draft,
+        User $admin,
+    ): Booking {
+        $method = PaymentMethodType::from((string) $draft['payment_method']);
+        $startDate = (string) $draft['start_date'];
+        $endDate = (string) $draft['end_date'];
+        $quantity = max(1, (int) $draft['quantity']);
+        $duration = BookingPeriod::durationInDays($startDate, $endDate);
+        $isPaid = filter_var($draft['is_paid'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $startRentalNow = filter_var($draft['start_rental_now'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $now = Carbon::now();
+
+        return DB::transaction(function () use (
+            $business,
+            $product,
+            $draft,
+            $method,
+            $startDate,
+            $endDate,
+            $quantity,
+            $duration,
+            $isPaid,
+            $startRentalNow,
+            $now,
+            $admin,
+        ): Booking {
+            $lockedBusiness = Business::query()
+                ->whereKey($business->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $lockedProduct = BusinessScope::withoutBusinessScope(
+                Product::query()
+                    ->whereKey($product->getKey())
+                    ->where('business_id', $lockedBusiness->getKey())
+                    ->active()
+                    ->lockForUpdate(),
+            )->firstOrFail();
+
+            $available = $this->availability->availableUnits(
+                $lockedProduct,
+                $startDate,
+                $endDate,
+            );
+
+            if ($available < $quantity) {
+                throw new InsufficientStockException($available, $quantity);
+            }
+
+            $customer = $this->resolveCustomer($draft);
+            $subtotal = BookingPeriod::total(
+                (int) $lockedProduct->price,
+                $quantity,
+                $duration,
+            );
+            $paymentStatus = $isPaid
+                ? PaymentStatus::Lunas
+                : PaymentStatus::BelumDibayar;
+            $bookingStatus = $startRentalNow
+                ? BookingStatus::SedangDisewa
+                : BookingStatus::Dikonfirmasi;
+
+            $booking = Booking::query()->create([
+                'booking_code' => $this->codes->next($lockedBusiness, $now),
+                'business_id' => $lockedBusiness->getKey(),
+                'customer_id' => $customer->getKey(),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'total_days' => $duration,
+                'subtotal' => $subtotal,
+                'total' => $subtotal,
+                'payment_method' => $method->value,
+                'payment_status' => $paymentStatus->value,
+                'booking_status' => $bookingStatus->value,
+                'renter_count' => $this->renterCount($lockedBusiness, $draft),
+                'notes' => $this->notes($draft),
+                'confirmed_at' => $now,
+                'started_at' => $startRentalNow ? $now : null,
+            ]);
+
+            BookingItem::query()->create([
+                'booking_id' => $booking->getKey(),
+                'product_id' => $lockedProduct->getKey(),
+                'product_name' => $lockedProduct->name,
+                'price_unit' => $lockedProduct->price_unit,
+                'price' => (int) $lockedProduct->price,
+                'quantity' => $quantity,
+                'total_days' => $duration,
+                'subtotal' => $subtotal,
+            ]);
+
+            Payment::query()->create([
+                'booking_id' => $booking->getKey(),
+                'business_id' => $lockedBusiness->getKey(),
+                'method' => $method->value,
+                'amount' => $subtotal,
+                'proof' => null,
+                'status' => $paymentStatus->value,
+                'verified_at' => $isPaid ? $now : null,
+                'verified_by' => $isPaid ? $admin->getKey() : null,
+            ]);
+
+            $booking->statusHistories()->create([
+                'from_status' => null,
+                'to_status' => BookingStatus::Dikonfirmasi,
+                'note' => 'Booking manual dicatat oleh admin.',
+                'changed_by' => $admin->getKey(),
+            ]);
+
+            if ($startRentalNow) {
+                $booking->statusHistories()->create([
+                    'from_status' => BookingStatus::Dikonfirmasi,
+                    'to_status' => BookingStatus::SedangDisewa,
+                    'note' => 'Barang diserahkan langsung kepada penyewa.',
+                    'changed_by' => $admin->getKey(),
+                ]);
+            }
 
             return $booking;
         }, 3);

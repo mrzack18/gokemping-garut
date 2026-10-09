@@ -1,6 +1,17 @@
 import { Head, Link } from '@inertiajs/react';
-import { motion } from 'motion/react';
-import { BadgeCheck, Clock, Package, Wallet } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import {
+    BadgeCheck,
+    CalendarRange,
+    Clock,
+    Package,
+    Wallet,
+} from 'lucide-react';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminPageHeader from '@/components/admin/page-header';
+import AdminStatCard from '@/components/admin/stat-card';
+import BookingChart from '@/components/admin/booking-chart';
+import { BookingStatusBadge } from '@/components/admin/booking-status-badge';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -17,129 +28,121 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import BookingChart from '@/components/admin/booking-chart';
-import { BookingStatusBadge } from '@/components/admin/booking-status-badge';
 import type { AdminDashboardPageProps } from '@/types';
 import { dashboard } from '@/routes/admin';
 import bookingRoutes from '@/routes/admin/bookings';
-
-const statCards = [
-    { key: 'totalProducts', label: 'Total Produk', icon: Package },
-    { key: 'bookingsToday', label: 'Booking Hari Ini', icon: Clock },
-    { key: 'rented', label: 'Sedang Disewa', icon: BadgeCheck },
-    { key: 'awaitingConfirmation', label: 'Menunggu Konfirmasi', icon: Clock },
-    {
-        key: 'pendingPayments',
-        label: 'Menunggu Verifikasi Bayar',
-        icon: Wallet,
-    },
-] as const;
-
-/**
- * Warna badge status booking diambil dari komponen badge bersama supaya
- * dashboard dan halaman booking memberi pembacaan yang sama.
- */
 
 export default function AdminDashboard({
     business,
     stats,
 }: AdminDashboardPageProps) {
     const { revenue } = stats;
+    const reducedMotion = useReducedMotion();
+
+    const statCards = [
+        {
+            key: 'totalProducts',
+            label: 'Total Produk',
+            icon: Package,
+            tone: 'default' as const,
+        },
+        {
+            key: 'bookingsToday',
+            label: 'Booking Hari Ini',
+            icon: Clock,
+            tone: 'default' as const,
+        },
+        {
+            key: 'rented',
+            label: 'Sedang Disewa',
+            icon: BadgeCheck,
+            tone: 'success' as const,
+        },
+        {
+            key: 'awaitingConfirmation',
+            label: 'Menunggu Konfirmasi',
+            icon: Clock,
+            tone: 'warning' as const,
+        },
+        {
+            key: 'pendingPayments',
+            label: 'Menunggu Verifikasi Bayar',
+            icon: Wallet,
+            tone: 'warning' as const,
+        },
+    ] as const;
 
     return (
         <>
             <Head title={`Dashboard ${business.name}`} />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-1"
-                >
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Dashboard {business.name}
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Seluruh data di halaman ini hanya menampilkan unit
-                        bisnis Anda.
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
-                            Prefix kode booking: {business.bookingCodePrefix}
-                        </Badge>
-                        <Badge variant="outline">
-                            WhatsApp: {business.whatsapp}
-                        </Badge>
-                    </div>
-                </motion.div>
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title={`Dashboard ${business.name}`}
+                    description="Ringkasan operasional unit usaha Anda hari ini. Data di halaman ini hanya mencakup unit ini."
+                    meta={
+                        <>
+                            <Badge
+                                variant="outline"
+                                className="border-pine-700/20 bg-pine-50 font-mono text-pine-700 dark:border-pine-100/20 dark:bg-pine-100/30 dark:text-pine-600"
+                            >
+                                {business.bookingCodePrefix}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                                WhatsApp admin: {business.whatsapp}
+                            </span>
+                        </>
+                    }
+                />
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {statCards.map((card, index) => (
                         <motion.div
                             key={card.key}
-                            initial={{ opacity: 0, y: 12 }}
+                            initial={
+                                reducedMotion ? false : { opacity: 0, y: 10 }
+                            }
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
-                                duration: 0.3,
-                                delay: index * 0.06,
+                                duration: reducedMotion ? 0 : 0.3,
+                                delay: reducedMotion ? 0 : index * 0.05,
+                                ease: [0.22, 1, 0.36, 1],
                             }}
                         >
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">
-                                        {card.label}
-                                    </CardTitle>
-                                    <card.icon className="size-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-semibold tabular-nums">
-                                        {stats[card.key]}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <AdminStatCard
+                                icon={card.icon}
+                                label={card.label}
+                                value={stats[card.key]}
+                                tone={card.tone}
+                            />
                         </motion.div>
                     ))}
 
                     <motion.div
-                        initial={{ opacity: 0, y: 12 }}
+                        initial={reducedMotion ? false : { opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.3 }}
+                        transition={{
+                            duration: reducedMotion ? 0 : 0.3,
+                            delay: reducedMotion ? 0 : 0.25,
+                            ease: [0.22, 1, 0.36, 1],
+                        }}
                     >
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    Pendapatan Bulan Ini
-                                </CardTitle>
-                                <Wallet className="size-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-semibold tabular-nums">
-                                    Rp {revenue.paid_label}
-                                </div>
-                                <p className="mt-2 text-xs text-muted-foreground">
-                                    Lunas dan dikonfirmasi admin,{' '}
-                                    {revenue.period_label}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    Belum diverifikasi: Rp{' '}
-                                    {revenue.pending_label}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <AdminStatCard
+                            icon={Wallet}
+                            label="Pendapatan Bulan Ini"
+                            value={`Rp ${revenue.paid_label}`}
+                            hint={`Lunas ${revenue.period_label} · Menunggu Rp ${revenue.pending_label}`}
+                        />
                     </motion.div>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-5">
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.36 }}
-                        className="lg:col-span-2"
-                    >
-                        <Card className="h-full">
+                    <div className="lg:col-span-2">
+                        <Card className="h-full rounded-lg shadow-none">
                             <CardHeader>
-                                <CardTitle>Booking 7 Hari Terakhir</CardTitle>
+                                <CardTitle className="font-display text-base">
+                                    Booking 7 Hari Terakhir
+                                </CardTitle>
                                 <CardDescription>
                                     Dihitung dari tanggal booking masuk, bukan
                                     tanggal mulai sewa.
@@ -149,17 +152,14 @@ export default function AdminDashboard({
                                 <BookingChart points={stats.bookingChart} />
                             </CardContent>
                         </Card>
-                    </motion.div>
+                    </div>
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.42 }}
-                        className="lg:col-span-3"
-                    >
-                        <Card className="h-full">
+                    <div className="lg:col-span-3">
+                        <Card className="h-full rounded-lg shadow-none">
                             <CardHeader>
-                                <CardTitle>Booking Terbaru</CardTitle>
+                                <CardTitle className="font-display text-base">
+                                    Booking Terbaru
+                                </CardTitle>
                                 <CardDescription>
                                     Lima booking terakhir yang masuk di unit
                                     ini.
@@ -167,9 +167,11 @@ export default function AdminDashboard({
                             </CardHeader>
                             <CardContent>
                                 {stats.recentBookings.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">
-                                        Belum ada booking masuk.
-                                    </p>
+                                    <AdminEmptyState
+                                        icon={CalendarRange}
+                                        title="Belum ada booking masuk"
+                                        description="Booking baru dari penyewa akan muncul di sini beserta statusnya."
+                                    />
                                 ) : (
                                     <Table>
                                         <TableHeader>
@@ -197,7 +199,7 @@ export default function AdminDashboard({
                                                                 href={bookingRoutes.show(
                                                                     booking.booking_code,
                                                                 )}
-                                                                className="underline underline-offset-4"
+                                                                className="font-medium text-pine-700 underline underline-offset-4 dark:text-pine-600"
                                                             >
                                                                 {
                                                                     booking.booking_code
@@ -250,7 +252,7 @@ export default function AdminDashboard({
                                 )}
                             </CardContent>
                         </Card>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </>

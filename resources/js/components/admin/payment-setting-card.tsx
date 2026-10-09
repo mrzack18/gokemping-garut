@@ -1,5 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { ImageOff } from 'lucide-react';
+import ActiveBadge from '@/components/admin/active-badge';
+import FileInput from '@/components/admin/file-input';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,13 +36,13 @@ export default function PaymentSettingCard({
     method: AdminPaymentMethodSetting;
 }) {
     return (
-        <Card className="flex flex-col">
+        <Card className="flex flex-col rounded-lg shadow-none">
             <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
-                    <CardTitle>{method.label}</CardTitle>
-                    <Badge variant={method.is_active ? 'default' : 'secondary'}>
-                        {method.is_active ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
+                    <CardTitle className="font-display text-base">
+                        {method.label}
+                    </CardTitle>
+                    <ActiveBadge isActive={method.is_active} />
                     {method.is_active && !method.is_ready ? (
                         <Badge variant="destructive">Belum lengkap</Badge>
                     ) : null}
@@ -110,8 +112,11 @@ export default function PaymentSettingCard({
                                                 Gambar QRIS
                                             </Label>
                                             {method.qris_image_url === null ? (
-                                                <div className="flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                                                    <ImageOff className="size-5 shrink-0" />
+                                                <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                                                    <ImageOff
+                                                        aria-hidden="true"
+                                                        className="size-5 shrink-0"
+                                                    />
                                                     Belum ada gambar. QRIS tidak
                                                     bisa dipilih penyewa sebelum
                                                     gambarnya diunggah.
@@ -120,15 +125,15 @@ export default function PaymentSettingCard({
                                                 <img
                                                     src={method.qris_image_url}
                                                     alt={`QRIS ${method.merchant_name ?? method.label}`}
-                                                    className="h-40 w-40 rounded-md border object-contain"
+                                                    width={160}
+                                                    height={160}
+                                                    className="h-40 w-40 rounded-md border border-border bg-white object-contain p-1"
                                                 />
                                             )}
-                                            <input
+                                            <FileInput
                                                 id="qris_image"
                                                 name="qris_image"
-                                                type="file"
                                                 accept="image/jpeg,image/png,image/webp"
-                                                className="text-sm"
                                             />
                                             <InputError
                                                 message={errors.qris_image}
@@ -201,7 +206,7 @@ export default function PaymentSettingCard({
                                     </>
                                 ) : null}
 
-                                <label className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+                                <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 text-sm">
                                     {/*
                                      * Checkbox yang tidak dicentang tidak
                                      * mengirim apa pun, jadi hidden di depannya
@@ -217,7 +222,7 @@ export default function PaymentSettingCard({
                                         name="is_active"
                                         value="1"
                                         defaultChecked={method.is_active}
-                                        className="mt-0.5 size-4"
+                                        className="mt-0.5 size-4 accent-pine-700 dark:accent-pine-600"
                                     />
                                     <span className="grid gap-0.5">
                                         <span className="font-medium">

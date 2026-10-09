@@ -18,4 +18,19 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /**
+     * Cocokkan URL secara persis, bukan sebagai prefix. Dipakai menu
+     * Dashboard karena `/admin` adalah prefix semua halaman admin lain.
+     */
+    exact?: boolean;
+    /** Prefix routes yang tidak membuat item ini aktif. */
+    exclude?: NonNullable<InertiaLinkProps['href']>[];
+};
+
+/**
+ * Kelompok menu sidebar admin, mis. "Operasional" atau "Laporan".
+ */
+export type NavSection = {
+    label: string;
+    items: NavItem[];
 };

@@ -103,7 +103,7 @@ export default function FaqFormDialog({
                                 <InputError message={errors.sort_order} />
                             </div>
 
-                            <label className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+                            <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 text-sm">
                                 <input
                                     type="hidden"
                                     name="is_active"
@@ -114,7 +114,7 @@ export default function FaqFormDialog({
                                     name="is_active"
                                     value="1"
                                     defaultChecked={faq?.is_active ?? true}
-                                    className="mt-0.5 size-4"
+                                    className="mt-0.5 size-4 accent-pine-700 dark:accent-pine-600"
                                 />
                                 <span className="grid gap-0.5">
                                     <span className="font-medium">

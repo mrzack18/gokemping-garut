@@ -1,7 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -20,7 +19,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import PublicLayout from '@/layouts/public-layout';
-import { formatRupiah } from '@/lib/format';
+import PageHeader from '@/components/public/page-header';
+import EmptyState from '@/components/public/empty-state';
+import ProductCard from '@/components/public/product-card';
 import catalogRoutes from '@/routes/catalog';
 import services from '@/routes/services';
 import type {
@@ -29,14 +30,7 @@ import type {
     CatalogProduct,
     CatalogSort,
 } from '@/types';
-import {
-    ArrowLeft,
-    ArrowRight,
-    ImageOff,
-    Package,
-    RotateCcw,
-    Search,
-} from 'lucide-react';
+import { Package, RotateCcw, Search } from 'lucide-react';
 
 const ALL_CATEGORIES = 'semua';
 
@@ -233,49 +227,28 @@ export default function Catalog({
         <PublicLayout businesses={businesses} anchorBase="/">
             <Head title={`Katalog ${business.name}`} />
 
-            <section className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <Button
-                            asChild
-                            variant="ghost"
-                            size="sm"
-                            className="-ml-3"
-                        >
-                            <Link href={services.index()}>
-                                <ArrowLeft className="size-4" />
-                                Pilih layanan
-                            </Link>
-                        </Button>
-
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-                            Katalog {business.name}
-                        </h1>
-                        {business.description ? (
-                            <p className="mt-3 max-w-2xl text-muted-foreground">
-                                {business.description}
-                            </p>
-                        ) : null}
-                    </motion.div>
-                </div>
-            </section>
+            <PageHeader
+                title={`Katalog ${business.name}`}
+                eyebrow={`${business.booking_code_prefix} · Sewa per hari`}
+                description={
+                    business.service_intro ?? business.description ?? undefined
+                }
+                backHref={services.index.url()}
+                backLabel="Pilih layanan"
+                className="bg-sand-50"
+            />
 
             <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">
-                            Cari dan filter
+                <Card className="rounded-lg border-x-0 border-y border-border bg-transparent py-4 shadow-none">
+                    <CardHeader className="px-0">
+                        <CardTitle className="font-display text-lg">
+                            Temukan perlengkapan
                         </CardTitle>
                         <CardDescription>
-                            Filter tersimpan di alamat halaman, jadi tautan yang
-                            kamu salin akan membuka tampilan yang sama.
+                            Cari berdasarkan nama, kategori, atau rentang harga.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-0">
                         <form
                             onSubmit={handleSubmit}
                             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12"
@@ -410,7 +383,10 @@ export default function Catalog({
 
                             <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-12">
                                 <Button type="submit" disabled={pending}>
-                                    <Search className="size-4" />
+                                    <Search
+                                        aria-hidden="true"
+                                        className="size-4"
+                                    />
                                     Terapkan
                                 </Button>
                                 {hasFilters ? (
@@ -435,36 +411,41 @@ export default function Catalog({
                             ? 'Tidak ada produk yang cocok.'
                             : `Menampilkan ${products.from ?? 0}-${products.to ?? 0} dari ${total} produk`}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                        Kode booking unit ini dimulai dengan{' '}
-                        <span className="font-medium">
-                            {business.booking_code_prefix}
-                        </span>
+                    <p className="text-xs text-muted-foreground">
+                        Filter dapat dibagikan melalui alamat halaman.
                     </p>
                 </div>
 
                 {products.data.length === 0 ? (
-                    <Card className="mt-4">
-                        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-                            <Package className="size-8 text-muted-foreground" />
-                            <p className="font-medium">Katalog kosong</p>
-                            <p className="max-w-md text-sm text-muted-foreground">
-                                {hasFilters
-                                    ? 'Coba longgarkan filter pencarian, atau reset filter untuk melihat semua produk.'
-                                    : 'Belum ada produk aktif di unit ini.'}
-                            </p>
-                            {hasFilters ? (
+                    <EmptyState
+                        className="mt-5"
+                        icon={Package}
+                        title={
+                            hasFilters
+                                ? 'Produk tidak ditemukan'
+                                : 'Katalog belum tersedia'
+                        }
+                        description={
+                            hasFilters
+                                ? 'Coba ubah kata kunci atau longgarkan filter untuk melihat pilihan lain.'
+                                : 'Belum ada produk aktif di unit ini. Silakan cek kembali nanti.'
+                        }
+                        action={
+                            hasFilters ? (
                                 <Button
                                     variant="outline"
                                     onClick={resetFilters}
                                     disabled={pending}
                                 >
-                                    <RotateCcw className="size-4" />
+                                    <RotateCcw
+                                        aria-hidden="true"
+                                        className="size-4"
+                                    />
                                     Reset filter
                                 </Button>
-                            ) : null}
-                        </CardContent>
-                    </Card>
+                            ) : null
+                        }
+                    />
                 ) : (
                     <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         {products.data.map((product, index) => {
@@ -474,7 +455,7 @@ export default function Catalog({
                                 ? detailUrlBuilder(product)
                                 : null;
 
-                            return (
+                            return detailUrl ? (
                                 <motion.div
                                     key={product.id}
                                     initial={{ opacity: 0, y: 16 }}
@@ -484,92 +465,12 @@ export default function Catalog({
                                         delay: Math.min(index, 8) * 0.06,
                                     }}
                                 >
-                                    <Card className="flex h-full flex-col overflow-hidden">
-                                        <div className="aspect-4/3 w-full overflow-hidden bg-muted">
-                                            {product.photo ? (
-                                                <img
-                                                    src={product.photo}
-                                                    alt={product.name}
-                                                    loading="lazy"
-                                                    className="size-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                                                    <ImageOff className="size-6" />
-                                                    <span className="text-xs">
-                                                        Foto belum tersedia
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <CardHeader className="gap-2">
-                                            {product.category ? (
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="w-fit font-normal"
-                                                >
-                                                    {product.category.name}
-                                                </Badge>
-                                            ) : null}
-                                            <CardTitle className="text-base leading-snug">
-                                                {product.name}
-                                            </CardTitle>
-                                        </CardHeader>
-
-                                        <CardContent className="mt-auto space-y-3">
-                                            <div className="flex flex-wrap items-baseline gap-x-2">
-                                                <span className="text-lg font-semibold tabular-nums">
-                                                    {formatRupiah(
-                                                        product.price,
-                                                    )}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    / {product.price_unit}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between gap-2">
-                                                <Badge
-                                                    variant={
-                                                        product.is_available
-                                                            ? 'default'
-                                                            : 'destructive'
-                                                    }
-                                                >
-                                                    {product.is_available
-                                                        ? 'Tersedia'
-                                                        : 'Tidak tersedia'}
-                                                </Badge>
-                                                {product.is_available ? (
-                                                    <span className="text-xs text-muted-foreground tabular-nums">
-                                                        Sisa {product.stock}
-                                                    </span>
-                                                ) : null}
-                                            </div>
-
-                                            {product.description ? (
-                                                <p className="line-clamp-3 text-sm text-muted-foreground">
-                                                    {product.description}
-                                                </p>
-                                            ) : null}
-
-                                            {detailUrl ? (
-                                                <Button
-                                                    asChild
-                                                    variant="outline"
-                                                    className="mt-auto w-full"
-                                                >
-                                                    <Link href={detailUrl}>
-                                                        Lihat Detail
-                                                        <ArrowRight className="size-4" />
-                                                    </Link>
-                                                </Button>
-                                            ) : null}
-                                        </CardContent>
-                                    </Card>
+                                    <ProductCard
+                                        product={product}
+                                        href={detailUrl}
+                                    />
                                 </motion.div>
-                            );
+                            ) : null;
                         })}
                     </div>
                 )}

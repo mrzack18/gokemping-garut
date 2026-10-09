@@ -1,13 +1,21 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { motion } from 'motion/react';
-import { ExternalLink, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Form, Head } from '@inertiajs/react';
+import {
+    ExternalLink,
+    HelpCircle,
+    Images,
+    Pencil,
+    Plus,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
+import ActiveBadge from '@/components/admin/active-badge';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminPageHeader from '@/components/admin/page-header';
 import BannerDeleteDialog from '@/components/admin/banner-delete-dialog';
 import BannerFormDialog from '@/components/admin/banner-form-dialog';
 import FaqDeleteDialog from '@/components/admin/faq-delete-dialog';
 import FaqFormDialog from '@/components/admin/faq-form-dialog';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -62,39 +70,26 @@ export default function AdminContent({
         <>
             <Head title="Konten" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-                >
-                    <div className="flex flex-col gap-1">
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                            Konten
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Atur informasi layanan, kontak, banner, dan FAQ yang
-                            tampil di halaman publik unit ini.
-                        </p>
-                    </div>
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Konten"
+                    description="Atur informasi layanan, kontak, banner, dan FAQ yang tampil di halaman publik unit ini."
+                    actions={
+                        <Button asChild variant="outline">
+                            <a href="/" target="_blank" rel="noreferrer">
+                                <ExternalLink aria-hidden="true" />
+                                Lihat halaman publik
+                            </a>
+                        </Button>
+                    }
+                />
 
-                    <Button asChild variant="outline">
-                        <Link href="/">
-                            <ExternalLink />
-                            Lihat halaman publik
-                        </Link>
-                    </Button>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.06 }}
-                >
-                    <Card>
+                <div>
+                    <Card className="rounded-lg shadow-none">
                         <CardHeader>
-                            <CardTitle>Informasi Layanan & Kontak</CardTitle>
+                            <CardTitle className="font-display text-base">
+                                Informasi Layanan & Kontak
+                            </CardTitle>
                             <CardDescription>
                                 Tampil di halaman pilih layanan dan section
                                 kontak landing page. Ketentuan sewa di sini
@@ -284,18 +279,16 @@ export default function AdminContent({
                             </Form>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.12 }}
-                >
-                    <Card>
+                <div>
+                    <Card className="rounded-lg shadow-none">
                         <CardHeader>
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="flex flex-col gap-1">
-                                    <CardTitle>Banner Hero</CardTitle>
+                                    <CardTitle className="font-display text-base">
+                                        Banner Hero
+                                    </CardTitle>
                                     <CardDescription>
                                         Banner tampil di carousel landing page
                                         sesuai urutan tayang.
@@ -304,18 +297,24 @@ export default function AdminContent({
                                 <Button
                                     onClick={() => openBannerForm(null)}
                                     disabled={banners.length >= 5}
+                                    title={
+                                        banners.length >= 5
+                                            ? 'Maksimal 5 banner per unit'
+                                            : undefined
+                                    }
                                 >
-                                    <Plus />
+                                    <Plus aria-hidden="true" />
                                     Tambah Banner
                                 </Button>
                             </div>
                         </CardHeader>
                         <CardContent>
                             {banners.length === 0 ? (
-                                <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-                                    Belum ada banner. Tambahkan banner supaya
-                                    hero carousel landing page terisi.
-                                </p>
+                                <AdminEmptyState
+                                    icon={Images}
+                                    title="Belum ada banner"
+                                    description="Tambahkan banner supaya hero carousel landing page terisi."
+                                />
                             ) : (
                                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                     {banners.map((banner) => (
@@ -332,17 +331,11 @@ export default function AdminContent({
                                             ) : null}
                                             <div className="flex flex-1 flex-col gap-2 p-3">
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <Badge
-                                                        variant={
+                                                    <ActiveBadge
+                                                        isActive={
                                                             banner.is_active
-                                                                ? 'default'
-                                                                : 'secondary'
                                                         }
-                                                    >
-                                                        {banner.is_active
-                                                            ? 'Aktif'
-                                                            : 'Nonaktif'}
-                                                    </Badge>
+                                                    />
                                                     <span className="text-xs text-muted-foreground">
                                                         Urutan{' '}
                                                         {banner.sort_order}
@@ -366,7 +359,7 @@ export default function AdminContent({
                                                             )
                                                         }
                                                     >
-                                                        <Pencil />
+                                                        <Pencil aria-hidden="true" />
                                                         Edit
                                                     </Button>
                                                     <Button
@@ -377,8 +370,9 @@ export default function AdminContent({
                                                                 banner,
                                                             )
                                                         }
+                                                        className="text-destructive hover:text-destructive"
                                                     >
-                                                        <Trash2 />
+                                                        <Trash2 aria-hidden="true" />
                                                         Hapus
                                                     </Button>
                                                 </div>
@@ -389,35 +383,34 @@ export default function AdminContent({
                             )}
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.18 }}
-                >
-                    <Card>
+                <div>
+                    <Card className="rounded-lg shadow-none">
                         <CardHeader>
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="flex flex-col gap-1">
-                                    <CardTitle>FAQ</CardTitle>
+                                    <CardTitle className="font-display text-base">
+                                        FAQ
+                                    </CardTitle>
                                     <CardDescription>
                                         Pertanyaan dan jawaban yang tampil di
                                         section FAQ landing page.
                                     </CardDescription>
                                 </div>
                                 <Button onClick={() => openFaqForm(null)}>
-                                    <Plus />
+                                    <Plus aria-hidden="true" />
                                     Tambah FAQ
                                 </Button>
                             </div>
                         </CardHeader>
                         <CardContent>
                             {faqs.length === 0 ? (
-                                <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-                                    Belum ada FAQ. Selama kosong, landing page
-                                    memakai daftar bawaan.
-                                </p>
+                                <AdminEmptyState
+                                    icon={HelpCircle}
+                                    title="Belum ada FAQ"
+                                    description="Selama kosong, landing page memakai daftar pertanyaan bawaan."
+                                />
                             ) : (
                                 <ul className="flex flex-col divide-y">
                                     {faqs.map((faq) => (
@@ -427,17 +420,9 @@ export default function AdminContent({
                                         >
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <Badge
-                                                        variant={
-                                                            faq.is_active
-                                                                ? 'default'
-                                                                : 'secondary'
-                                                        }
-                                                    >
-                                                        {faq.is_active
-                                                            ? 'Aktif'
-                                                            : 'Nonaktif'}
-                                                    </Badge>
+                                                    <ActiveBadge
+                                                        isActive={faq.is_active}
+                                                    />
                                                     <span className="text-xs text-muted-foreground">
                                                         Urutan {faq.sort_order}
                                                     </span>
@@ -458,7 +443,7 @@ export default function AdminContent({
                                                         openFaqForm(faq)
                                                     }
                                                 >
-                                                    <Pencil />
+                                                    <Pencil aria-hidden="true" />
                                                     Edit
                                                 </Button>
                                                 <Button
@@ -467,8 +452,9 @@ export default function AdminContent({
                                                     onClick={() =>
                                                         setFaqToDelete(faq)
                                                     }
+                                                    className="text-destructive hover:text-destructive"
                                                 >
-                                                    <Trash2 />
+                                                    <Trash2 aria-hidden="true" />
                                                     Hapus
                                                 </Button>
                                             </div>
@@ -478,7 +464,7 @@ export default function AdminContent({
                             )}
                         </CardContent>
                     </Card>
-                </motion.div>
+                </div>
             </div>
 
             <BannerFormDialog

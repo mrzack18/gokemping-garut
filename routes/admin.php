@@ -73,6 +73,12 @@ Route::middleware(['auth', 'business'])
          * detailnya bisa dibaca tanpa membuka daftar lebih dulu.
          */
         Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
+        Route::get('bookings/manual', [BookingController::class, 'createManual'])
+            ->name('bookings.manual.create');
+        Route::post('bookings/manual', [BookingController::class, 'storeManual'])
+            ->name('bookings.manual.store');
+        Route::get('bookings/manual/availability', [BookingController::class, 'manualAvailability'])
+            ->name('bookings.manual.availability');
         Route::get('bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
         Route::patch('bookings/{booking}/status', [BookingController::class, 'updateStatus'])
             ->name('bookings.status');

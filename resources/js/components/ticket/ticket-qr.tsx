@@ -58,12 +58,23 @@ export default function TicketQr({
                 style={{ width: size + 24, height: size + 24 }}
             >
                 {failed ? (
-                    <p className="px-4 text-center text-sm text-muted-foreground">
+                    <p
+                        role="status"
+                        aria-live="polite"
+                        className="px-4 text-center text-sm text-muted-foreground"
+                    >
                         QR gagal dibuat. Gunakan kode booking di atas untuk cek
                         tiket manual.
                     </p>
                 ) : dataUrl === null ? (
-                    <Spinner />
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        className="flex flex-col items-center gap-2 text-muted-foreground"
+                    >
+                        <Spinner />
+                        <span className="sr-only">Menyiapkan QR tiket</span>
+                    </div>
                 ) : (
                     <img
                         src={dataUrl}
@@ -79,6 +90,7 @@ export default function TicketQr({
                     href={dataUrl ?? '#'}
                     download={fileName}
                     aria-disabled={dataUrl === null}
+                    tabIndex={dataUrl === null ? -1 : undefined}
                     onClick={(event) => {
                         if (dataUrl === null) {
                             event.preventDefault();

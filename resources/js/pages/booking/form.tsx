@@ -1,6 +1,8 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import BookingMobileBar from '@/components/booking/booking-mobile-bar';
+import BookingSteps from '@/components/booking/booking-steps';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,10 +76,14 @@ export default function BookingForm({
     initial,
 }: BookingFormPageProps) {
     const serverErrors = usePage().props.errors as Record<string, string>;
+    const serverErrorsKey = JSON.stringify(serverErrors);
 
     const [startDate, setStartDate] = useState(initial.start_date);
     const [endDate, setEndDate] = useState(initial.end_date);
     const [quantity, setQuantity] = useState(initial.quantity);
+    const [dismissedServerErrors, setDismissedServerErrors] = useState<
+        Record<string, boolean>
+    >({});
     const [availability, setAvailability] =
         useState<BookingAvailability | null>(null);
     const [isChecking, setIsChecking] = useState(false);
@@ -95,7 +101,9 @@ export default function BookingForm({
     const draftRoute = draftRouteBySlug(business.slug);
 
     const startError =
-        serverErrors.start_date ??
+        (dismissedServerErrors.start_date
+            ? undefined
+            : serverErrors.start_date) ??
         (startDate === ''
             ? 'Pilih tanggal mulai.'
             : startDate < minDate
@@ -103,7 +111,7 @@ export default function BookingForm({
               : null);
 
     const endError =
-        serverErrors.end_date ??
+        (dismissedServerErrors.end_date ? undefined : serverErrors.end_date) ??
         (endDate === ''
             ? 'Pilih tanggal selesai.'
             : startError !== null
@@ -112,7 +120,9 @@ export default function BookingForm({
                 ? 'Tanggal selesai harus tanggal mulai atau setelahnya.'
                 : null);
 
-    const quantityError = serverErrors.quantity ?? null;
+    const quantityError = dismissedServerErrors.quantity
+        ? null
+        : (serverErrors.quantity ?? null);
 
     const hasValidPeriod = startError === null && endError === null;
 
@@ -215,6 +225,14 @@ export default function BookingForm({
         !isBlocked &&
         isQuantityAvailable;
 
+    useEffect(() => {
+        setDismissedServerErrors({});
+    }, [serverErrorsKey]);
+
+    function clearServerFieldError(field: string): void {
+        setDismissedServerErrors((current) => ({ ...current, [field]: true }));
+    }
+
     function continueToBiodata(): void {
         if (!canContinue || draftRoute === null) {
             return;
@@ -238,8 +256,8 @@ export default function BookingForm({
         <PublicLayout businesses={businesses} anchorBase="/">
             <Head title={`Booking ${product.name}`} />
 
-            <section className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="border-b border-border bg-sand-50">
+                <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -257,7 +275,7 @@ export default function BookingForm({
                             </Link>
                         </Button>
 
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
                             Form Booking
                         </h1>
                         <p className="mt-3 max-w-2xl text-muted-foreground">
@@ -266,382 +284,458 @@ export default function BookingForm({
                             ketersediaan diperiksa pada langkah berikutnya.
                         </p>
                     </motion.div>
+                    <div className="mt-7 max-w-2xl">
+                        <BookingSteps current={1} />
+                    </div>
                 </div>
             </section>
 
-            <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-                <div className="grid gap-8 lg:grid-cols-3">
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45 }}
-                        className="space-y-4 lg:col-span-2"
-                    >
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">
-                                    Produk yang disewa
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex gap-4">
-                                    <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
-                                        {product.photo ? (
-                                            <img
-                                                src={product.photo}
-                                                alt={product.name}
-                                                className="size-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex size-full items-center justify-center text-muted-foreground">
-                                                <ImageOff className="size-5" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        {product.category ? (
-                                            <Badge
-                                                variant="secondary"
-                                                className="font-normal"
-                                            >
-                                                {product.category.name}
-                                            </Badge>
-                                        ) : null}
-                                        <p className="font-medium">
-                                            {product.name}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {formatRupiah(product.price)} /{' '}
-                                            {product.price_unit}
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {isOutOfStock ? (
-                            <Card>
-                                <CardContent className="flex items-start gap-3 py-6">
-                                    <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
-                                    <div className="space-y-1">
-                                        <p className="font-medium">
-                                            Stok produk sedang kosong
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Produk ini tidak bisa dipesan untuk
-                                            sementara. Hubungi admin unit{' '}
-                                            {business.name} untuk informasi
-                                            ketersediaan.
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            <Card>
+            <section className="mx-auto w-full max-w-6xl px-4 py-8 pb-28 sm:px-6 sm:py-10 sm:pb-28 lg:pb-14">
+                <form
+                    id="booking-schedule-form"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        continueToBiodata();
+                    }}
+                >
+                    <div className="grid gap-8 lg:grid-cols-3">
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.45 }}
+                            className="space-y-4 lg:col-span-2"
+                        >
+                            <Card className="rounded-lg shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">
-                                        Jadwal dan jumlah
+                                    <CardTitle className="font-display text-base">
+                                        Produk yang disewa
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="start_date">
-                                                Tanggal mulai
-                                            </Label>
-                                            <Input
-                                                id="start_date"
-                                                name="start_date"
-                                                type="date"
-                                                min={minDate}
-                                                value={startDate}
-                                                onChange={(event) =>
-                                                    setStartDate(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                aria-invalid={
-                                                    startError !== null
-                                                }
-                                            />
-                                            {startError !== null ? (
-                                                <p className="text-xs text-destructive">
-                                                    {startError}
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="end_date">
-                                                Tanggal selesai
-                                            </Label>
-                                            <Input
-                                                id="end_date"
-                                                name="end_date"
-                                                type="date"
-                                                min={
-                                                    startError === null &&
-                                                    startDate !== ''
-                                                        ? startDate
-                                                        : minDate
-                                                }
-                                                value={endDate}
-                                                onChange={(event) =>
-                                                    setEndDate(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                aria-invalid={endError !== null}
-                                            />
-                                            {endError !== null ? (
-                                                <p className="text-xs text-destructive">
-                                                    {endError}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="quantity">
-                                            Jumlah barang
-                                        </Label>
-                                        <div className="flex items-center gap-3">
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                aria-label="Kurangi jumlah"
-                                                disabled={quantity <= 1}
-                                                onClick={() =>
-                                                    setQuantity(
-                                                        Math.max(
-                                                            1,
-                                                            quantity - 1,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <Minus />
-                                            </Button>
-                                            <input
-                                                id="quantity"
-                                                name="quantity"
-                                                type="number"
-                                                min={1}
-                                                max={maxQuantity}
-                                                value={quantity}
-                                                onChange={(event) => {
-                                                    const parsed = Number(
-                                                        event.target.value,
-                                                    );
-                                                    setQuantity(
-                                                        Number.isFinite(parsed)
-                                                            ? Math.min(
-                                                                  Math.max(
-                                                                      Math.trunc(
-                                                                          parsed,
-                                                                      ),
-                                                                      1,
-                                                                  ),
-                                                                  maxQuantity,
-                                                              )
-                                                            : 1,
-                                                    );
-                                                }}
-                                                className="h-9 w-16 rounded-md border bg-background text-center text-sm tabular-nums"
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                aria-label="Tambah jumlah"
-                                                disabled={
-                                                    quantity >= maxQuantity
-                                                }
-                                                onClick={() =>
-                                                    setQuantity(
-                                                        Math.min(
-                                                            maxQuantity,
-                                                            quantity + 1,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <Plus />
-                                            </Button>
-                                            <span className="text-sm text-muted-foreground">
-                                                Maksimal {maxQuantity} unit
-                                            </span>
-                                        </div>
-
-                                        {quantityError !== null ? (
-                                            <p className="text-xs text-destructive">
-                                                {quantityError}
-                                            </p>
-                                        ) : null}
-
-                                        <div className="flex items-start gap-2 pt-1 text-sm">
-                                            {isChecking ? (
-                                                <>
-                                                    <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
-                                                    <span className="text-muted-foreground">
-                                                        Memeriksa
-                                                        ketersediaan...
-                                                    </span>
-                                                </>
-                                            ) : availabilityError !== null ? (
-                                                <>
-                                                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-                                                    <span className="text-destructive">
-                                                        {availabilityError}
-                                                    </span>
-                                                </>
-                                            ) : availability === null ? (
-                                                <span className="text-muted-foreground">
-                                                    Ketersediaan unit akan
-                                                    diperiksa otomatis setelah
-                                                    tanggal diisi.
-                                                </span>
-                                            ) : isQuantityAvailable ? (
-                                                <>
-                                                    <Badge variant="secondary">
-                                                        Tersedia{' '}
-                                                        {availability.available}{' '}
-                                                        unit
-                                                    </Badge>
-                                                    <span className="text-muted-foreground">
-                                                        dari{' '}
-                                                        {availability.stock}{' '}
-                                                        unit, sisa{' '}
-                                                        {availability.used} unit
-                                                        sedang tersewa.
-                                                    </span>
-                                                </>
+                                <CardContent>
+                                    <div className="flex gap-4">
+                                        <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                            {product.photo ? (
+                                                <img
+                                                    src={product.photo}
+                                                    alt={product.name}
+                                                    className="size-full object-cover"
+                                                />
                                             ) : (
-                                                <>
-                                                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-                                                    <span className="text-destructive">
-                                                        Stok tidak mencukupi
-                                                        pada periode tersebut.
-                                                    </span>
-                                                </>
+                                                <div className="flex size-full items-center justify-center text-muted-foreground">
+                                                    <ImageOff className="size-5" />
+                                                </div>
                                             )}
                                         </div>
+                                        <div className="space-y-1">
+                                            {product.category ? (
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="font-normal"
+                                                >
+                                                    {product.category.name}
+                                                </Badge>
+                                            ) : null}
+                                            <p className="font-medium">
+                                                {product.name}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {formatRupiah(product.price)} /{' '}
+                                                {product.price_unit}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {isOutOfStock ? (
+                                <Card className="rounded-lg shadow-none">
+                                    <CardContent className="flex items-start gap-3 py-6">
+                                        <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
+                                        <div className="space-y-1">
+                                            <p className="font-medium">
+                                                Stok produk sedang kosong
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Produk ini tidak bisa dipesan
+                                                untuk sementara. Hubungi admin
+                                                unit {business.name} untuk
+                                                informasi ketersediaan.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <Card className="rounded-lg shadow-none">
+                                    <CardHeader>
+                                        <CardTitle className="font-display text-base">
+                                            Jadwal dan jumlah
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="start_date">
+                                                    Tanggal mulai
+                                                </Label>
+                                                <Input
+                                                    id="start_date"
+                                                    name="start_date"
+                                                    type="date"
+                                                    min={minDate}
+                                                    value={startDate}
+                                                    required
+                                                    onChange={(event) => {
+                                                        clearServerFieldError(
+                                                            'start_date',
+                                                        );
+                                                        setStartDate(
+                                                            event.target.value,
+                                                        );
+                                                    }}
+                                                    aria-invalid={
+                                                        startError !== null
+                                                    }
+                                                    aria-describedby={
+                                                        startError
+                                                            ? 'start-date-error'
+                                                            : undefined
+                                                    }
+                                                />
+                                                {startError !== null ? (
+                                                    <p
+                                                        id="start-date-error"
+                                                        className="text-xs text-destructive"
+                                                    >
+                                                        {startError}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="end_date">
+                                                    Tanggal selesai
+                                                </Label>
+                                                <Input
+                                                    id="end_date"
+                                                    name="end_date"
+                                                    type="date"
+                                                    min={
+                                                        startError === null &&
+                                                        startDate !== ''
+                                                            ? startDate
+                                                            : minDate
+                                                    }
+                                                    value={endDate}
+                                                    required
+                                                    onChange={(event) => {
+                                                        clearServerFieldError(
+                                                            'end_date',
+                                                        );
+                                                        setEndDate(
+                                                            event.target.value,
+                                                        );
+                                                    }}
+                                                    aria-invalid={
+                                                        endError !== null
+                                                    }
+                                                    aria-describedby={
+                                                        endError
+                                                            ? 'end-date-error'
+                                                            : undefined
+                                                    }
+                                                />
+                                                {endError !== null ? (
+                                                    <p
+                                                        id="end-date-error"
+                                                        className="text-xs text-destructive"
+                                                    >
+                                                        {endError}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="quantity">
+                                                Jumlah barang
+                                            </Label>
+                                            <div className="flex items-center gap-3">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="icon"
+                                                    aria-label="Kurangi jumlah"
+                                                    disabled={quantity <= 1}
+                                                    onClick={() => {
+                                                        clearServerFieldError(
+                                                            'quantity',
+                                                        );
+                                                        setQuantity(
+                                                            Math.max(
+                                                                1,
+                                                                quantity - 1,
+                                                            ),
+                                                        );
+                                                    }}
+                                                >
+                                                    <Minus aria-hidden="true" />
+                                                </Button>
+                                                <Input
+                                                    id="quantity"
+                                                    name="quantity"
+                                                    type="number"
+                                                    min={1}
+                                                    max={maxQuantity}
+                                                    value={quantity}
+                                                    onChange={(event) => {
+                                                        clearServerFieldError(
+                                                            'quantity',
+                                                        );
+                                                        const parsed = Number(
+                                                            event.target.value,
+                                                        );
+                                                        setQuantity(
+                                                            Number.isFinite(
+                                                                parsed,
+                                                            )
+                                                                ? Math.min(
+                                                                      Math.max(
+                                                                          Math.trunc(
+                                                                              parsed,
+                                                                          ),
+                                                                          1,
+                                                                      ),
+                                                                      maxQuantity,
+                                                                  )
+                                                                : 1,
+                                                        );
+                                                    }}
+                                                    aria-invalid={
+                                                        quantityError !== null
+                                                    }
+                                                    aria-describedby={
+                                                        quantityError
+                                                            ? 'quantity-error'
+                                                            : undefined
+                                                    }
+                                                    className="h-10 w-20 text-center tabular-nums"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="icon"
+                                                    aria-label="Tambah jumlah"
+                                                    disabled={
+                                                        quantity >= maxQuantity
+                                                    }
+                                                    onClick={() => {
+                                                        clearServerFieldError(
+                                                            'quantity',
+                                                        );
+                                                        setQuantity(
+                                                            Math.min(
+                                                                maxQuantity,
+                                                                quantity + 1,
+                                                            ),
+                                                        );
+                                                    }}
+                                                >
+                                                    <Plus aria-hidden="true" />
+                                                </Button>
+                                                <span className="text-sm text-muted-foreground">
+                                                    Maksimal {maxQuantity} unit
+                                                </span>
+                                            </div>
+
+                                            {quantityError !== null ? (
+                                                <p
+                                                    id="quantity-error"
+                                                    className="text-xs text-destructive"
+                                                >
+                                                    {quantityError}
+                                                </p>
+                                            ) : null}
+
+                                            <div
+                                                role="status"
+                                                aria-live="polite"
+                                                className="flex items-start gap-2 pt-1 text-sm"
+                                            >
+                                                {isChecking ? (
+                                                    <>
+                                                        <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
+                                                        <span className="text-muted-foreground">
+                                                            Memeriksa
+                                                            ketersediaan...
+                                                        </span>
+                                                    </>
+                                                ) : availabilityError !==
+                                                  null ? (
+                                                    <>
+                                                        <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                                        <span className="text-destructive">
+                                                            {availabilityError}
+                                                        </span>
+                                                    </>
+                                                ) : availability === null ? (
+                                                    <span className="text-muted-foreground">
+                                                        Ketersediaan unit akan
+                                                        diperiksa otomatis
+                                                        setelah tanggal diisi.
+                                                    </span>
+                                                ) : isQuantityAvailable ? (
+                                                    <>
+                                                        <Badge variant="secondary">
+                                                            Tersedia{' '}
+                                                            {
+                                                                availability.available
+                                                            }{' '}
+                                                            unit
+                                                        </Badge>
+                                                        <span className="text-muted-foreground">
+                                                            dari{' '}
+                                                            {availability.stock}{' '}
+                                                            unit, sisa{' '}
+                                                            {availability.used}{' '}
+                                                            unit sedang tersewa.
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                                        <span className="text-destructive">
+                                                            Stok tidak mencukupi
+                                                            pada periode
+                                                            tersebut.
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <p className="text-xs text-muted-foreground">
+                                            Tanggal selesai diperlakukan sebagai
+                                            batas pengembalian, bukan hari sewa.
+                                            Sewa 10 sampai 12 Oktober dihitung 2
+                                            hari, dan sewa pada tanggal yang
+                                            sama dihitung 1 hari.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.45, delay: 0.1 }}
+                        >
+                            <Card className="rounded-lg shadow-none lg:sticky lg:top-24">
+                                <CardHeader>
+                                    <CardTitle className="font-display text-base">
+                                        Estimasi biaya
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3 text-sm">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="text-muted-foreground">
+                                            Harga {product.price_unit}
+                                        </span>
+                                        <span className="tabular-nums">
+                                            {formatRupiah(product.price)}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="text-muted-foreground">
+                                            Jumlah
+                                        </span>
+                                        <span className="tabular-nums">
+                                            {quantity}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="text-muted-foreground">
+                                            Durasi
+                                        </span>
+                                        <span className="tabular-nums">
+                                            {duration > 0
+                                                ? `${duration} hari`
+                                                : '-'}
+                                        </span>
                                     </div>
 
+                                    {startDate !== '' && endDate !== '' ? (
+                                        <p className="text-xs text-muted-foreground">
+                                            {formatBookingDate(startDate)}{' '}
+                                            sampai {formatBookingDate(endDate)}
+                                        </p>
+                                    ) : null}
+
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="text-muted-foreground">
+                                            Ketersediaan
+                                        </span>
+                                        <span className="tabular-nums">
+                                            {availability === null
+                                                ? '-'
+                                                : `${availability.available} dari ${availability.stock} unit`}
+                                        </span>
+                                    </div>
+
+                                    <Separator />
+
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="font-medium">
+                                            Total
+                                        </span>
+                                        <span className="text-xl font-semibold tabular-nums">
+                                            {canEstimate
+                                                ? formatRupiah(total)
+                                                : '-'}
+                                        </span>
+                                    </div>
+
+                                    {canEstimate ? (
+                                        <p className="text-xs text-muted-foreground tabular-nums">
+                                            {formatRupiah(product.price)} x{' '}
+                                            {quantity} x {duration} hari
+                                        </p>
+                                    ) : null}
+
+                                    <Separator />
+
+                                    <Button
+                                        type="submit"
+                                        className="w-full"
+                                        size="lg"
+                                        disabled={!canContinue || isSubmitting}
+                                    >
+                                        {isSubmitting
+                                            ? 'Menyimpan...'
+                                            : 'Lanjut'}
+                                    </Button>
                                     <p className="text-xs text-muted-foreground">
-                                        Tanggal selesai diperlakukan sebagai
-                                        batas pengembalian, bukan hari sewa.
-                                        Sewa 10 sampai 12 Oktober dihitung 2
-                                        hari, dan sewa pada tanggal yang sama
-                                        dihitung 1 hari.
+                                        {availability !== null &&
+                                        !isQuantityAvailable
+                                            ? 'Jumlah barang melebihi unit yang tersedia pada periode ini.'
+                                            : isBlocked
+                                              ? 'Ketersediaan belum bisa dipastikan. Isi tanggal yang valid lalu coba lagi.'
+                                              : !hasValidPeriod
+                                                ? 'Isi tanggal sewa dengan benar sebelum melanjutkan.'
+                                                : 'Data penyewa diminta pada langkah berikutnya.'}
                                     </p>
                                 </CardContent>
                             </Card>
-                        )}
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45, delay: 0.1 }}
-                    >
-                        <Card className="lg:sticky lg:top-24">
-                            <CardHeader>
-                                <CardTitle className="text-base">
-                                    Estimasi biaya
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3 text-sm">
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="text-muted-foreground">
-                                        Harga {product.price_unit}
-                                    </span>
-                                    <span className="tabular-nums">
-                                        {formatRupiah(product.price)}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="text-muted-foreground">
-                                        Jumlah
-                                    </span>
-                                    <span className="tabular-nums">
-                                        {quantity}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="text-muted-foreground">
-                                        Durasi
-                                    </span>
-                                    <span className="tabular-nums">
-                                        {duration > 0
-                                            ? `${duration} hari`
-                                            : '-'}
-                                    </span>
-                                </div>
-
-                                {startDate !== '' && endDate !== '' ? (
-                                    <p className="text-xs text-muted-foreground">
-                                        {formatBookingDate(startDate)} sampai{' '}
-                                        {formatBookingDate(endDate)}
-                                    </p>
-                                ) : null}
-
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="text-muted-foreground">
-                                        Ketersediaan
-                                    </span>
-                                    <span className="tabular-nums">
-                                        {availability === null
-                                            ? '-'
-                                            : `${availability.available} dari ${availability.stock} unit`}
-                                    </span>
-                                </div>
-
-                                <Separator />
-
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="font-medium">Total</span>
-                                    <span className="text-xl font-semibold tabular-nums">
-                                        {canEstimate
-                                            ? formatRupiah(total)
-                                            : '-'}
-                                    </span>
-                                </div>
-
-                                {canEstimate ? (
-                                    <p className="text-xs text-muted-foreground tabular-nums">
-                                        {formatRupiah(product.price)} x{' '}
-                                        {quantity} x {duration} hari
-                                    </p>
-                                ) : null}
-
-                                <Separator />
-
-                                <Button
-                                    type="button"
-                                    className="w-full"
-                                    size="lg"
-                                    onClick={continueToBiodata}
-                                    disabled={!canContinue || isSubmitting}
-                                >
-                                    {isSubmitting ? 'Menyimpan...' : 'Lanjut'}
-                                </Button>
-                                <p className="text-xs text-muted-foreground">
-                                    {availability !== null &&
-                                    !isQuantityAvailable
-                                        ? 'Jumlah barang melebihi unit yang tersedia pada periode ini.'
-                                        : isBlocked
-                                          ? 'Ketersediaan belum bisa dipastikan. Isi tanggal yang valid lalu coba lagi.'
-                                          : !hasValidPeriod
-                                            ? 'Isi tanggal sewa dengan benar sebelum melanjutkan.'
-                                            : 'Data penyewa diminta pada langkah berikutnya.'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </div>
+                        </motion.div>
+                    </div>
+                </form>
             </section>
+            <BookingMobileBar
+                amount={canEstimate ? formatRupiah(total) : 'Isi tanggal sewa'}
+                label={isSubmitting ? 'Menyimpan…' : 'Lanjut'}
+                disabled={!canContinue || isSubmitting}
+                formId="booking-schedule-form"
+            />
         </PublicLayout>
     );
 }

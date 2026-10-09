@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { CalendarRange, MessageCircle, Ticket, User } from 'lucide-react';
+import {
+    ArrowRight,
+    CalendarRange,
+    MessageCircle,
+    Ticket,
+    User,
+} from 'lucide-react';
 import {
     BookingStatusBadge,
     PaymentStatusBadge,
@@ -7,6 +13,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import {
     Table,
     TableBody,
@@ -23,29 +30,52 @@ import type { TicketDetail } from '@/types';
  * landing page dan halaman cek tiket panel admin (ROADMAP 5.5).
  *
  * Yang ditampilkan sama di dua tempat: identitas tiket, status booking dan
- * pembayaran, produk, periode, total, serta tombol WhatsApp admin unit. NIK
- * dan alamat tidak pernah ikut karena tiket ini juga halaman publik.
+ * pembayaran, produk, periode, total, serta aksi yang sesuai konteks: WhatsApp
+ * untuk penyewa publik, detail booking untuk staf admin. NIK dan alamat tidak
+ * pernah ikut karena hasil tiket ini juga dipakai di halaman publik.
  */
 export default function TicketResult({
     ticket,
     resetUrl,
+    detailUrl,
+    variant = 'admin',
 }: {
     ticket: TicketDetail;
     /** Tautan "cek tiket lain", beda antara landing page dan panel admin. */
     resetUrl: string;
+    /** Halaman detail internal yang dipakai staf setelah menemukan tiket. */
+    detailUrl?: string;
+    variant?: 'public' | 'admin';
 }) {
+    const isPublic = variant === 'public';
+
     return (
-        <Card className="mt-6">
-            <CardContent className="flex flex-col gap-5 pt-6">
+        <Card className={cn('mt-6', isPublic && 'rounded-lg shadow-none')}>
+            <CardContent
+                className={cn(
+                    'flex flex-col gap-5 pt-6',
+                    isPublic && 'p-5 sm:p-6',
+                )}
+            >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-col gap-1">
-                        <p className="text-sm text-muted-foreground">
+                        <p
+                            className={cn(
+                                'text-sm text-muted-foreground',
+                                isPublic && 'text-xs',
+                            )}
+                        >
                             {ticket.business.name} &middot; booking{' '}
                             <span className="font-mono">
                                 {ticket.booking_code}
                             </span>
                         </p>
-                        <p className="text-xl font-semibold">
+                        <p
+                            className={cn(
+                                'text-xl font-semibold',
+                                isPublic && 'font-display tracking-tight',
+                            )}
+                        >
                             Tiket {ticket.customer_name}
                         </p>
                     </div>
@@ -61,7 +91,12 @@ export default function TicketResult({
                     </div>
                 </div>
 
-                <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                <dl
+                    className={cn(
+                        'grid gap-4 text-sm sm:grid-cols-2',
+                        isPublic && 'border-y border-border py-5',
+                    )}
+                >
                     <div className="flex gap-2">
                         <User
                             className="mt-0.5 size-4 shrink-0 text-muted-foreground"
@@ -115,36 +150,64 @@ export default function TicketResult({
                     </div>
                 </dl>
 
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Produk</TableHead>
-                            <TableHead className="w-20 text-right">
-                                Jumlah
-                            </TableHead>
-                            <TableHead className="w-32 text-right">
-                                Subtotal
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {ticket.items.map((item) => (
-                            <TableRow
-                                key={`${item.product_name}-${item.quantity}`}
+                {isPublic ? (
+                    <div className="divide-y divide-border border-b border-border">
+                        {ticket.items.map((item, index) => (
+                            <div
+                                key={`${item.product_name}-${item.quantity}-${index}`}
+                                className="flex items-start justify-between gap-4 py-3 text-sm"
                             >
-                                <TableCell>{item.product_name}</TableCell>
-                                <TableCell className="text-right tabular-nums">
-                                    {item.quantity}
-                                </TableCell>
-                                <TableCell className="text-right tabular-nums">
+                                <div className="min-w-0">
+                                    <p className="font-medium">
+                                        {item.product_name}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Jumlah {item.quantity}
+                                    </p>
+                                </div>
+                                <p className="shrink-0 text-right font-medium tabular-nums">
                                     Rp {item.subtotal_label}
-                                </TableCell>
-                            </TableRow>
+                                </p>
+                            </div>
                         ))}
-                    </TableBody>
-                </Table>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Produk</TableHead>
+                                <TableHead className="w-20 text-right">
+                                    Jumlah
+                                </TableHead>
+                                <TableHead className="w-32 text-right">
+                                    Subtotal
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {ticket.items.map((item) => (
+                                <TableRow
+                                    key={`${item.product_name}-${item.quantity}`}
+                                >
+                                    <TableCell>{item.product_name}</TableCell>
+                                    <TableCell className="text-right tabular-nums">
+                                        {item.quantity}
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums">
+                                        Rp {item.subtotal_label}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
 
-                <div className="flex items-center justify-between border-t pt-4">
+                <div
+                    className={cn(
+                        'flex items-center justify-between border-t pt-4',
+                        isPublic && 'border-0 pt-0',
+                    )}
+                >
                     <span className="text-sm text-muted-foreground">Total</span>
                     <span className="text-lg font-semibold tabular-nums">
                         Rp {ticket.total_label}
@@ -161,7 +224,7 @@ export default function TicketResult({
                 ) : null}
 
                 <div className="flex flex-wrap items-center gap-2">
-                    {ticket.business.whatsapp !== null ? (
+                    {isPublic && ticket.business.whatsapp !== null ? (
                         <Button asChild>
                             <a
                                 href={whatsappLink(
@@ -174,6 +237,15 @@ export default function TicketResult({
                                 <MessageCircle className="size-4" />
                                 Tanya admin
                             </a>
+                        </Button>
+                    ) : null}
+
+                    {!isPublic && detailUrl ? (
+                        <Button asChild>
+                            <Link href={detailUrl}>
+                                Detail booking
+                                <ArrowRight aria-hidden="true" />
+                            </Link>
                         </Button>
                     ) : null}
 

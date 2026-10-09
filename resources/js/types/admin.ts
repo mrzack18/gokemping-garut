@@ -1,4 +1,17 @@
 /**
+ * Konteks unit bisnis admin yang dibagikan lewat shared props Inertia.
+ *
+ * Dipakai shell admin (badge unit di sidebar dan header) serta halaman
+ * dashboard, sehingga admin selalu tahu sedang mengelola unit yang mana.
+ */
+export type AdminBusiness = {
+    name: string;
+    slug: string;
+    bookingCodePrefix: string;
+    whatsapp: string;
+};
+
+/**
  * Angka dashboard admin (PRD section 22, ROADMAP 4.1).
  *
  * Seluruhnya sudah dihitung server per `business_id` admin yang login, jadi
@@ -36,12 +49,7 @@ export type DashboardRecentBooking = {
 };
 
 export type AdminDashboardPageProps = {
-    business: {
-        name: string;
-        slug: string;
-        bookingCodePrefix: string;
-        whatsapp: string;
-    };
+    business: AdminBusiness;
     stats: {
         totalProducts: number;
         bookingsToday: number;
@@ -256,6 +264,28 @@ export type AdminBookingsPageProps = {
     bookings: AdminBookingPaginator;
     filters: AdminBookingFilters;
     statusOptions: { value: BookingStatusValue; label: string }[];
+};
+
+/** Produk aktif yang dapat dipilih saat admin mencatat sewa langsung. */
+export type AdminManualBookingProduct = {
+    id: number;
+    name: string;
+    price: number;
+    price_label: string;
+    price_unit: string;
+    stock: number;
+    photo: string | null;
+    category: string | null;
+};
+
+export type AdminManualBookingPageProps = {
+    products: AdminManualBookingProduct[];
+    minDate: string;
+    isBikeRental: boolean;
+    paymentMethods: {
+        value: 'cash' | 'qris' | 'bank_transfer';
+        label: string;
+    }[];
 };
 
 export type AdminBookingItem = {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,11 +36,22 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $business = $user instanceof User ? $user->business : null;
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+            ],
+            // Konteks unit dipakai shell admin (badge unit di sidebar/header).
+            // Dibagikan di sini supaya tidak perlu dikirim ulang per halaman.
+            'business' => $business === null ? null : [
+                'name' => $business->name,
+                'slug' => $business->slug,
+                'bookingCodePrefix' => $business->booking_code_prefix,
+                'whatsapp' => $business->whatsapp,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

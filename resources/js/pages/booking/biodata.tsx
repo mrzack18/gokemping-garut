@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import BookingMobileBar from '@/components/booking/booking-mobile-bar';
+import BookingSteps from '@/components/booking/booking-steps';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -193,8 +195,8 @@ export default function BookingBiodata({
         <PublicLayout businesses={businesses} anchorBase="/">
             <Head title="Biodata Penyewa" />
 
-            <section className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="border-b border-border bg-sand-50">
+                <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -212,7 +214,7 @@ export default function BookingBiodata({
                             </Link>
                         </Button>
 
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
                             Biodata Penyewa
                         </h1>
                         <p className="mt-3 max-w-2xl text-muted-foreground">
@@ -221,10 +223,13 @@ export default function BookingBiodata({
                             mengisi form otomatis.
                         </p>
                     </motion.div>
+                    <div className="mt-7 max-w-2xl">
+                        <BookingSteps current={2} />
+                    </div>
                 </div>
             </section>
 
-            <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <section className="mx-auto w-full max-w-6xl px-4 py-8 pb-28 sm:px-6 sm:py-10 sm:pb-28 lg:pb-14">
                 <div className="grid gap-8 lg:grid-cols-3">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -232,9 +237,9 @@ export default function BookingBiodata({
                         transition={{ duration: 0.45 }}
                         className="lg:col-span-2"
                     >
-                        <Card>
+                        <Card className="rounded-lg shadow-none">
                             <CardHeader>
-                                <CardTitle className="text-base">
+                                <CardTitle className="font-display text-base">
                                     Data Penyewa
                                 </CardTitle>
                             </CardHeader>
@@ -244,6 +249,7 @@ export default function BookingBiodata({
                                         event.preventDefault();
                                         post(routes.biodata.store.url());
                                     }}
+                                    id="booking-biodata-form"
                                     className="space-y-6"
                                 >
                                     <div className="grid gap-4 sm:grid-cols-2">
@@ -300,6 +306,20 @@ export default function BookingBiodata({
                                             <InputError
                                                 message={errors.whatsapp}
                                             />
+                                            <div
+                                                aria-live="polite"
+                                                className="min-h-5 text-xs"
+                                            >
+                                                {lookupStatus()}
+                                            </div>
+                                            {lookupError !== null ? (
+                                                <p
+                                                    role="status"
+                                                    className="text-sm text-destructive"
+                                                >
+                                                    {lookupError}
+                                                </p>
+                                            ) : null}
                                         </div>
 
                                         <div className="space-y-2">
@@ -450,16 +470,6 @@ export default function BookingBiodata({
                                         <InputError message={errors.notes} />
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                                        {lookupStatus()}
-                                    </div>
-
-                                    {lookupError !== null ? (
-                                        <p className="text-sm text-destructive">
-                                            {lookupError}
-                                        </p>
-                                    ) : null}
-
                                     <Separator />
 
                                     <div className="flex flex-wrap items-center gap-3">
@@ -471,9 +481,8 @@ export default function BookingBiodata({
                                             Simpan Data Penyewa
                                         </Button>
                                         <p className="text-xs text-muted-foreground">
-                                            Belum ada data yang disimpan ke
-                                            database. Penyimpanan booking
-                                            dibangun pada ROADMAP 3.11.
+                                            Data ini digunakan admin untuk
+                                            memverifikasi penyewa.
                                         </p>
                                     </div>
                                 </form>
@@ -486,9 +495,9 @@ export default function BookingBiodata({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45, delay: 0.1 }}
                     >
-                        <Card className="lg:sticky lg:top-24">
+                        <Card className="rounded-lg shadow-none lg:sticky lg:top-24">
                             <CardHeader>
-                                <CardTitle className="text-base">
+                                <CardTitle className="font-display text-base">
                                     Ringkasan booking
                                 </CardTitle>
                             </CardHeader>
@@ -526,6 +535,12 @@ export default function BookingBiodata({
                     </motion.div>
                 </div>
             </section>
+            <BookingMobileBar
+                amount={formatRupiah(subtotal)}
+                label={processing ? 'Menyimpan…' : 'Simpan data'}
+                disabled={processing}
+                formId="booking-biodata-form"
+            />
         </PublicLayout>
     );
 }

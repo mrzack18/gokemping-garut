@@ -2,6 +2,7 @@ import { Form, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
+import TopographyPattern from '@/components/brand/topography-pattern';
 import Reveal from '@/components/landing/reveal';
 import Section from '@/components/landing/section';
 import TicketResult from '@/components/ticket/ticket-result';
@@ -54,17 +55,19 @@ export default function TicketCheck({
             eyebrow="Cek tiket"
             title="Lihat status booking-mu"
             description="Masukkan kode booking dan nomor WhatsApp yang dipakai saat memesan. Staf juga bisa memakai bagian ini untuk memeriksa tiket saat pengambilan barang."
+            tone="dark"
         >
-            <Reveal className="mx-auto max-w-3xl">
-                <Card>
-                    <CardContent className="pt-6">
+            <Reveal className="relative isolate mx-auto max-w-3xl">
+                <TopographyPattern className="pointer-events-none absolute inset-[-4rem] -z-10 size-[calc(100%+8rem)] text-pine-50 opacity-[0.08]" />
+                <Card className="border-pine-50/15 bg-background text-foreground shadow-none">
+                    <CardContent className="p-5 sm:p-7">
                         <Form
                             {...tickets.lookup.form()}
                             options={{
                                 preserveScroll: true,
                                 preserveState: true,
                             }}
-                            className="grid gap-4 sm:grid-cols-2"
+                            className="grid gap-5 sm:grid-cols-2"
                         >
                             {({ processing, errors }) => (
                                 <>
@@ -82,6 +85,9 @@ export default function TicketCheck({
                                         <InputError
                                             message={errors.booking_code}
                                         />
+                                        <p className="text-xs text-muted-foreground">
+                                            Kode diawali GK- atau SSG-.
+                                        </p>
                                     </div>
 
                                     <div className="grid gap-2">
@@ -98,22 +104,32 @@ export default function TicketCheck({
                                         <InputError message={errors.whatsapp} />
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+                                    <div className="flex flex-col gap-2 border-t border-border pt-4 sm:col-span-2 sm:flex-row sm:items-center">
                                         <Button
                                             type="submit"
                                             disabled={processing}
+                                            className="sm:min-w-36"
                                         >
-                                            <Search className="size-4" />
+                                            <Search
+                                                aria-hidden="true"
+                                                className="size-4"
+                                            />
                                             {processing
                                                 ? 'Mencari...'
                                                 : 'Cek Tiket'}
                                         </Button>
 
-                                        <TicketScanner onScan={handleScan} />
+                                        <TicketScanner
+                                            onScan={handleScan}
+                                            variant="public"
+                                        />
                                     </div>
 
                                     {scanError !== null ? (
-                                        <p className="text-sm text-destructive sm:col-span-2">
+                                        <p
+                                            role="status"
+                                            className="text-sm text-destructive sm:col-span-2"
+                                        >
                                             {scanError}
                                         </p>
                                     ) : null}
@@ -127,6 +143,7 @@ export default function TicketCheck({
                     <TicketResult
                         ticket={ticket}
                         resetUrl={`${home.url()}#cek-tiket`}
+                        variant="public"
                     />
                 ) : null}
             </Reveal>

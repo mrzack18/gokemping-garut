@@ -12,6 +12,9 @@
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-display:
+        'Bricolage Grotesque', 'Instrument Sans', ui-sans-serif, system-ui,
+        sans-serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -59,9 +62,41 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-pine-950: var(--pine-950);
+    --color-pine-900: var(--pine-900);
+    --color-pine-800: var(--pine-800);
+    --color-pine-700: var(--pine-700);
+    --color-pine-600: var(--pine-600);
+    --color-pine-100: var(--pine-100);
+    --color-pine-50: var(--pine-50);
+    --color-sand-50: var(--sand-50);
+    --color-sand-100: var(--sand-100);
+    --color-ember-500: var(--ember-500);
+    --color-ember-600: var(--ember-600);
+    --color-success: var(--success);
+    --color-warning-bg: var(--warning-bg);
+    --color-warning-border: var(--warning-border);
+    --color-warning-text: var(--warning-text);
 }
 
 :root {
+    --pine-950: oklch(0.19 0.035 155);
+    --pine-900: oklch(0.25 0.045 155);
+    --pine-800: oklch(0.32 0.06 155);
+    --pine-700: oklch(0.4 0.075 155);
+    --pine-600: oklch(0.47 0.09 155);
+    --pine-100: oklch(0.93 0.03 155);
+    --pine-50: oklch(0.97 0.015 155);
+    --sand-50: oklch(0.98 0.008 90);
+    --sand-100: oklch(0.96 0.012 90);
+    --ember-500: oklch(0.72 0.15 60);
+    --ember-600: oklch(0.63 0.14 55);
+    --success: oklch(0.52 0.12 152);
+    --warning-bg: oklch(0.97 0.04 85);
+    --warning-border: oklch(0.86 0.09 80);
+    --warning-text: oklch(0.42 0.09 70);
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -98,6 +133,21 @@
 }
 
 .dark {
+    --pine-950: oklch(0.13 0.025 155);
+    --pine-900: oklch(0.19 0.035 155);
+    --pine-800: oklch(0.25 0.045 155);
+    --pine-700: oklch(0.7 0.11 155);
+    --pine-600: oklch(0.76 0.1 155);
+    --pine-100: oklch(0.28 0.04 155);
+    --sand-50: oklch(0.19 0.01 155);
+    --sand-100: oklch(0.24 0.012 155);
+    --ember-500: oklch(0.76 0.14 65);
+    --ember-600: oklch(0.8 0.12 65);
+    --success: oklch(0.72 0.12 152);
+    --warning-bg: oklch(0.28 0.04 80);
+    --warning-border: oklch(0.42 0.07 80);
+    --warning-text: oklch(0.86 0.08 85);
+
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.145 0 0);
@@ -125,11 +175,234 @@
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-primary-foreground: oklch(0.205 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(0.269 0 0);
     --sidebar-ring: oklch(0.439 0 0);
+}
+
+.public-theme {
+    --background: oklch(0.995 0.002 95);
+    --foreground: oklch(0.24 0.015 160);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.24 0.015 160);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.24 0.015 160);
+    --primary: var(--pine-700);
+    --primary-foreground: oklch(0.99 0.005 95);
+    --secondary: var(--sand-100);
+    --secondary-foreground: oklch(0.27 0.025 155);
+    --muted: var(--sand-100);
+    --muted-foreground: oklch(0.5 0.012 150);
+    --accent: var(--pine-100);
+    --accent-foreground: oklch(0.27 0.025 155);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.99 0.005 95);
+    --border: oklch(0.9 0.008 120);
+    --input: oklch(0.9 0.008 120);
+    --ring: oklch(0.62 0.08 155);
+    --radius: 0.5rem;
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-success: var(--success);
+    --color-warning-bg: var(--warning-bg);
+    --color-warning-border: var(--warning-border);
+    --color-warning-text: var(--warning-text);
+}
+
+.dark .public-theme {
+    --background: oklch(0.16 0.012 160);
+    --foreground: oklch(0.95 0.01 150);
+    --card: oklch(0.2 0.014 160);
+    --card-foreground: oklch(0.95 0.01 150);
+    --popover: oklch(0.2 0.014 160);
+    --popover-foreground: oklch(0.95 0.01 150);
+    --primary: var(--pine-700);
+    --primary-foreground: oklch(0.18 0.02 160);
+    --secondary: oklch(0.25 0.015 155);
+    --secondary-foreground: oklch(0.95 0.01 150);
+    --muted: oklch(0.24 0.012 155);
+    --muted-foreground: oklch(0.72 0.012 150);
+    --accent: oklch(0.28 0.04 155);
+    --accent-foreground: oklch(0.95 0.01 150);
+    --destructive: oklch(0.65 0.19 27);
+    --destructive-foreground: oklch(0.85 0.1 25);
+    --border: oklch(0.3 0.015 155);
+    --input: oklch(0.3 0.015 155);
+    --ring: oklch(0.6 0.09 155);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+}
+
+/*
+ * Panel admin memakai bahasa visual yang sama dengan halaman publik
+ * (pine/sand), tetapi lebih rapat dan fungsional: kanvas netral terang,
+ * sidebar pinus gelap, dan sudut 0.5rem.
+ */
+.admin-theme {
+    --background: oklch(0.984 0.003 120);
+    --foreground: oklch(0.23 0.015 160);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.23 0.015 160);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.23 0.015 160);
+    --primary: var(--pine-700);
+    --primary-foreground: oklch(0.99 0.005 95);
+    --secondary: oklch(0.96 0.008 130);
+    --secondary-foreground: oklch(0.27 0.025 155);
+    --muted: oklch(0.965 0.006 130);
+    --muted-foreground: oklch(0.5 0.012 150);
+    --accent: var(--pine-100);
+    --accent-foreground: oklch(0.27 0.025 155);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.99 0.005 95);
+    --border: oklch(0.9 0.008 130);
+    --input: oklch(0.9 0.008 130);
+    --ring: oklch(0.62 0.08 155);
+    --radius: 0.5rem;
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --sidebar: var(--pine-950);
+    --sidebar-foreground: oklch(0.9 0.02 155);
+    --sidebar-primary: oklch(0.72 0.11 155);
+    --sidebar-primary-foreground: oklch(0.16 0.02 160);
+    --sidebar-accent: oklch(0.28 0.04 155);
+    --sidebar-accent-foreground: oklch(0.98 0.01 155);
+    --sidebar-border: oklch(0.3 0.035 155);
+    --sidebar-ring: oklch(0.7 0.1 155);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-success: var(--success);
+    --color-warning-bg: var(--warning-bg);
+    --color-warning-border: var(--warning-border);
+    --color-warning-text: var(--warning-text);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+.dark .admin-theme {
+    --background: oklch(0.16 0.012 160);
+    --foreground: oklch(0.95 0.01 150);
+    --card: oklch(0.2 0.014 160);
+    --card-foreground: oklch(0.95 0.01 150);
+    --popover: oklch(0.2 0.014 160);
+    --popover-foreground: oklch(0.95 0.01 150);
+    --primary: var(--pine-700);
+    --primary-foreground: oklch(0.18 0.02 160);
+    --secondary: oklch(0.25 0.015 155);
+    --secondary-foreground: oklch(0.95 0.01 150);
+    --muted: oklch(0.24 0.012 155);
+    --muted-foreground: oklch(0.72 0.012 150);
+    --accent: oklch(0.28 0.04 155);
+    --accent-foreground: oklch(0.95 0.01 150);
+    --destructive: oklch(0.65 0.19 27);
+    --destructive-foreground: oklch(0.85 0.1 25);
+    --border: oklch(0.3 0.015 155);
+    --input: oklch(0.3 0.015 155);
+    --ring: oklch(0.6 0.09 155);
+
+    --sidebar: oklch(0.13 0.02 160);
+    --sidebar-foreground: oklch(0.9 0.02 155);
+    --sidebar-primary: oklch(0.75 0.11 155);
+    --sidebar-primary-foreground: oklch(0.15 0.02 160);
+    --sidebar-accent: oklch(0.24 0.035 155);
+    --sidebar-accent-foreground: oklch(0.98 0.01 155);
+    --sidebar-border: oklch(0.27 0.03 155);
+    --sidebar-ring: oklch(0.65 0.1 155);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
@@ -140,4 +413,46 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/*
+ * Native scrollbars are visible in Windows/Linux browsers and can otherwise
+ * look unrelated to the pine/sand interface. Keep the track quiet, the thumb
+ * slim, and the hover state clear; the same rules also cover table and sidebar
+ * overflow containers.
+ */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--pine-700) 48%, transparent)
+        transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: color-mix(in oklch, var(--pine-700) 48%, transparent);
+    background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: var(--pine-600);
+}
+
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
 }

@@ -1,8 +1,9 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { motion } from 'motion/react';
-import { ArrowLeft } from 'lucide-react';
+import { Link2 } from 'lucide-react';
+import AdminPageHeader from '@/components/admin/page-header';
 import ProductFormFields from '@/components/admin/product-form-fields';
 import ProductPhotoGallery from '@/components/admin/product-photo-gallery';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import productRoutes from '@/routes/admin/products';
 import type { AdminProductEditPageProps } from '@/types';
@@ -30,32 +31,33 @@ export default function AdminProductsEdit({
         <>
             <Head title={`Edit ${product.name}`} />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-1"
-                >
-                    <Button asChild variant="ghost" size="sm">
-                        <Link
-                            href={productRoutes.index()}
-                            className="-ml-3 w-fit"
-                        >
-                            <ArrowLeft />
-                            Kembali ke daftar
-                        </Link>
-                    </Button>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Edit Produk
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        URL publik: /{product.slug}
-                        {product.bookingCount > 0
-                            ? ` · ${product.bookingCount} booking memakai produk ini`
-                            : ''}
-                    </p>
-                </motion.div>
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Edit Produk"
+                    description="Nama dan detail produk bisa diubah. URL publik tidak berubah agar tautan katalog dan booking tetap aman."
+                    backHref={productRoutes.index.url()}
+                    backLabel="Kembali ke daftar"
+                    meta={
+                        <>
+                            <Badge
+                                variant="outline"
+                                className="gap-1.5 font-mono text-xs font-normal"
+                            >
+                                <Link2
+                                    aria-hidden="true"
+                                    className="size-3.5"
+                                />
+                                /{product.slug}
+                            </Badge>
+                            {product.bookingCount > 0 ? (
+                                <span className="text-xs text-muted-foreground">
+                                    {product.bookingCount} booking memakai
+                                    produk ini
+                                </span>
+                            ) : null}
+                        </>
+                    }
+                />
 
                 <Form
                     {...productRoutes.update.form({
@@ -87,6 +89,11 @@ export default function AdminProductsEdit({
                             />
 
                             <div className="flex flex-wrap items-center justify-end gap-2">
+                                <Button asChild variant="outline">
+                                    <Link href={productRoutes.index()}>
+                                        Batal
+                                    </Link>
+                                </Button>
                                 <Button type="submit" disabled={processing}>
                                     {processing
                                         ? 'Menyimpan...'

@@ -1,54 +1,63 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import PublicLayout from '@/layouts/public-layout';
+import PageHeader from '@/components/public/page-header';
+import EmptyState from '@/components/public/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { serviceCopyFor } from '@/components/landing/service-copy';
 import { formatRupiah } from '@/lib/format';
+import catalogRoutes from '@/routes/catalog';
 import type { ServiceSelectionPageProps } from '@/types';
-import { ArrowRight, Bike, MapPin, Phone, Tent } from 'lucide-react';
+import {
+    ArrowRight,
+    Bike,
+    MapPin,
+    PackageOpen,
+    Phone,
+    Tent,
+} from 'lucide-react';
 
 const icons: Record<string, typeof Tent> = {
     gokemping: Tent,
     'sewa-sepeda-garut': Bike,
 };
 
+function catalogHref(slug: string): string {
+    if (slug === 'gokemping') {
+        return catalogRoutes.gokemping.url();
+    }
+
+    if (slug === 'sewa-sepeda-garut') {
+        return catalogRoutes.sewaSepedaGarut.url();
+    }
+
+    return `/${slug}`;
+}
+
 export default function ServiceSelection({
     businesses,
     previewProducts,
 }: ServiceSelectionPageProps) {
     return (
-        <PublicLayout businesses={businesses}>
+        <PublicLayout businesses={businesses} anchorBase="/">
             <Head title="Pilih Layanan" />
 
-            <section className="border-b">
-                <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45 }}
-                    >
-                        <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-                            Pilih layanan
-                        </p>
-                        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-                            Mau sewa yang mana?
-                        </h1>
-                        <p className="mt-3 max-w-2xl text-muted-foreground">
-                            Pilih salah satu unit di bawah ini. Setelah memilih,
-                            kamu langsung diarahkan ke katalog unit tersebut.
-                        </p>
-                    </motion.div>
-                </div>
-            </section>
+            <PageHeader
+                eyebrow="Pilih layanan"
+                title="Mau sewa yang mana?"
+                description="Pilih unit yang sesuai dengan rencana perjalananmu. Setelah itu, kamu bisa melihat katalog dan ketersediaan barang."
+                className="bg-sand-50"
+            />
 
             <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
                 {businesses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Belum ada layanan yang aktif. Silakan kembali lagi
-                        nanti.
-                    </p>
+                    <EmptyState
+                        icon={PackageOpen}
+                        title="Belum ada layanan aktif"
+                        description="Silakan kembali lagi nanti untuk melihat pilihan layanan GoKemping."
+                    />
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2">
                         {businesses.map((business, index) => {
@@ -77,14 +86,23 @@ export default function ServiceSelection({
                                         delay: index * 0.12,
                                     }}
                                 >
-                                    <Card className="flex h-full flex-col transition-shadow duration-300 hover:shadow-lg">
+                                    <Card className="flex h-full flex-col rounded-lg shadow-none transition-[border-color,box-shadow] duration-200 hover:border-pine-600/40 hover:shadow-sm">
                                         <CardContent className="flex flex-1 flex-col gap-5 p-6">
                                             <div className="flex items-start gap-3">
-                                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                                                    <Icon className="size-6 text-primary" />
+                                                <span className="flex size-12 shrink-0 items-center justify-center border border-pine-700/20 bg-pine-50 dark:bg-pine-100">
+                                                    <Icon
+                                                        aria-hidden="true"
+                                                        className="size-6 text-pine-700 dark:text-pine-600"
+                                                    />
                                                 </span>
                                                 <div>
-                                                    <h2 className="text-xl font-semibold">
+                                                    <p className="text-xs font-semibold tracking-[0.14em] text-pine-600 uppercase">
+                                                        {business.slug ===
+                                                        'gokemping'
+                                                            ? 'Outdoor · Camping'
+                                                            : 'Outdoor · Sepeda'}
+                                                    </p>
+                                                    <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                                                         {business.name}
                                                     </h2>
                                                     {business.address ? (
@@ -102,26 +120,27 @@ export default function ServiceSelection({
                                                 </div>
                                             </div>
 
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-sm leading-relaxed text-muted-foreground">
                                                 {intro}
                                             </p>
 
-                                            <ul className="space-y-2 text-sm">
+                                            <ul className="space-y-2.5 border-t border-border pt-4 text-sm">
                                                 {highlights.map((highlight) => (
                                                     <li
                                                         key={highlight}
-                                                        className="flex gap-2 text-muted-foreground"
+                                                        className="flex gap-2.5 text-muted-foreground"
                                                     >
-                                                        <span aria-hidden>
-                                                            &middot;
-                                                        </span>
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="mt-1 size-1.5 shrink-0 rounded-full bg-pine-600"
+                                                        />
                                                         {highlight}
                                                     </li>
                                                 ))}
                                             </ul>
 
                                             {business.rental_terms ? (
-                                                <div className="rounded-lg border bg-muted/40 p-3">
+                                                <div className="rounded-md border border-border bg-sand-50 p-4">
                                                     <p className="text-xs font-medium">
                                                         Ketentuan sewa
                                                     </p>
@@ -170,10 +189,17 @@ export default function ServiceSelection({
                                                     asChild
                                                     className="w-full"
                                                 >
-                                                    <a href={copy.catalogUrl}>
+                                                    <Link
+                                                        href={catalogHref(
+                                                            business.slug,
+                                                        )}
+                                                    >
                                                         {copy.buttonLabel}
-                                                        <ArrowRight className="size-4" />
-                                                    </a>
+                                                        <ArrowRight
+                                                            aria-hidden="true"
+                                                            className="size-4"
+                                                        />
+                                                    </Link>
                                                 </Button>
                                                 <p className="text-center text-xs text-muted-foreground">
                                                     Kode booking unit ini

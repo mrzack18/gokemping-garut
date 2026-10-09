@@ -1,15 +1,5 @@
-import { motion, type Variants } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-
-const variants: Variants = {
-    hidden: { opacity: 0, y: 24 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-    },
-};
 
 type RevealProps = {
     children: ReactNode;
@@ -28,15 +18,19 @@ export default function Reveal({
     as = 'div',
 }: RevealProps) {
     const Component = motion[as];
+    const reducedMotion = useReducedMotion();
 
     return (
         <Component
-            className={cn(className)}
-            variants={variants}
-            initial="hidden"
-            whileInView="visible"
+            className={className}
+            initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay }}
+            transition={{
+                duration: reducedMotion ? 0 : 0.45,
+                delay: reducedMotion ? 0 : delay,
+                ease: [0.22, 1, 0.36, 1],
+            }}
         >
             {children}
         </Component>

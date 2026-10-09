@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BookingStatus;
+use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Models\Business;
 use App\Models\Category;
 use App\Models\Product;
@@ -108,6 +111,34 @@ class ProductDetailPageTest extends TestCase
                 ->component('catalog/show')
                 ->where('product.stock', 0)
                 ->where('product.is_available', false)
+            );
+    }
+
+    public function test_detail_produk_menampilkan_stok_tersisa_hari_ini_dan_jadwal_booking(): void
+    {
+        $business = $this->business('gokemping');
+        $product = $this->product($business, ['stock' => 3]);
+        $start = today()->toDateString();
+        $end = today()->addDays(2)->toDateString();
+        $booking = Booking::factory()->forPeriod(
+            $business,
+            $start,
+            $end,
+            BookingStatus::Dikonfirmasi,
+        )->create();
+
+        BookingItem::factory()->for($booking)->for($product)->create([
+            'quantity' => 1,
+        ]);
+
+        $this->get(route('catalog.gokemping.show', ['product' => $product->slug]))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('catalog/show')
+                ->where('product.stock', 3)
+                ->where('product.available_now', 2)
+                ->where('product.booked_periods_count', 1)
+                ->where('product.booked_periods.0.quantity', 1)
+                ->where('product.booked_periods.0.status_label', 'Dikonfirmasi')
             );
     }
 

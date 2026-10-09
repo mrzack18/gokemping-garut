@@ -1,3 +1,4 @@
+import type { AdminBusiness } from '@/types/admin';
 import type { Auth } from '@/types/auth';
 
 declare module 'react' {
@@ -11,6 +12,7 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            business: AdminBusiness | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

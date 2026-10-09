@@ -1,7 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { motion } from 'motion/react';
 import { ArrowRight, RotateCcw, Search, Users } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import AdminEmptyState from '@/components/admin/empty-state';
+import AdminFilterCard from '@/components/admin/filter-card';
+import AdminPageHeader from '@/components/admin/page-header';
+import AdminPagination from '@/components/admin/pagination';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -83,85 +86,52 @@ export default function AdminCustomers({
         <>
             <Head title="Penyewa" />
 
-            <div className="flex flex-1 flex-col gap-6 p-4">
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-1"
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+                <AdminPageHeader
+                    title="Penyewa"
+                    description="Orang yang pernah booking di unit ini, beserta jumlah booking dan total transaksinya. Riwayat booking lengkap ada di halaman detail masing-masing penyewa."
+                />
+
+                <AdminFilterCard
+                    title="Cari penyewa"
+                    description="Cari dengan nama, nomor WhatsApp, atau NIK. NIK dicari dalam bentuk lengkap maupun sebagian, tetapi yang tampil di tabel tetap tersamar."
+                    onSubmit={handleSubmit}
+                    pending={pending}
+                    hasFilters={hasFilters}
+                    onReset={resetFilters}
+                    submitLabel="Cari"
+                    resetLabel="Reset"
                 >
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Penyewa
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Orang yang pernah booking di unit ini, beserta jumlah
-                        booking dan total transaksinya. Riwayat booking lengkap
-                        ada di halaman detail masing-masing penyewa.
-                    </p>
-                </motion.div>
+                    <div className="space-y-2 sm:col-span-2 lg:col-span-8">
+                        <Label htmlFor="q">Kata kunci</Label>
+                        <div className="relative">
+                            <Search
+                                aria-hidden="true"
+                                className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <Input
+                                id="q"
+                                name="q"
+                                value={draft.q}
+                                onChange={(event) =>
+                                    setDraft({
+                                        ...draft,
+                                        q: event.target.value,
+                                    })
+                                }
+                                placeholder="Nama, WhatsApp, atau NIK"
+                                className="pl-9"
+                                maxLength={100}
+                            />
+                        </div>
+                    </div>
+                </AdminFilterCard>
 
-                <Card>
+                <Card className="rounded-lg shadow-none">
                     <CardHeader>
-                        <CardTitle>Cari penyewa</CardTitle>
-                        <CardDescription>
-                            Cari dengan nama, nomor WhatsApp, atau NIK. NIK
-                            dicari dalam bentuk lengkap maupun sebagian, tetapi
-                            yang tampil di tabel tetap tersamar.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={handleSubmit}
-                            className="flex flex-col gap-4 sm:flex-row sm:items-end"
-                        >
-                            <div className="flex-1 space-y-2">
-                                <Label htmlFor="q">Kata kunci</Label>
-                                <div className="relative">
-                                    <Search
-                                        aria-hidden
-                                        className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                                    />
-                                    <Input
-                                        id="q"
-                                        name="q"
-                                        value={draft.q}
-                                        onChange={(event) =>
-                                            setDraft({
-                                                ...draft,
-                                                q: event.target.value,
-                                            })
-                                        }
-                                        placeholder="Nama, WhatsApp, atau NIK"
-                                        className="pl-9"
-                                        maxLength={100}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Button type="submit" disabled={pending}>
-                                    <Search className="size-4" />
-                                    Cari
-                                </Button>
-                                {hasFilters ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={resetFilters}
-                                        disabled={pending}
-                                    >
-                                        <RotateCcw className="size-4" />
-                                        Reset
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Daftar Penyewa</CardTitle>
+                        <CardTitle className="font-display text-base">
+                            Daftar Penyewa
+                        </CardTitle>
                         <CardDescription>
                             {total === 0
                                 ? 'Tidak ada penyewa yang cocok dengan pencarian.'
@@ -170,10 +140,30 @@ export default function AdminCustomers({
                     </CardHeader>
                     <CardContent>
                         {customers.data.length === 0 ? (
-                            <CustomerEmptyState
-                                hasFilters={hasFilters}
-                                onReset={resetFilters}
-                                pending={pending}
+                            <AdminEmptyState
+                                icon={Users}
+                                title={
+                                    hasFilters
+                                        ? 'Tidak ada penyewa yang cocok'
+                                        : 'Belum ada penyewa'
+                                }
+                                description={
+                                    hasFilters
+                                        ? 'Coba periksa ejaan nama, nomor WhatsApp, atau NIK-nya.'
+                                        : 'Penyewa muncul di sini setelah booking pertamanya masuk lewat halaman pemesanan publik.'
+                                }
+                                action={
+                                    hasFilters ? (
+                                        <Button
+                                            variant="outline"
+                                            onClick={resetFilters}
+                                            disabled={pending}
+                                        >
+                                            <RotateCcw aria-hidden="true" />
+                                            Reset pencarian
+                                        </Button>
+                                    ) : null
+                                }
                             />
                         ) : (
                             <Table>
@@ -211,68 +201,12 @@ export default function AdminCustomers({
                     </CardContent>
                 </Card>
 
-                {lastPage > 1 ? (
-                    <nav
-                        aria-label="Navigasi halaman penyewa"
-                        className="flex flex-wrap items-center justify-center gap-1"
-                    >
-                        {currentPage > 1 ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage - 1)}
-                                    preserveScroll
-                                >
-                                    Sebelumnya
-                                </Link>
-                            </Button>
-                        ) : null}
-
-                        {visiblePages(currentPage, lastPage).map((page) =>
-                            page === 'gap' ? (
-                                <span
-                                    key={`gap-${page}`}
-                                    className="px-2 text-sm text-muted-foreground"
-                                >
-                                    ...
-                                </span>
-                            ) : (
-                                <Button
-                                    key={page}
-                                    asChild
-                                    size="sm"
-                                    variant={
-                                        page === currentPage
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                >
-                                    <Link
-                                        href={pageUrl(filters, page)}
-                                        preserveScroll
-                                        aria-current={
-                                            page === currentPage
-                                                ? 'page'
-                                                : undefined
-                                        }
-                                    >
-                                        {page}
-                                    </Link>
-                                </Button>
-                            ),
-                        )}
-
-                        {currentPage < lastPage ? (
-                            <Button asChild variant="outline" size="sm">
-                                <Link
-                                    href={pageUrl(filters, currentPage + 1)}
-                                    preserveScroll
-                                >
-                                    Berikutnya
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </nav>
-                ) : null}
+                <AdminPagination
+                    currentPage={currentPage}
+                    lastPage={lastPage}
+                    pageUrl={(page) => pageUrl(filters, page)}
+                    ariaLabel="Navigasi halaman penyewa"
+                />
             </div>
         </>
     );
@@ -327,47 +261,6 @@ function CustomerRow({ customer }: { customer: AdminCustomerRow }) {
 }
 
 /**
- * Empty state daftar penyewa.
- *
- * Dua kondisi dibedakan karena tindakan yang berguna berbeda: tanpa pencarian,
- * memang belum ada booking yang masuk; dengan pencarian aktif, penyewanya
- * mungkin ada tapi tidak cocok.
- */
-function CustomerEmptyState({
-    hasFilters,
-    onReset,
-    pending,
-}: {
-    hasFilters: boolean;
-    onReset: () => void;
-    pending: boolean;
-}) {
-    return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
-            <Users className="size-8 text-muted-foreground" />
-            <div className="flex flex-col gap-1">
-                <p className="font-medium">
-                    {hasFilters
-                        ? 'Tidak ada penyewa yang cocok'
-                        : 'Belum ada penyewa'}
-                </p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                    {hasFilters
-                        ? 'Coba periksa ejaan nama, nomor WhatsApp, atau NIK-nya.'
-                        : 'Penyewa muncul di sini setelah booking pertamanya masuk lewat halaman pemesanan publik.'}
-                </p>
-            </div>
-            {hasFilters ? (
-                <Button variant="outline" onClick={onReset} disabled={pending}>
-                    <RotateCcw />
-                    Reset pencarian
-                </Button>
-            ) : null}
-        </div>
-    );
-}
-
-/**
  * Query string pencarian.
  *
  * Nilai yang kosong tidak ikut ditulis supaya URL tetap pendek dan mudah
@@ -390,35 +283,4 @@ function pageUrl(filters: AdminCustomerFilters, page: number): string {
             page: String(page),
         },
     });
-}
-
-/**
- * Nomor halaman yang ditampilkan, dengan celah `...` di antara halaman yang
- * dilewati. Pola yang sama dipakai daftar booking dan produk.
- */
-function visiblePages(current: number, last: number): (number | 'gap')[] {
-    const wanted = new Set<number>([
-        1,
-        last,
-        current - 1,
-        current,
-        current + 1,
-    ]);
-    const pages: (number | 'gap')[] = [];
-    let previous = 0;
-
-    for (let page = 1; page <= last; page += 1) {
-        if (!wanted.has(page)) {
-            continue;
-        }
-
-        if (previous > 0 && page - previous > 1) {
-            pages.push('gap');
-        }
-
-        pages.push(page);
-        previous = page;
-    }
-
-    return pages;
 }

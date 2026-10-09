@@ -1,18 +1,23 @@
 import { usePage } from '@inertiajs/react';
+import { BrandMark } from '@/components/brand/logo';
 
-import AppLogoIcon from '@/components/app-logo-icon';
-
+/**
+ * Identitas panel admin: mark GoKemping + nama aplikasi + unit yang dikelola.
+ * Nama unit dibaca dari shared prop `business` (HandleInertiaRequests), jadi
+ * admin selalu tahu sedang berada di unit mana.
+ */
 export default function AppLogo() {
-    const { name } = usePage().props;
+    const { name, business } = usePage().props;
 
     return (
         <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
-            </div>
-            <div className="ml-1 grid flex-1 text-left text-sm">
-                <span className="mb-0.5 truncate leading-tight font-semibold">
-                    {name}
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary/15 ring-1 ring-sidebar-primary/30 ring-inset">
+                <BrandMark inverse className="size-5" />
+            </span>
+            <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-sm font-semibold">{name}</span>
+                <span className="truncate text-xs text-sidebar-foreground/60">
+                    {business ? `Panel ${business.name}` : 'Panel admin'}
                 </span>
             </div>
         </>

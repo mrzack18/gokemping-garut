@@ -7,30 +7,50 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import type { NavItem } from '@/types';
+import type { NavSection } from '@/types';
 
-export function NavMain({ items }: { items: NavItem[] }) {
-    const { isCurrentUrl } = useCurrentUrl();
+export function NavMain({ sections }: { sections: NavSection[] }) {
+    const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
-        <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
-            <SidebarMenu>
-                {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={isCurrentUrl(item.href)}
-                            tooltip={{ children: item.title }}
-                        >
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            {sections.map((section) => (
+                <SidebarGroup key={section.label} className="px-2 py-0">
+                    <SidebarGroupLabel className="text-sidebar-foreground/50">
+                        {section.label}
+                    </SidebarGroupLabel>
+                    <SidebarMenu>
+                        {section.items.map((item) => {
+                            // Dashboard dicocokkan persis karena `/admin`
+                            // adalah prefix dari semua halaman admin lainnya.
+                            const isExcluded = item.exclude?.some((href) =>
+                                isCurrentOrParentUrl(href),
+                            );
+                            const isActive =
+                                !isExcluded &&
+                                (item.exact
+                                    ? isCurrentUrl(item.href)
+                                    : isCurrentOrParentUrl(item.href));
+
+                            return (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={isActive}
+                                        tooltip={{ children: item.title }}
+                                        className="transition-colors data-[active=true]:ring-1 data-[active=true]:ring-sidebar-primary/25 data-[active=true]:ring-inset"
+                                    >
+                                        <Link href={item.href} prefetch>
+                                            {item.icon && <item.icon />}
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            );
+                        })}
+                    </SidebarMenu>
+                </SidebarGroup>
+            ))}
+        </>
     );
 }
